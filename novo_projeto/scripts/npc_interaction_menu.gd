@@ -8,6 +8,7 @@ signal closed
 
 const UI = preload("res://scripts/ui_theme.gd")
 const ITEMS = preload("res://scripts/item_catalog.gd")
+const NPCS = preload("res://scripts/npc_registry.gd")
 var backdrop: ColorRect
 var card: PanelContainer
 var content: VBoxContainer
@@ -48,9 +49,13 @@ func show_npc(npc: Dictionary, friendship: int, level: String, preferred: String
     _clear()
     _heading(str(npc.get("name", "Morador")))
     _line("Profissao: %s | Raridade: %s" % [npc.get("profession", "Morador"), npc.get("rarity", "Comum")])
+    var classification: Dictionary = NPCS.profile(str(npc.get("id", "")))
+    _line("Grupo: %s | %s" % [classification["category"], "Importante para a historia" if classification["important"] else "Personagem comum"])
+    _line("Cadastro: " + ("Recrutavel" if classification["recruitable"] else "Nao recrutavel"))
     _line("Amizade: %d/100 — %s" % [friendship, level])
     _line("Presentes preferidos: " + preferred)
     _choice("Conversar", "talk")
+    _choice("Consultar cadastro de NPCs", "directory")
     if is_merchant:
         _choice("Abrir loja", "shop")
     _choice("Presentear", "gifts")
@@ -153,3 +158,54 @@ func _on_gift_click(item_id: String) -> void:
 func _on_backdrop_input(event: InputEvent) -> void:
     if event is InputEventMouseButton and event.pressed:
         hide_menu()
+
+func show_directory() -> void:
+    selected_npc.clear()
+    _clear()
+    _heading("Cadastro de NPCs")
+    _line("Escolha uma categoria. Os filtros de historia e recrutamento sao independentes.")
+    for group_name in NPCS.CATEGORIES:
+        var button := _button(group_name)
+        button.pressed.connect(show_directory_group.bind(group_name))
+    var close_button := _button("Fechar")
+    close_button.pressed.connect(hide_menu)
+    visible = true
+
+func show_directory_group(group_name: String) -> void:
+    _clear()
+    _heading(group_name)
+    _line("Subtopicos de recrutamento e importancia narrativa")
+    for category in ["Todos", "Recrutaveis", "Nao recrutaveis", "Importantes para a historia", "Personagens comuns"]:
+        var filter_button := _button(category)
+        filter_button.pressed.connect(_filter_directory.bind(group_name, category))
+    var back_button := _button("Voltar as categorias")
+    back_button.pressed.connect(show_directory)
+    visible = true
+
+func _filter_directory(group_name: String, filter_name: String) -> void:
+    var recruit_filter := -1
+    var story_filter := -1
+    match filter_name:
+        "Recrutaveis":
+            recruit_filter = 1
+        "Nao recrutaveis":
+            recruit_filter = 0
+        "Importantes para a historia":
+            story_filter = 1
+        "Personagens comuns":
+            story_filter = 0
+    var results: Array[Dictionary] = NPCS.list_filtered(group_name, recruit_filter, story_filter)
+    _clear()
+    _heading(group_name + " / " + filter_name)
+    if results.is_empty():
+        _line("Nenhum NPC cadastrado neste subtopico.")
+    for entry in results:
+        var label := "%s | %s | %s" % [
+            str(entry["id"]).replace("_", " ").capitalize(),
+            "Recrutavel" if entry["recruitable"] else "Nao recrutavel",
+            "Importante" if entry["important"] else "Comum"
+        ]
+        _line(label)
+    var back := _button("Voltar aos filtros")
+    back.pressed.connect(show_directory_group.bind(group_name))
+    visible = true
