@@ -96,6 +96,37 @@ func _make_box(parent: Node3D, location: Vector3, dimensions: Vector3, tint: Col
         body.add_child(collision)
         parent.add_child(body)
 
+func _decorate_house(side: float, z: float, index: int) -> void:
+    # Original decorative roofs/facades built only once at scene initialization.
+    var facing := 1.0 if side < 0.0 else -1.0
+    var door_x := side + facing * 3.06
+    var accent := Color("#a98048") if index == 0 else Color("#787f68") if index == 1 else Color("#985b51") if index == 4 else Color("#8a745b")
+    _make_box(settlement, Vector3(door_x, 1.1, z), Vector3(0.13, 2.2, 1.35), Color("#493727"))
+    _make_box(settlement, Vector3(door_x + facing * 0.08, 1.1, z + 0.41), Vector3(0.14, 0.13, 0.13), Color("#c9a46b"))
+    for offset_z in [-1.7, 1.7]:
+        _make_box(settlement, Vector3(door_x, 1.65, z + offset_z), Vector3(.17, 1.12, .85), Color("#42342b"))
+        _make_box(settlement, Vector3(door_x + facing * .09, 1.64, z + offset_z), Vector3(.09, .87, .60), Color("#b9b5a0"))
+        _make_box(settlement, Vector3(door_x + facing * .17, 1.65, z + offset_z), Vector3(.10, .86, .09), Color("#6b503b"))
+    for roof_half in [-1.0, 1.0]:
+        var roof := MeshInstance3D.new()
+        var roof_box := BoxMesh.new()
+        roof_box.size = Vector3(3.95, .20, 6.3)
+        roof.mesh = roof_box
+        roof.position = Vector3(side + roof_half * 1.73, 4.0, z)
+        roof.rotation.z = -roof_half * 0.30
+        var tint := Color("#574139") if index in [0, 2] else Color("#4e514b")
+        var material_key := tint.to_html()
+        if not _shared_materials.has(material_key):
+            var roof_mat := StandardMaterial3D.new()
+            roof_mat.albedo_color = tint
+            _shared_materials[material_key] = roof_mat
+        roof.material_override = _shared_materials[material_key]
+        settlement.add_child(roof)
+    _make_box(settlement, Vector3(side, 4.65, z), Vector3(.27, .27, 6.4), accent)
+    _make_box(settlement, Vector3(door_x + facing*.75, .07, z), Vector3(1.8,.11,1.65), Color("#8a806d"))
+    _make_box(settlement, Vector3(door_x, 2.82, z), Vector3(.13,.24,1.7), accent)
+    _make_box(settlement, Vector3(door_x + facing*.13, 2.63, z), Vector3(.08,.38,1.25), accent)
+
 func _generate_world() -> void:
     var light := DirectionalLight3D.new()
     light.rotation_degrees = Vector3(-50, -35, 0)
@@ -121,6 +152,8 @@ func _generate_world() -> void:
         _make_box(settlement, Vector3(9, 1.4, z), Vector3(6, 2.8, 5), Color("#88735a"), true)
         _make_box(settlement, Vector3(-9, 3.2, z), Vector3(7, .9, 6), Color("#655044"))
         _make_box(settlement, Vector3(9, 3.2, z), Vector3(7, .9, 6), Color("#655044"))
+        _decorate_house(-9.0, z, i)
+        _decorate_house(9.0, z, i)
     for i in range(16):
         var z := -28.0 + i * 4.0
         _make_box(settlement, Vector3(-30, 1.0, z), Vector3(1.5, 2.0, 2), Color("#526a48"))
@@ -143,7 +176,7 @@ func _generate_world() -> void:
     _player_sprite = character
     _player_walk_frames = ACTOR_ANIM.make_frames(GameState.character_appearance)
     character.texture = _player_walk_frames["down:0"]
-    character.pixel_size = 0.028
+    character.pixel_size = 0.053
     character.position.y = 0.82
     character.billboard = BaseMaterial3D.BILLBOARD_ENABLED
     character.shaded = false
@@ -585,7 +618,7 @@ func _make_terrain_texture(parent: Node3D) -> void:
     for y in range(64):
         for x in range(64):
             var n := (x * 71 + y * 43 + x * y * 3) % 19
-            img.set_pixel(x, y, Color.from_hsv(.27, .34, .33 + float(n) * .009))
+            img.set_pixel(x, y, Color.from_hsv(.27, .29, .39 + float(n) * .003))
     var mat := StandardMaterial3D.new()
     mat.albedo_texture = ImageTexture.create_from_image(img)
     mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
@@ -730,7 +763,7 @@ func _create_npc_visual(data: Dictionary) -> Sprite3D:
     var id := str(data["id"])
     npc.name = "NPC_" + id
     npc.texture = _sprite_texture
-    npc.pixel_size = 0.026
+    npc.pixel_size = 0.048
     npc.billboard = BaseMaterial3D.BILLBOARD_ENABLED
     npc.shaded = false
     npc.position = ROUTINES.position_for(id, GameState.day) + Vector3(0, 1, 0)
