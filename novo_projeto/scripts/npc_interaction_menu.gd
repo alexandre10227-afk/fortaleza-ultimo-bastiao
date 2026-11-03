@@ -29,15 +29,15 @@ func _ready() -> void:
     center.mouse_filter = Control.MOUSE_FILTER_IGNORE
     add_child(center)
     card = PanelContainer.new()
-    card.custom_minimum_size = Vector2(525, 0)
+    card.custom_minimum_size = Vector2(820, 0)
     UI.apply_panel(card)
     center.add_child(card)
     var scroll := ScrollContainer.new()
-    scroll.custom_minimum_size = Vector2(520, 390)
+    scroll.custom_minimum_size = Vector2(790, 460)
     scroll.size_flags_vertical = Control.SIZE_SHRINK_CENTER
     card.add_child(scroll)
     content = VBoxContainer.new()
-    content.custom_minimum_size.x = 470
+    content.custom_minimum_size.x = 755
     content.add_theme_constant_override("separation", 9)
     scroll.add_child(content)
 
@@ -72,10 +72,43 @@ func show_npc(npc: Dictionary, friendship: int, level: String, preferred: String
 func show_gifts(npc: Dictionary, inventory: Dictionary) -> void:
     selected_npc = npc.duplicate(true)
     _clear()
-    _heading("Presentear: %s" % npc.get("name", "Morador"))
+    _heading("PRESENTES E RELACIONAMENTO")
+    var columns := HBoxContainer.new()
+    columns.add_theme_constant_override("separation", 22)
+    content.add_child(columns)
+    var details := VBoxContainer.new()
+    details.custom_minimum_size.x = 300
+    details.add_theme_constant_override("separation", 11)
+    columns.add_child(details)
+    var portrait := PanelContainer.new()
+    portrait.custom_minimum_size = Vector2(160, 130)
+    UI.apply_panel(portrait)
+    details.add_child(portrait)
+    var portrait_text := Label.new()
+    portrait_text.text = str(npc.get("name", "?")).substr(0, 1).to_upper()
+    portrait_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    portrait_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+    portrait_text.add_theme_font_size_override("font_size", 70)
+    portrait_text.add_theme_color_override("font_color", UI.MUTED_GOLD)
+    portrait.add_child(portrait_text)
     var preferred := ITEMS.preferred_category(str(npc.get("id", "")), str(npc.get("profession", "")))
-    _line("Categoria aceita: %s" % preferred)
-    _line("Clique em um item. Recusas nao gastam o item.")
+    var info := Label.new()
+    info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    info.text = "%s\nProfissao: %s\nCategoria aceita: %s\nAmizade: %d/100" % [npc.get("name", "Morador"), npc.get("profession", "Morador"), preferred, GameState.friendship_points(str(npc.get("id", "")))]
+    UI.apply_text(info)
+    details.add_child(info)
+    var items_column := VBoxContainer.new()
+    items_column.custom_minimum_size.x = 410
+    columns.add_child(items_column)
+    var heading := Label.new()
+    heading.text = "SELECIONE UM PRESENTE"
+    UI.apply_title(heading)
+    items_column.add_child(heading)
+    var grid := GridContainer.new()
+    grid.columns = 3
+    grid.add_theme_constant_override("h_separation", 8)
+    grid.add_theme_constant_override("v_separation", 8)
+    items_column.add_child(grid)
     var found := false
     for id in inventory.keys():
         var key := str(id)
@@ -85,13 +118,20 @@ func show_gifts(npc: Dictionary, inventory: Dictionary) -> void:
         found = true
         var data: Dictionary = ITEMS.get_item(key)
         var accepted := ITEMS.accepts_gift(str(npc.get("id", "")), str(npc.get("profession", "")), key)
-        var suffix := "ACEITO" if accepted else "RECUSADO"
-        var button := _button("%s x%d | %s | %s" % [data["name"], amount, data["rarity"], suffix])
+        var button := Button.new()
+        button.text = "%s\nx%d | %s" % [data["name"], amount, "ACEITO" if accepted else "RECUSADO"]
+        button.custom_minimum_size = Vector2(128, 76)
+        button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
         button.disabled = not accepted
+        UI.apply_button(button)
+        grid.add_child(button)
         button.pressed.connect(_on_gift_click.bind(key))
     if not found:
-        _line("Nao ha itens de presente no inventario.")
-    var back := _button("Voltar")
+        var empty := Label.new()
+        empty.text = "Nenhum presente no inventario."
+        items_column.add_child(empty)
+    _line("Apenas presentes da categoria preferida podem ser entregues. O item recusado nao e consumido.")
+    var back := _button("Voltar ao personagem")
     back.pressed.connect(_on_action.bind("back"))
     visible = true
 
