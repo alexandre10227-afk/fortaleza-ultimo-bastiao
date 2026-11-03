@@ -8,6 +8,7 @@ const OPTIONS = preload("res://scripts/game_settings.gd")
 var panel: VBoxContainer
 var name_input: LineEdit
 var difficulty_input: OptionButton
+var _selected_difficulty := "Normal"
 var dialogue_ui: Control
 var origin_input: OptionButton
 var appearance_input: OptionButton
@@ -69,7 +70,7 @@ func _show_main_menu() -> void:
     _label("FORTALEZA: ULTIMO BASTIAO", 35)
     _label("O Vale das Cinzas aguarda suas escolhas.", 19)
     _label("Uma campanha original de estrategia, exploracao e consequencias.", 16)
-    _button("Novo jogo", _show_creation)
+    _button("Novo jogo", _show_difficulty)
     if FileAccess.file_exists(GameState.SAVE_PATH):
         _button("Continuar campanha", _continue)
     _button("Configuracoes", _show_settings)
@@ -104,10 +105,32 @@ func _show_settings() -> void:
 func _quit_game() -> void:
     get_tree().quit()
 
+func _show_difficulty() -> void:
+    _clear()
+    _label("01 / DIFICULDADE DA CAMPANHA", 29)
+    _label("Escolha como deseja enfrentar a defesa do Bastião.", 18)
+    var details := {
+        "Facil": "Mais recursos e aprendizado seguro para descobrir a historia.",
+        "Normal": "Equilibrio entre perigo, recursos e progressao.",
+        "Dificil": "Inimigos mais perigosos, recursos escassos e escolhas decisivas.",
+        "Impossivel": "3x experiencia; inimigos brutais, menos recursos e risco permanente."
+    }
+    for value in ["Facil", "Normal", "Dificil", "Impossivel"]:
+        var label := "%s | %s" % [value, details[value]]
+        _button(label, _select_difficulty.bind(value))
+    _button("Voltar ao menu principal", _show_main_menu)
+
+func _select_difficulty(value: String) -> void:
+    if not ["Facil", "Normal", "Dificil", "Impossivel"].has(value):
+        return
+    _selected_difficulty = value
+    _show_creation()
+
 func _show_creation() -> void:
     _clear()
     _label("FORTALEZA: ULTIMO BASTIAO", 31)
-    _label("NOVO PROJETO | ETAPA 1 EM DESENVOLVIMENTO", 15)
+    _label("02 / CRIACAO DO PROTAGONISTA", 15)
+    _label("Dificuldade selecionada: " + _selected_difficulty, 17)
     _label("Um desconhecido pode escolher seu destino. Crie seu personagem.")
     name_input = LineEdit.new()
     name_input.placeholder_text = "Nome do protagonista"
@@ -166,23 +189,13 @@ func _show_creation() -> void:
         plus.pressed.connect(_edit_stat.bind(str(stat), 1))
         row.add_child(plus)
     _refresh_stats()
-    _label("Dificuldade da campanha")
-    difficulty_input = OptionButton.new()
-    for item in ["Facil", "Normal", "Dificil", "Impossivel"]:
-        difficulty_input.add_item(item)
-    difficulty_input.select(1)
-    difficulty_input.add_theme_stylebox_override("normal", UI.button_style())
-    difficulty_input.add_theme_stylebox_override("hover", UI.button_style("hover"))
-    difficulty_input.add_theme_color_override("font_color", UI.LIGHT_TEXT)
-    panel.add_child(difficulty_input)
-    _label("Impossivel concede 3x XP, mas torna a sobrevivencia mais dificil.", 15)
     _button("Comecar: audiencia com o rei", _create_character)
-    _button("Voltar ao menu principal", _show_main_menu)
+    _button("Voltar a dificuldade", _show_difficulty)
     if FileAccess.file_exists(GameState.SAVE_PATH):
         _button("Continuar campanha salva", _continue)
 
 func _create_character() -> void:
-    GameState.new_game(name_input.text, difficulty_input.get_item_text(difficulty_input.selected))
+    GameState.new_game(name_input.text, _selected_difficulty)
     var selected_origin := origin_input.get_item_text(origin_input.selected)
     if not GameState.configure_character(selected_origin, _stats, appearance_input.selected):
         _label("Verifique a origem e os pontos de atributos.", 15)
