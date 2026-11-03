@@ -83,3 +83,10 @@ static func price(item_id: String, region: String, oath: String) -> int:
 
 static func can_recruit(npc: Dictionary, oath: String) -> bool:
     return not (oath == "exile" and npc.get("home", "") == "Fortaleza")
+
+static func travelling_merchant_present(region: String, day: int) -> bool:
+    # Caravan visits each region for four days every twelve game days.
+    var first_day := 1 if region == "Fortaleza" else 5
+    if day < first_day:
+        return false
+    return (day - first_day) % 12 < STAY_DAYS
