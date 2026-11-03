@@ -193,3 +193,14 @@ Controles temporários no mundo: `V` abre visitantes da taverna; teclas `1` a `5
 - `scripts/world.gd`: `P` abre a selecao de presentes do inventario para o NPC proximo, personagem na mansao ou visitante selecionado na taverna. Dialogos incluem opcao de oferecer presente. `O` abre mercado na taverna/ferraria ou quando ha caravana; `Z` alterna comprar/vender, `L` passa de pagina, teclas 1–5 negociam. A caravana possui janela inicial de quatro dias e adicional de preco.
 - `tests/test_item_economy.gd` criado com checagens de recusas, raridade, mercado, comida, receitas, construcoes e salvamento. **Este novo teste ainda nao foi executado no motor nesta rodada**; nao declarar a atualizacao aprovada por Godot sem os resultados.
 - **Pendente:** menus definitivos de forja/obras, alvos de comida para todos os companheiros, variacao de estoque, visuais definitivos, balanceamento e testes reais de FPS antes do ZIP.
+
+
+### Consolidação do inventário e atalhos de protótipo (03/11/2026)
+
+- IDs de recursos integrados: `ferro` coletado já serve como minério comum para presentear ferreiros, vender e usar em fabricação/obras; `ervas` também consta no catálogo de Comestíveis. Não são criados itens incompatíveis com o inventário antigo.
+- Troncos de `madeira` adicionados ao cenário das duas cidades; coleta pela tecla `G`. Madeira é **material de obra**, não categoria de presente.
+- `P`: presentear NPC próximo ou, dentro da taverna, o último visitante selecionado com as teclas 1–5. Presentes errados são recusados sem custo, independentemente de raridade.
+- `O`: abrir mercado de taverna/ferraria; também abre comércio com a caravana quando estiver disponível no calendário. `Z` alterna compra/venda, `L` pagina o catálogo, `1–5` selecionam os itens apresentados.
+- `F`: consumir comida do inventário e aplicar bônus temporários ao protagonista. `H`: abrir receitas iniciais dentro da ferraria. `Y`: aprimorar a ferraria com materiais e moedas.
+- Esses são controles provisórios e menus simples, ainda não a interface gráfica final. Outros estabelecimentos e buffs para companheiros aguardam integração nas próximas etapas.
+- **Teste novo `test_item_economy.gd` escrito, mas não executado nesta rodada no Godot:** cobre recusa para todas as categorias incompatíveis de todos os NPCs, presentes aceitos por raridade, compra/venda, consumo, receita, aprimoramento e save/load. Não declarar testes ou desempenho aprovados antes da validação de execução.
