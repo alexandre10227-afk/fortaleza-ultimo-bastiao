@@ -1,11 +1,13 @@
 extends Control
 const UI = preload("res://scripts/ui_theme.gd")
+const PORTRAITS = preload("res://scripts/portrait_factory.gd")
 ## Componente original, reutilizavel: 9-slice, nome, revelacao e escolhas.
 signal choice_selected(index: int)
 signal dialogue_closed
 const CHARACTER_INTERVAL := 0.025
 var speaker_label: Label
 var portrait_letter: Label
+var portrait_texture: TextureRect
 var body_label: RichTextLabel
 var choice_column: VBoxContainer
 var continue_button: Button
@@ -91,6 +93,13 @@ func _ready() -> void:
     portrait_letter.add_theme_font_size_override("font_size", 53)
     portrait_letter.add_theme_color_override("font_color", UI.MUTED_GOLD)
     portrait_panel.add_child(portrait_letter)
+    portrait_letter.visible = false
+    portrait_texture = TextureRect.new()
+    portrait_texture.custom_minimum_size = Vector2(80, 118)
+    portrait_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+    portrait_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+    portrait_texture.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+    portrait_panel.add_child(portrait_texture)
     speaker_label = Label.new()
     speaker_label.name = "Speaker"
     speaker_label.add_theme_font_size_override("font_size", 21)
@@ -135,6 +144,7 @@ func _make_nine_slice() -> StyleBoxTexture:
 func show_dialogue(speaker: String, message: String, choices: Array = []) -> void:
     speaker_label.text = speaker
     portrait_letter.text = speaker.substr(0, 1).to_upper()
+    portrait_texture.texture = PORTRAITS.portrait(speaker.to_lower().replace(" ", "_"))
     body_label.text = message
     body_label.visible_characters = 0
     _full_length = message.length()
