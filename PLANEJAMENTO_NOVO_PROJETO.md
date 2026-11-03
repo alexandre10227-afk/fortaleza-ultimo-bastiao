@@ -360,3 +360,18 @@ Sistema de **classe e subclasse** para progressao das habilidades de combate, co
 **Regra de maior prioridade:** a tabela das seis classes, subclasses e raridades de heróis descrita no Adendo 1.8 vale **somente para NPCs**. O **protagonista** tem quatro classes básicas: **Guerreiro, Cavaleiro, Mago e Sacerdote**; não possui raridade Raro/Épico/Lendário/Mítico de classe. Novas especializações são **ensinadas por NPCs** (amizade mínima inicial 60 pontos, mestre presente e compatibilidade) ou **aprendidas de livros de habilidade de chefes** (consumo único do livro; drop do boss ainda a implementar). A classe inicial não é substituída ao aprender uma subclasse; técnicas ficam registradas no save, incluindo fonte de aprendizado. Ver [CLASSES_E_SUBCLASSES.md](CLASSES_E_SUBCLASSES.md).
 
 Os NPCs mantêm as raridades e progressões já definidas, incluindo magos elementais, Trovão e Verde.
+
+
+## Aceite condicional da Etapa 1 e início da Etapa 2 — 03/11/2026
+
+O usuário testou no Windows e autorizou iniciar a Etapa 2. O desempenho foi percebido como fluido e sem lags até o momento. **Este aceite permite desenvolver a Etapa 2, mas não significa que o acabamento da Etapa 1 esteja completo.** Permanecem tarefas obrigatórias de design, arte e UX ao longo da evolução do jogo:
+
+- Controles: **Esc fecha a janela/modal superior**, inclusive inventário, ficha, mapa, mercado, forja, jornal e menus de NPC.
+- Navegação: o personagem entra automaticamente ao se aproximar da porta; transição de cena suave e tempo de bloqueio na saída para impedir o efeito de entrar/sair repetidamente.
+- Fluxo: três telas separadas — **Menu inicial → Dificuldade → Criação de personagem**, seguidas pelo prólogo e decisão de Aldric.
+- Ferraria: receitas **comuns** de quatro classes do protagonista (**Guerreiro, Cavaleiro, Mago e Sacerdote**), com slots independentes **arma, capacete, peitoral e botas**. Não fabricar itens de evento ou relíquias narrativas.
+- Comércio: mercado por **arquetipo de NPC**. Doran: Guerreiro; mercador marcial: Cavaleiro; mercador arcano: Mago; mercador sagrado: Sacerdote. Oferecem equipamentos superiores Raros/Épicos próprios. A penalidade de preços do Exilado continua.
+- Exceção narrativa permanente: **Espada do Herói** e **Armadura do Duque** só vêm das respectivas missões; não entram na forja, nos mercados nem nos presentes. "Itens especiais de comerciante" significam equipamentos superiores não exclusivos.
+- Menus devem deixar de ser listas de texto e passar a usar cliques, ícones, categoria, preço e acessibilidade. Retratos de NPCs e texturas do mundo continuam recebendo acabamento autoral.
+- Fase 2 inicia por **equipamentos e bônus**, seguindo para combate, técnicas, progressão, profissões e relacionamentos. O sistema de classes raras é exclusivo de NPCs; protagonista possui quatro classes iniciais e aprende técnicas com mestres e livros de chefes.
+- Testes automatizados sobre as novas interfaces, salvamento e transição de portas tornam-se bloqueadores de regressão. Desempenho Windows e revisão do jogador seguem como critérios de qualidade, não como motivo para atrasar o início da Etapa 2.
