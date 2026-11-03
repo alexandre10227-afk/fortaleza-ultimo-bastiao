@@ -72,6 +72,10 @@ func show_page(page_name: String) -> void:
             _line("Protagonista: %s  |  Origem: %s" % [GameState.character_name, GameState.character_origin], true)
             _line("Dificuldade: %s  |  Juramento: %s" % [GameState.difficulty, GameState.oath])
             _line("Dia: %d  |  Onda: %d  |  Energia: %d" % [GameState.day, GameState.wave_number, GameState.energy])
+            _line("Classe: %s / %s" % [GameState.hero_build.get("class", "Guerreiro"), GameState.hero_build.get("subclass", "Espada e Escudo")])
+            _line("Raridade da subclasse: %s" % GameState.hero_build.get("rarity", "Raro"))
+            if str(GameState.hero_build.get("class", "")) == "Mago":
+                _line("Afinidades: " + ", ".join(GameState.hero_build.get("elements", [])))
             _line("Atributos de criacao", true)
             var radar := preload("res://scripts/attribute_radar.gd").new()
             body.add_child(radar)
@@ -109,7 +113,9 @@ func show_page(page_name: String) -> void:
             _line("Atributos iniciais e progressao", true)
             _line("Experiencia em agilidade por viagem: %d" % GameState.agility_xp)
             _line("Bonus temporarios de refeicoes: " + str(GameState.active_food_bonuses))
-            _line("Tecnicas, talentos e equipamentos de combate: Etapa 2.")
+            _line("Classe atual: %s — %s" % [GameState.hero_build.get("class", ""), GameState.hero_build.get("subclass", "")])
+            _line("Potencial da subclasse: %s" % GameState.hero_build.get("rarity", "Raro"))
+            _line("Sistema de combate, talentos e materiais de evolucao: Etapa 2.")
 
 func _line(message: String, title: bool = false) -> void:
     var label := Label.new()
