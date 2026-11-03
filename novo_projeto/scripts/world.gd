@@ -44,6 +44,7 @@ var _market_selling := false
 var _market_travelling := false
 var _market_ids: Array[String] = []
 var _market_vendor_id := ""
+var equipment_market: Control
 var npc_menu: Control
 var character_sheet: Control
 var _door_cooldown := 0.0
@@ -75,6 +76,7 @@ func _ready() -> void:
     _generate_map_dialog()
     _create_dialogue_ui()
     _create_npc_menu()
+    _create_equipment_market()
     _create_character_sheet()
     _create_scene_fade()
     _refresh_hud()
@@ -383,6 +385,9 @@ func _close_top_window() -> void:
         dialogue_ui.close_dialogue()
     elif npc_menu != null and npc_menu.is_open():
         npc_menu.hide_menu()
+    elif equipment_market != null and equipment_market.visible:
+        equipment_market.hide_store()
+        _market_mode = false
     elif character_sheet != null and character_sheet.visible:
         character_sheet.hide_sheet()
     elif map_open:
@@ -403,7 +408,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
         _close_top_window()
         get_viewport().set_input_as_handled()
         return
-    if (dialogue_ui != null and dialogue_ui.visible) or (npc_menu != null and npc_menu.is_open()) or (character_sheet != null and character_sheet.visible):
+    if (dialogue_ui != null and dialogue_ui.visible) or (npc_menu != null and npc_menu.is_open()) or (character_sheet != null and character_sheet.visible) or (equipment_market != null and equipment_market.visible):
         return
     match event.keycode:
         KEY_N:
@@ -1186,6 +1191,7 @@ func _refresh_market() -> void:
     var pages := maxi(1, ceili(float(available_ids.size()) / 5.0))
     _market_page %= pages
     var lines: Array[String] = ["%s | %s | Moedas: %d | Pagina %d/%d" % [title, mode, GameState.money, _market_page + 1, pages]]
+    var store_rows: Array[Dictionary] = []
     var start_index := _market_page * 5
     for i in range(start_index, mini(available_ids.size(), start_index + 5)):
         var item_id := available_ids[i]
@@ -1193,9 +1199,31 @@ func _refresh_market() -> void:
         _market_ids.append(item_id)
         var price := ITEMS.sell_price(item_id) if _market_selling else ITEMS.price(item_id, GameState.current_region, GameState.oath, _market_travelling)
         lines.append("[%d] %s | %s | %s | %d moedas" % [_market_ids.size(), data["name"], data["category"], data["rarity"], price])
+        var slot_name := GEAR.slot_for(item_id)
+        store_rows.append({"id":item_id, "name":str(data["name"]), "rarity":str(data["rarity"]), "category":str(data["category"]), "slot":slot_name, "price":price})
     lines.append("1-5: negociar | Z: compra/venda | L: proxima pagina | V: fechar")
     town_panel.text = "\n".join(lines)
-    town_panel.visible = true
+    town_panel.visible = false
+    if equipment_market != null:
+        equipment_market.show_inventory(title + " / " + mode, store_rows, GameState.money)
+
+func _create_equipment_market() -> void:
+    equipment_market = preload("res://scripts/equipment_market_panel.gd").new()
+    equipment_market.name = "EquipmentMarket"
+    get_node("CanvasLayer").add_child(equipment_market)
+    equipment_market.purchase_requested.connect(_market_click_purchase)
+
+func _market_click_purchase(item_id: String) -> void:
+    var success := false
+    if _market_selling:
+        success = GameState.market_sell(item_id)
+    elif not _market_vendor_id.is_empty():
+        success = GameState.buy_from_merchant(_market_vendor_id, item_id)
+    else:
+        success = GameState.market_buy(item_id, _market_travelling)
+    last_message = "Negociado: " + item_id if success else "Moedas insuficientes ou item indisponivel."
+    _refresh_market()
+    _refresh_hud()
 
 func _market_transaction(index: int) -> void:
     if index < 0 or index >= _market_ids.size():
