@@ -111,3 +111,20 @@ Controles temporários no mundo: `V` abre visitantes da taverna; teclas `1` a `5
 **Pendente:** arte/texturas definitivas, fonte caligráfica licenciada, retratos individuais, sons de máquina de escrever, transições animadas, navegação por controle e validação visual em resolução diferente. Não confundir com UI final polida nem com etapa concluída.
 
 **Entrega:** sem ZIP; valem as exigências de otimização, revisão de interface e medição de desempenho antes do pacote de aceitação.
+
+
+## Incremento: missões iniciais e coleta persistente (03/11/2026)
+
+**Implementado e publicado no código:** primeiro ciclo de missão obtida por diálogo com escolha, coleta de recursos próximos e entrega ao NPC.
+
+- Fortaleza: Doran oferece **Ferro para as muralhas**; entregar 3 unidades de minério de ferro rende 35 moedas.
+- Porto Cinzento: Elira oferece **Suprimentos do porto**; entregar 3 unidades de ervas rende 35 moedas.
+- Falar com o morador próximo usando `Q`; selecionar a opção de ajuda. Visitar pontos de coleta visíveis pelo cenário e usar `G` para coletar.
+- Cinco pontos de coleta iniciais por região, com reposição no dia seguinte. Um ponto não pode ser coletado mais de uma vez no mesmo dia, inclusive após salvar/recarregar.
+- Missões são iniciadas e concluídas uma única vez; consumo dos itens e pagamento são atômicos na lógica de campanha. Estados e eventos persistem no save JSON atual.
+- As missões e coletas entram nas Crônicas do Mundo e a conclusão é lembrada pelo NPC.
+- Novo teste automatizado `tests/test_quests.gd`: verifica estado, entrega insuficiente, conclusão sem repetição, reposição diária, salvamento e carregamento.
+
+**Validação executada localmente no Godot 4.7.2 em modo headless:** os seis testes anteriores e o novo `test_quests.gd` passaram (7/7), e o editor importou o projeto sem erros de script. Não são testes de FPS nem de aceitação no Windows.
+
+**Limitações:** recursos ainda usam malhas simples; missões são exemplos iniciais, não os cinco arcos completos. Ainda faltam painéis de missões, animações, navegação, arte e interiores definitivos. A Etapa 1 **não está concluída** e nenhum ZIP de aceite foi gerado.
