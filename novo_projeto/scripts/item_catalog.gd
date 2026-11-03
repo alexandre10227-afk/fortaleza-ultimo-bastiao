@@ -33,21 +33,27 @@ const ITEMS := {
     "sabre_magistral": {"name":"Sabre magistral", "category":"Armas", "rarity":"Lendario", "price":2100},
 }
 const RARITY_SELL_FACTOR := .5
-const FAVORITES := {
-    "doran": ["minerio_ferro","pedra_incomum","meteorito","bainha_medida"],
-    "elira": ["carne_assada","sopa_ervas","espada_madeira","bainha_medida"],
-    "mira": ["maca","cenoura","sopa_ervas","livro_historia"],
-    "kael": ["cristal_azul","tratado_estrategia","espada_cerimonia"],
-    "selene": ["pintura_tinta","tratado_estrategia","compendio_perdido"],
+# Cada personagem aceita somente uma categoria de presente.
+# Preferencias nao sao intercambiaveis com a raridade ou profissao.
+const NPC_GIFT_CATEGORY := {
+    "doran": "Minerios",
+    "elira": "Armas",
+    "mira": "Comestiveis",
+    "kael": "Armas",
+    "selene": "Estudos",
+    "duque": "Arte",
+    "herdeira_duque": "Arte",
 }
-const PROFESSION_FAVORITES := {
-    "Ferreiro": ["Minerios","Armas"],
-    "Mineiro": ["Minerios"],
-    "Soldado": ["Armas","Comestiveis"],
-    "Curandeira": ["Comestiveis","Estudos"],
-    "Estrategista": ["Estudos","Arte"],
-    "Explorador": ["Armas","Estudos"],
-    "Mercenaria": ["Armas","Comestiveis"],
+const PROFESSION_GIFT_CATEGORY := {
+    "Ferreiro": "Minerios",
+    "Mineiro": "Minerios",
+    "Soldado": "Armas",
+    "Curandeira": "Comestiveis",
+    "Estrategista": "Estudos",
+    "Explorador": "Armas",
+    "Mercenaria": "Armas",
+    "Escriba": "Estudos",
+    "Artista": "Arte",
 }
 const RARITY_BASE_AFFECTION := {"Comum":4,"Raro":7,"Epico":11,"Lendario":16}
 
@@ -72,16 +78,21 @@ static func sell_price(item_id: String) -> int:
         return -1
     return maxi(1, int(floori(float(ITEMS[item_id]["price"]) * RARITY_SELL_FACTOR)))
 
-static func gift_affection(npc_id: String, profession: String, item_id: String) -> int:
+static func preferred_category(npc_id: String, profession: String = "") -> String:
+    if NPC_GIFT_CATEGORY.has(npc_id):
+        return str(NPC_GIFT_CATEGORY[npc_id])
+    return str(PROFESSION_GIFT_CATEGORY.get(profession, ""))
+
+static func accepts_gift(npc_id: String, profession: String, item_id: String) -> bool:
     if not ITEMS.has(item_id):
+        return false
+    var preferred := preferred_category(npc_id, profession)
+    return not preferred.is_empty() and str(ITEMS[item_id]["category"]) == preferred
+
+static func gift_affection(npc_id: String, profession: String, item_id: String) -> int:
+    if not accepts_gift(npc_id, profession, item_id):
         return 0
-    var item: Dictionary = ITEMS[item_id]
-    var base := int(RARITY_BASE_AFFECTION[item["rarity"]])
-    if FAVORITES.get(npc_id, []).has(item_id):
-        return base + 10
-    if PROFESSION_FAVORITES.get(profession, []).has(item["category"]):
-        return base + 4
-    return maxi(1, int(ceilf(float(base) * 0.5)))
+    return int(RARITY_BASE_AFFECTION[ITEMS[item_id]["rarity"]])
 
 static func can_eat(item_id: String) -> bool:
     return ITEMS.has(item_id) and ITEMS[item_id]["category"] == "Comestiveis"
