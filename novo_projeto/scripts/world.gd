@@ -13,6 +13,10 @@ var interact_hint: Label
 var settlement: Node3D
 var camera: Camera3D
 const WALK_SPEED := 5.0
+const REGION_SYSTEM = preload("res://scripts/region_system.gd")
+var regional_details: Node3D
+var npc_visuals: Dictionary = {}
+var world_environment: WorldEnvironment
 const HINT_REFRESH_SECONDS := 0.18
 var _hint_accumulator := 0.0
 var _cached_hint := ""
@@ -24,6 +28,7 @@ var _active_region_label: Label
 
 func _ready() -> void:
     _generate_world()
+    _apply_region_theme()
     _generate_ui()
     _generate_map_dialog()
     _refresh_hud()
@@ -56,6 +61,7 @@ func _generate_world() -> void:
     light.rotation_degrees = Vector3(-50, -35, 0)
     add_child(light)
     var world_env := WorldEnvironment.new()
+    world_environment = world_env
     world_env.environment = Environment.new()
     world_env.environment.background_mode = Environment.BG_COLOR
     world_env.environment.background_color = Color("#9cb4ad")
@@ -79,14 +85,9 @@ func _generate_world() -> void:
         _make_box(settlement, Vector3(-30, 1.0, z), Vector3(1.5, 2.0, 2), Color("#526a48"))
         _make_box(settlement, Vector3(30, 1.0, z), Vector3(1.5, 2.0, 2), Color("#526a48"))
     _sprite_texture = _make_sprite_texture()
-    for visitor in range(4):
-        var npc := Sprite3D.new()
-        npc.texture = _sprite_texture
-        npc.pixel_size = 0.026
-        npc.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-        npc.shaded = false
-        npc.position = Vector3(4.7 + float(visitor % 2) * 2.0, 1.0, -13.0 + float(visitor / 2) * 6.0)
-        settlement.add_child(npc)
+    regional_details = Node3D.new()
+    regional_details.name = "RegionDetails"
+    settlement.add_child(regional_details)
     player = CharacterBody3D.new()
     var physical_shape := CollisionShape3D.new()
     var capsule := CapsuleShape3D.new()
@@ -146,7 +147,7 @@ func _generate_ui() -> void:
     help.add_theme_font_size_override("font_size", 15)
     help.text = "WASD: explorar | N: avancar dia | T: viajar | C: cronicas | F5: salvar"
     column.add_child(help)
-    help.text = "WASD mover | E entrar/sair | M mapa | N dia | V taverna | B comprar | I itens"
+    help.text = "WASD mover | E entrar/sair | Q conversar | M mapa | N dia | V taverna | B comprar | I itens"
     interact_hint = Label.new()
     column.add_child(interact_hint)
     news = RichTextLabel.new()
@@ -192,7 +193,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
     match event.keycode:
         KEY_N:
             GameState.advance_days(1)
+            _refresh_resident_positions()
             _refresh_hud()
+        KEY_Q:
+            _talk_to_nearest_npc()
         KEY_T, KEY_M:
             _toggle_map()
         KEY_E:
@@ -285,6 +289,9 @@ func _update_hint() -> void:
     if not active_interior.is_empty():
         next_hint = "Interior: %s | E: sair" % active_interior
     else:
+        var npc := _nearest_npc()
+        if not npc.is_empty():
+            next_hint = "Q: conversar com %s" % npc["name"]
         var nearby := _nearest_building()
         next_hint = "E: entrar em %s" % nearby["room"] if not nearby.is_empty() else "Explore a vila; aproxime-se das portas"
     if next_hint != _cached_hint:
@@ -386,7 +393,86 @@ func _travel_to(destination: String) -> void:
         interior_node.visible = false
         player.position = Vector3(0, 0, 13)
         _interior_return_position = player.position
+        _apply_region_theme()
         last_message = "Viagem concluida: -5 energia e XP de Agilidade."
     map_open = false
     map_dialog.visible = false
+    _refresh_hud()
+
+func _apply_region_theme() -> void:
+    var region: Dictionary = REGION_SYSTEM.region_data(GameState.current_region)
+    world_environment.environment.background_color = region["sky"]
+    for mesh in settlement.get_children():
+        if mesh is MeshInstance3D and mesh.mesh is BoxMesh:
+            if mesh.position == Vector3(0, -0.65, 0):
+                var ground_mat := StandardMaterial3D.new()
+                ground_mat.albedo_color = region["ground"]
+                mesh.material_override = ground_mat
+            elif mesh.position == Vector3(0, -0.07, 0):
+                var road_mat := StandardMaterial3D.new()
+                road_mat.albedo_color = region["road"]
+                mesh.material_override = road_mat
+    for obj in regional_details.get_children():
+        regional_details.remove_child(obj)
+        obj.queue_free()
+    if region["type"] == "harbor":
+        for index in range(4):
+            _make_box(regional_details, Vector3(19, -0.13, -20 + index * 12), Vector3(14, .3, 3.0), Color("#716455"))
+        _make_box(regional_details, Vector3(25, -.24, 0), Vector3(14, .22, 65), Color("#407c9a"))
+        for index in range(4):
+            _make_box(regional_details, Vector3(23, .6, -20 + index * 12), Vector3(1.1, 1.3, 1.1), Color("#8b7459"))
+    else:
+        for index in range(7):
+            _make_box(regional_details, Vector3(-24 + index * 8, 1.6, -33), Vector3(6, 3.2, 1.5), Color("#81857c"))
+        for index in range(3):
+            _make_box(regional_details, Vector3(-24 + index * 24, 3, -33), Vector3(5, 6, 5), Color("#8e9188"))
+    _spawn_residents()
+
+func _spawn_residents() -> void:
+    for visual in npc_visuals.values():
+        if is_instance_valid(visual):
+            visual.queue_free()
+    npc_visuals.clear()
+    var residents: Array = REGION_SYSTEM.residents(GameState.current_region)
+    for index in range(residents.size()):
+        var data: Dictionary = residents[index]
+        var npc := Sprite3D.new()
+        npc.name = "NPC_" + str(data["id"])
+        npc.texture = _sprite_texture
+        npc.pixel_size = 0.026
+        npc.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+        npc.shaded = false
+        npc.position = REGION_SYSTEM.resident_position(index, GameState.day) + Vector3(0, 1, 0)
+        settlement.add_child(npc)
+        npc_visuals[str(data["id"])] = npc
+
+func _refresh_resident_positions() -> void:
+    var residents: Array = REGION_SYSTEM.residents(GameState.current_region)
+    for index in range(residents.size()):
+        var id := str(residents[index]["id"])
+        if npc_visuals.has(id) and is_instance_valid(npc_visuals[id]):
+            npc_visuals[id].position = REGION_SYSTEM.resident_position(index, GameState.day) + Vector3(0, 1, 0)
+
+func _nearest_npc() -> Dictionary:
+    var residents: Array = REGION_SYSTEM.residents(GameState.current_region)
+    for data in residents:
+        var id := str(data["id"])
+        if npc_visuals.has(id) and is_instance_valid(npc_visuals[id]):
+            var npc: Sprite3D = npc_visuals[id]
+            if REGION_SYSTEM.can_talk(Vector2(player.position.x, player.position.z).distance_to(Vector2(npc.position.x, npc.position.z))):
+                return data
+    return {}
+
+func _talk_to_nearest_npc() -> void:
+    if not active_interior.is_empty() or map_open:
+        return
+    var npc := _nearest_npc()
+    if npc.is_empty():
+        last_message = "Nao ha moradores proximos para conversar."
+    else:
+        var id := str(npc["id"])
+        var first_meeting := not GameState.npc_memory.has(id)
+        GameState.remember(id, "primeiro_encontro" if first_meeting else "conversa")
+        GameState.save_game()
+        last_message = "%s (%s): %s" % [npc["name"], npc["profession"], npc["dialogue"]]
     _refresh_hud()
