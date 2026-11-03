@@ -215,3 +215,14 @@ Controles temporários no mundo: `V` abre visitantes da taverna; teclas `1` a `5
 - **Pedir passagem:** deslocamento lateral de sprite quando existe posição livre, sem tocar na economia, reputação ou amizade. É um primeiro comportamento visual; ainda não há `NavigationAgent3D` para navegação de NPCs.
 - Menu impede mover o personagem enquanto estiver aberto. O mapeamento antigo de teclas segue temporariamente no código para debug; o fluxo de jogador prioriza `E` + clique.
 - Criado `tests/test_npc_interaction.gd` para regras de visibilidade de botões, presentes aceitos/recusados e sinais de clique. **Teste ainda precisa ser executado no Godot da revisão publicada**; a inspeção estática confirmou conexões e funções sem duplicidade, mas não prova execução ou desempenho.
+
+
+## Incremento NPCs — seis topicos e subtopicos de classificacao (03/11/2026)
+
+- `scripts/npc_registry.gd`: cadastro central de **Comerciantes, Soldados, Ferreiros, Cidadaos comuns, Fazendeiros, Nobres**, com dois eixos independentes: **Recrutavel/Nao recrutavel** e **Importante para a historia/Personagem comum**.
+- A ficha de NPC em `scripts/npc_interaction_menu.gd` agora exibe ocupacao e situacao no cadastro. Inclui acesso clicavel a um diretorio com filtros por categoria e subtopico.
+- `scripts/world.gd`: o diretorio tambem aparece como opcao no mapa de viagem; o botao Loja e definido pela classificacao real de vendedor, sem depender apenas do texto da profissao; Recrutar consulta elegibilidade-base mais restricoes atuais.
+- `scripts/game_state.gd`: impede recrutamento de NPCs marcados como nao recrutaveis, mantendo os requisitos especificos do Duque e da filha.
+- Entradas de contexto para NPCs novos (comerciante, fazendeiro e cidada comum) ja podem ser consultadas no cadastro, mas **nao significam personagens totalmente implementados no cenario**; vida, dialogos, imagens e atividades aguardam integracao gradual.
+- `tests/test_npc_registry.gd` criado para categorias, filtros, restricoes e janela. **Ainda nao rodado com o Godot nesta atualizacao**; nao reivindicar resultado de execucao sem validar a copia sincronizada.
+- A etapa permanece incompleta; otimizar e polir a interface, o grafico e o desempenho antes de gerar qualquer ZIP.
