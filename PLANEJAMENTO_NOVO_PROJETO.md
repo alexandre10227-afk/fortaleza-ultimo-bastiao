@@ -274,3 +274,17 @@ O código e as cenas iniciais do `novo_projeto/` continuam **em desenvolvimento*
 - A regra absoluta de otimização, polimento e testes ANTES do ZIP continua em vigor.
 
 **Estado técnico:** regras e alguns caminhos de interface implementados inicialmente em `novo_projeto/scripts/duke_event.gd`, `game_state.gd` e `world.gd`; boss/cutscene não são jogáveis ainda. O teste automatizado de regressão `tests/test_duke_event.gd` foi criado e precisa de execução/validação técnica no motor antes da entrega da etapa.
+
+
+## Adendo 1.4 — Amizade por niveis e permanencia nas tavernas (03/11/2026)
+
+- Relacionamento geral entre protagonista e NPCs em **cinco niveis**: **Indiferente (0–19)**, **Conhecido (20–39)**, **Amigos (40–59)**, **Confidente (60–79)** e **Leal ate a Morte (80–100)**. Recrutamento comum so no ultimo nivel, respeitando restricoes regionais e o NPC estar presente na taverna. Pontos persistem quando o NPC muda de cidade.
+- Personagens excepcionais seguem gatilhos proprios: o **Duque** precisa de seis charadas/75 pontos antes da onda 10; sua **herdeira** usa os desfechos especificos de seu evento.
+- Cada visitante fica na taverna por **quatro dias consecutivos de calendario** (chegada no primeiro dia, saida no quinto); a duracao nao reinicia ao abrir/fechar menus nem ao salvar e carregar.
+- Ao sair, um NPC pode **permanecer na vila** com rotina propria ou **seguir viagem** e reaparecer em outra cidade depois de um intervalo. O destino e influenciado pela historia individual: a conclusao da missao de Elira, por exemplo, faz com que ela opte por permanecer na comunidade quando deixar sua estadia.
+- Os itinerarios sao estados persistentes de mundo, avancados uma vez a cada dia do jogo, inclusive enquanto o protagonista esta em outra regiao. Chegada/saida aparecem nas Cronicas do Mundo.
+- Se o jogador recrutar um visitante elegivel durante a estadia, ele deixa o itinerario autonomo de viajante e passa para o estado de integrante do grupo.
+- A aparicao especial da herdeira do Duque apos a onda 30 continua com chance de **1% por verificacao diaria elegivel**, mas uma aparicao bem-sucedida a mantem na taverna por **quatro dias**, sem novas rolagens durante essa visita.
+- Estruturas iniciais no `novo_projeto/`: `friendship_system.gd`, `town_system.gd`, `game_state.gd`, `duke_event.gd` e `world.gd`. Testes de regressao criados/atualizados, ainda requerendo execucao da versao sincronizada antes de qualquer entrega.
+
+**Importante:** esse sistema de agendas e uma base funcional de dados e regras; movimentacao animada e rotina fisica completa dos NPCs em cena ainda pertencem a iteracoes futuras. Mantem-se a regra de nao gerar ZIP antes da conclusao da etapa, otimizacao, polimento e testes.
