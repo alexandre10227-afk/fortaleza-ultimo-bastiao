@@ -282,7 +282,10 @@ func _refresh_tavern() -> void:
         var can_join: bool = true if str(npc.get("id", "")) == DUKE.DAUGHTER_ID else preload("res://scripts/town_system.gd").can_recruit(npc, GameState.oath)
         var id := str(npc["id"])
         var affinity := "Especial" if id == DUKE.DAUGHTER_ID else "%d/100 (%s)" % [GameState.friendship_points(id), GameState.friendship_level(id)]
-        lines.append("[%d] %s (%s) / %s / %s %s" % [i + 1, npc["name"], npc["rarity"], npc["profession"], affinity, "" if can_join else "[NAO RECRUTAVEL]"])
+        var stay := ""
+        if npc.has("departure_day"):
+            stay = " | Restam %d dia(s)" % maxi(0, int(npc["departure_day"]) - GameState.day)
+        lines.append("[%d] %s (%s) / %s / %s %s%s" % [i + 1, npc["name"], npc["rarity"], npc["profession"], affinity, "" if can_join else "[NAO RECRUTAVEL]", stay])
     lines.append("Teclas 1-5: tentar recrutar | V: fechar")
     lines.append("Pao: %d moedas | B: comprar" % preload("res://scripts/town_system.gd").price("pao", GameState.current_region, GameState.oath))
     town_panel.text = "\n".join(lines)
@@ -478,7 +481,15 @@ func _spawn_residents() -> void:
         if is_instance_valid(visual):
             visual.queue_free()
     npc_visuals.clear()
-    var residents: Array = REGION_SYSTEM.residents(GameState.current_region)
+    var residents: Array = REGION_SYSTEM.residents(GameState.current_region).duplicate(true)
+    for resident in preload("res://scripts/town_system.gd").town_residents(GameState.current_region, GameState.npc_lives):
+        var exists := false
+        for existing in residents:
+            if existing.get("id", "") == resident.get("id", ""):
+                exists = true
+                break
+        if not exists:
+            residents.append(resident)
     for index in range(residents.size()):
         var data: Dictionary = residents[index]
         var npc := Sprite3D.new()
@@ -492,14 +503,31 @@ func _spawn_residents() -> void:
         npc_visuals[str(data["id"])] = npc
 
 func _refresh_resident_positions() -> void:
-    var residents: Array = REGION_SYSTEM.residents(GameState.current_region)
+    _spawn_residents()
+    var residents: Array = REGION_SYSTEM.residents(GameState.current_region).duplicate(true)
+    for resident in preload("res://scripts/town_system.gd").town_residents(GameState.current_region, GameState.npc_lives):
+        var exists := false
+        for existing in residents:
+            if existing.get("id", "") == resident.get("id", ""):
+                exists = true
+                break
+        if not exists:
+            residents.append(resident)
     for index in range(residents.size()):
         var id := str(residents[index]["id"])
         if npc_visuals.has(id) and is_instance_valid(npc_visuals[id]):
             npc_visuals[id].position = REGION_SYSTEM.resident_position(index, GameState.day) + Vector3(0, 1, 0)
 
 func _nearest_npc() -> Dictionary:
-    var residents: Array = REGION_SYSTEM.residents(GameState.current_region)
+    var residents: Array = REGION_SYSTEM.residents(GameState.current_region).duplicate(true)
+    for resident in preload("res://scripts/town_system.gd").town_residents(GameState.current_region, GameState.npc_lives):
+        var exists := false
+        for existing in residents:
+            if existing.get("id", "") == resident.get("id", ""):
+                exists = true
+                break
+        if not exists:
+            residents.append(resident)
     for data in residents:
         var id := str(data["id"])
         if npc_visuals.has(id) and is_instance_valid(npc_visuals[id]):
@@ -620,7 +648,7 @@ func _gather_nearby() -> void:
     _refresh_hud()
 
 func _current_tavern_visitors() -> Array[Dictionary]:
-    var visitors: Array[Dictionary] = preload("res://scripts/town_system.gd").tavern_visitors(GameState.current_region, GameState.day)
+    var visitors: Array[Dictionary] = preload("res://scripts/town_system.gd").tavern_visitors(GameState.current_region, GameState.day, GameState.npc_lives)
     if GameState.duke_tavern_visitor() and not bool(GameState.duke_state.get("daughter_recruited", false)):
         visitors.append({"id": DUKE.DAUGHTER_ID, "name": "Herdeira do Duque", "rarity": "S", "home": "Porto Cinzento", "profession": "Espadachim"})
     return visitors
