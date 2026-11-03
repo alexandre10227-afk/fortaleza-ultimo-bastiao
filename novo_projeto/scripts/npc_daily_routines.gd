@@ -4,6 +4,9 @@ extends RefCounted
 const POSTS := {
     "doran": {"work": Vector3(-4.1, 0, -9), "rest": Vector3(-2.5, 0, 6), "job": "Trabalhando na forja"},
     "kael": {"work": Vector3(2.2, 0, -22), "rest": Vector3(0, 0, 9), "job": "Vigiando a estrada"},
+    "mercador_marcial": {"work": Vector3(2.2, 0, -6), "rest": Vector3(2.2, 0, -6), "job":"Negociando equipamentos de cavaleiro"},
+    "mercador_arcano": {"work": Vector3(-3.2, 0, -17), "rest": Vector3(-3.2, 0, -17), "job":"Vendendo equipamentos arcanos"},
+    "mercador_sagrado": {"work": Vector3(2.5, 0, 3.5), "rest": Vector3(2.5, 0, 3.5), "job":"Vendendo reliquias de sacerdotes"},
     "iris_feirante": {"work": Vector3(3.2, 0, 8), "rest": Vector3(1.0, 0, 19), "job": "Vendendo mercadorias"},
     "bento_agricultor": {"work": Vector3(-18, 0, 22), "rest": Vector3(-3.0, 0, 18), "job": "Cuidando da plantacao"},
     "elira": {"work": Vector3(2.2, 0, -12), "rest": Vector3(-2.4, 0, 6), "job": "Treinando"},
