@@ -1,10 +1,12 @@
 extends Control
 const UI = preload("res://scripts/ui_theme.gd")
+const STORY = preload("res://scripts/story_content.gd")
 
 var panel: VBoxContainer
 var name_input: LineEdit
 var difficulty_input: OptionButton
 var dialogue_ui: Control
+var _prologue_step := 0
 
 func _ready() -> void:
     var backdrop := ColorRect.new()
@@ -77,21 +79,43 @@ func _create_character() -> void:
 func _show_audience() -> void:
     _clear()
     _label("O JURAMENTO DO REI", 29)
-    _label("O salao real silencia enquanto o rei aguarda sua resposta.", 18)
+    _label("Um futuro comandante e apenas um viajante diante do trono.", 18)
     if dialogue_ui == null:
         dialogue_ui = preload("res://scripts/dialogue_panel.gd").new()
         dialogue_ui.name = "DialoguePanel"
         add_child(dialogue_ui)
         dialogue_ui.choice_selected.connect(_on_royal_choice)
-    dialogue_ui.show_dialogue("Rei Aldric", "A fronteira esta prestes a cair. Voce aceita defender a fortaleza ou prefere seguir seu proprio destino?", ["Aceito defender a fortaleza.", "Nao servirei a coroa. Meu caminho e outro."])
+        dialogue_ui.dialogue_closed.connect(_on_royal_dialogue_closed)
+    _prologue_step = 0
+    dialogue_ui.show_dialogue("Rei Aldric", STORY.AUDIENCE_OPENING)
+
+
+func _on_royal_dialogue_closed() -> void:
+    if _prologue_step == 0:
+        _prologue_step = 1
+        dialogue_ui.show_dialogue("Rei Aldric", STORY.AUDIENCE_QUESTION, STORY.AUDIENCE_CHOICES)
+    elif _prologue_step == 2:
+        _prologue_step = 3
+        dialogue_ui.show_dialogue("Rei Aldric", STORY.OATH_QUESTION, STORY.OATH_CHOICES)
+    elif _prologue_step == 4:
+        _choose(GameState.oath == "guardian")
+
 
 func _on_royal_choice(index: int) -> void:
-    if dialogue_ui != null:
-        dialogue_ui.close_dialogue()
-    _choose(index == 0)
+    if _prologue_step == 1:
+        GameState.record_narrative_choice("first_principle", "compassion" if index == 0 else "duty")
+        _prologue_step = 2
+        dialogue_ui.show_dialogue("Rei Aldric", STORY.AUDIENCE_RESPONSE[index])
+    elif _prologue_step == 3:
+        var protect := index == 0
+        GameState.choose_oath(protect)
+        _prologue_step = 4
+        dialogue_ui.show_dialogue("Rei Aldric", STORY.OATH_ENDING_GUARD if protect else STORY.OATH_ENDING_EXILE)
+
 
 func _choose(protect: bool) -> void:
-    GameState.choose_oath(protect)
+    if GameState.oath.is_empty():
+        GameState.choose_oath(protect)
     get_tree().change_scene_to_file("res://scenes/world.tscn")
 
 func _continue() -> void:
