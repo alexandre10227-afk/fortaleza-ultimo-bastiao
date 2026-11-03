@@ -3,6 +3,7 @@ extends Control
 signal closed
 const UI = preload("res://scripts/ui_theme.gd")
 const ITEMS = preload("res://scripts/item_catalog.gd")
+const GEAR = preload("res://scripts/equipment_catalog.gd")
 const TABS := ["Personagem", "Inventario", "Relacoes", "Diario", "Habilidades", "Mundo"]
 var page: String = "Personagem"
 var body: VBoxContainer
@@ -74,6 +75,13 @@ func show_page(page_name: String) -> void:
             _line("Dia: %d  |  Onda: %d  |  Energia: %d" % [GameState.day, GameState.wave_number, GameState.energy])
             _line("Classe inicial: %s" % GameState.protagonist_track.get("base_class", "Guerreiro"))
             _line("Especializacoes aprendidas: " + str(GameState.protagonist_track.get("specializations", [])))
+            _line("Equipamentos", true)
+            for slot in GEAR.SLOTS:
+                var equipped_id := str(GameState.equipped.get(slot, ""))
+                var equipped_label := "Vazio" if equipped_id.is_empty() else str(GEAR.GEAR[equipped_id]["name"])
+                _line("%s: %s" % [slot.capitalize(), equipped_label])
+            var totals: Dictionary = GameState.equipment_stats()
+            _line("Bonus de ataque: +%d | Defesa: +%d" % [int(totals["attack"]), int(totals["defense"])])
             _line("Atributos de criacao", true)
             var radar := preload("res://scripts/attribute_radar.gd").new()
             body.add_child(radar)
@@ -93,6 +101,15 @@ func show_page(page_name: String) -> void:
                 var label := str(data.get("name", str(item_id).replace("_", " ").capitalize()))
                 var rarity := str(data.get("rarity", "Material/Especial"))
                 _line("%s  x%d  |  %s" % [label, quantity, rarity])
+                if GEAR.is_equipment(str(item_id)):
+                    var gear: Dictionary = GEAR.GEAR[str(item_id)]
+                    var equip_button := Button.new()
+                    var valid_class := GEAR.can_equip(str(item_id), str(GameState.protagonist_track.get("base_class","")))
+                    equip_button.text = "Equipar (%s): %s" % [str(gear["slot"]), str(gear["name"])]
+                    equip_button.disabled = not valid_class
+                    UI.apply_button(equip_button)
+                    equip_button.pressed.connect(_equip_owned_item.bind(str(item_id)))
+                    body.add_child(equip_button)
                 if GameState.PLAYER_CLASSES.BOSS_BOOKS.has(str(item_id)):
                     var book_button := Button.new()
                     var specialization := GameState.PLAYER_CLASSES.specialization_from_book(str(item_id))
@@ -168,5 +185,11 @@ func _line(message: String, title: bool = false) -> void:
 func _read_boss_book(book_id: String) -> void:
     if GameState.learn_from_boss_book(book_id):
         show_page("Habilidades")
+    else:
+        show_page("Inventario")
+
+func _equip_owned_item(item_id: String) -> void:
+    if GameState.equip_item(item_id):
+        show_page("Personagem")
     else:
         show_page("Inventario")
