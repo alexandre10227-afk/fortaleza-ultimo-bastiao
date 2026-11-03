@@ -3,6 +3,7 @@ extends Control
 ## Existing Godot theme is reused. No per-action keyboard shortcut required.
 signal action_selected(action: String, npc: Dictionary)
 signal gift_selected(npc: Dictionary, item_id: String)
+signal training_selected(npc: Dictionary, specialization: String)
 signal visitor_selected(npc: Dictionary)
 signal closed
 
@@ -66,6 +67,9 @@ func show_npc(npc: Dictionary, friendship: int, level: String, preferred: String
     if is_merchant:
         _choice("Abrir loja", "shop")
     _choice("Presentear", "gifts")
+    var available_lessons: Array = GameState.PLAYER_CLASSES.MASTER_TEACHERS.get(str(npc.get("id", "")), [])
+    if not available_lessons.is_empty():
+        _choice("Treinar com mestre", "training")
     if recruitable:
         _choice("Recrutar", "recruit")
     _choice("Pedir passagem (sem penalidade)", "step_aside")
@@ -139,6 +143,25 @@ func show_gifts(npc: Dictionary, inventory: Dictionary) -> void:
     var back := _button("Voltar ao personagem")
     back.pressed.connect(_on_action.bind("back"))
     visible = true
+
+func show_training(npc: Dictionary) -> void:
+    selected_npc = npc.duplicate(true)
+    _clear()
+    _heading("Treinamento com %s" % str(npc.get("name", "Mestre")))
+    _line("Afinidade exigida: Confidente (60 pontos).")
+    _line("A tecnica precisa ser compativel com a classe inicial do protagonista.")
+    var known: Array = GameState.PLAYER_CLASSES.MASTER_TEACHERS.get(str(npc.get("id", "")), [])
+    for specialization in known:
+        var option := _button(str(specialization))
+        var is_eligible := GameState.friendship_points(str(npc.get("id", ""))) >= 60 and GameState.PLAYER_CLASSES.can_learn(GameState.protagonist_track, str(specialization))
+        option.disabled = not is_eligible
+        option.pressed.connect(_on_training_click.bind(str(specialization)))
+    var back := _button("Voltar")
+    back.pressed.connect(_on_action.bind("back"))
+    visible = true
+
+func _on_training_click(specialization: String) -> void:
+    training_selected.emit(selected_npc.duplicate(true), specialization)
 
 func show_visitors(visitors: Array[Dictionary]) -> void:
     selected_npc.clear()
