@@ -30,6 +30,10 @@ var _gift_target: Dictionary = {}
 var _gift_ids: Array[String] = []
 var _gift_option := -1
 var _tavern_selected: Dictionary = {}
+var _market_mode := false
+var _market_selling := false
+var _market_travelling := false
+var _market_ids: Array[String] = []
 const HINT_REFRESH_SECONDS := 0.18
 var _hint_accumulator := 0.0
 var _cached_hint := ""
@@ -239,6 +243,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
             news.visible = not news.visible
             _refresh_news()
         KEY_V:
+            _market_mode = false
             if active_interior == "Taverna":
                 town_panel.visible = not town_panel.visible
                 _refresh_tavern()
@@ -251,10 +256,27 @@ func _unhandled_key_input(event: InputEvent) -> void:
             else:
                 last_message = "Entre no estabelecimento para comprar."
             _refresh_hud()
+        KEY_O:
+            if active_interior == "Taverna" or active_interior == "Ferraria" or (active_interior.is_empty() and preload("res://scripts/town_system.gd").travelling_merchant_present(GameState.current_region, GameState.day)):
+                _market_mode = true
+                _market_selling = false
+                _market_travelling = active_interior.is_empty()
+                _refresh_market()
+            else:
+                last_message = "Visite o mercado ou encontre a caravana viajante."
+                _refresh_hud()
+        KEY_Z:
+            if _market_mode:
+                _market_selling = not _market_selling
+                _refresh_market()
         KEY_I:
+            _market_mode = false
             town_panel.visible = not town_panel.visible
             town_panel.text = "INVENTARIO\n" + str(GameState.inventory) + "\nCompanheiros: " + str(GameState.recruited)
         KEY_1, KEY_2, KEY_3, KEY_4, KEY_5:
+            if _market_mode:
+                _market_transaction(event.keycode - KEY_1)
+                return
             var visitors := _current_tavern_visitors()
             var selected: int = event.keycode - KEY_1
             if town_panel.visible and selected < visitors.size():
