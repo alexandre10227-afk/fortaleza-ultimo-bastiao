@@ -32,6 +32,9 @@ var _gift_mode := false
 var _gift_target: Dictionary = {}
 var _gift_ids: Array[String] = []
 var _gift_option := -1
+var _story_option := -1
+var _story_mode := false
+var _story_npc_id := ""
 var _tavern_selected: Dictionary = {}
 var _market_mode := false
 var _market_selling := false
@@ -628,6 +631,10 @@ func _talk_to_nearest_npc() -> void:
         var options := ["Conte-me sobre seu trabalho."]
         if GameState.OPENING_QUESTS.has(id):
             options.append("Precisa de ajuda? / Entregar materiais")
+        _story_option = -1
+        if STORY.TOWN_DILEMMAS.has(id) and not GameState.narrative_flags.has("dilema_" + id):
+            _story_option = options.size()
+            options.append("Decidir o destino da cidade")
         _gift_option = options.size()
         options.append("Oferecer presente")
         options.append("Ate logo.")
@@ -644,6 +651,17 @@ func _create_dialogue_ui() -> void:
     dialogue_ui.choice_selected.connect(_on_dialogue_choice)
 
 func _on_dialogue_choice(index: int) -> void:
+    if _story_mode:
+        _story_mode = false
+        var event_id := _story_npc_id
+        _story_npc_id = ""
+        var data: Dictionary = STORY.TOWN_DILEMMAS.get(event_id, {})
+        if data.is_empty() or not GameState.resolve_town_dilemma(event_id, index):
+            dialogue_ui.show_dialogue("Cronicas", "A decisao nao pode mais ser alterada.")
+        else:
+            dialogue_ui.show_dialogue(str(_dialogue_npc.get("name", "Morador")), str(data["answers"][index]))
+        _refresh_hud()
+        return
     if _food_mode:
         _food_mode = false
         if index >= 0 and index < _food_ids.size():
@@ -697,6 +715,11 @@ func _on_dialogue_choice(index: int) -> void:
     if index == 0:
         var profession := str(_dialogue_npc.get("profession", "viajante"))
         dialogue_ui.show_dialogue(name_value, "Meu oficio e %s. Esta cidade muda a cada dia." % profession)
+    elif index == _story_option and STORY.TOWN_DILEMMAS.has(id):
+        _story_npc_id = id
+        _story_mode = true
+        var dilemma: Dictionary = STORY.TOWN_DILEMMAS[id]
+        dialogue_ui.show_dialogue(name_value, str(dilemma["question"]), dilemma["choices"])
     elif index == _gift_option:
         _present_to(_dialogue_npc)
     elif index == 1 and GameState.OPENING_QUESTS.has(id):
