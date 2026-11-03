@@ -1,0 +1,38 @@
+extends SceneTree
+
+func _initialize() -> void:
+    call_deferred("run")
+
+func run() -> void:
+    var state = root.get_node("GameState")
+    var story = load("res://scripts/story_content.gd")
+    state.new_game("Viajante", "Normal")
+    var start = load("res://scenes/start.tscn").instantiate()
+    root.add_child(start)
+    await process_frame
+    start._show_audience()
+    assert(start._prologue_step == 0)
+    assert(start.dialogue_ui.speaker_label.text == "Rei Aldric")
+    start._on_royal_dialogue_closed()
+    assert(start._prologue_step == 1)
+    assert(start.dialogue_ui._options.size() == 2)
+    start._on_royal_choice(0)
+    assert(state.narrative_flags["first_principle"] == "compassion")
+    assert(not state.record_narrative_choice("first_principle", "duty"))
+    start._on_royal_dialogue_closed()
+    assert(start._prologue_step == 3)
+    start._on_royal_choice(1)
+    assert(state.oath == "exile")
+    assert(state.fortress_price_multiplier() == 3)
+    assert(start.dialogue_ui.body_label.text == story.OATH_ENDING_EXILE)
+    assert(story.npc_line("doran", "exile", "", 0) != story.npc_line("doran", "guardian", "", 0))
+    assert(story.npc_line("elira", "guardian", "complete", 2) != story.npc_line("elira", "guardian", "", 0))
+    assert(state.save_game())
+    state.new_game("Reset", "Facil")
+    assert(state.load_game())
+    assert(state.narrative_flags["first_principle"] == "compassion")
+    assert(state.oath == "exile")
+    start.queue_free()
+    await process_frame
+    print("TEST_STORY_PASS")
+    quit(0)
