@@ -34,14 +34,12 @@ func _make_box(parent: Node3D, location: Vector3, dimensions: Vector3, tint: Col
     box.size = dimensions
     mesh.mesh = box
     mesh.position = location
-    var mat := StandardMaterial3D.new()
-    mat.albedo_color = tint
     var key := tint.to_html()
-    if _shared_materials.has(key):
-        mesh.material_override = _shared_materials[key]
-    else:
+    if not _shared_materials.has(key):
+        var mat := StandardMaterial3D.new()
+        mat.albedo_color = tint
         _shared_materials[key] = mat
-        mesh.material_override = mat
+    mesh.material_override = _shared_materials[key]
     parent.add_child(mesh)
     if solid:
         var body := StaticBody3D.new()
