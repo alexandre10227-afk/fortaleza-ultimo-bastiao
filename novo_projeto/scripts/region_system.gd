@@ -25,6 +25,8 @@ const RESIDENTS := {
     "Porto Cinzento": [
         {"id": "elira", "name": "Elira", "profession": "Mercenaria", "home": "Porto Cinzento", "dialogue": "O porto sempre revela novidades a quem sabe ouvir."},
         {"id": "mira", "name": "Mira", "profession": "Curandeira", "home": "Porto Cinzento", "dialogue": "Nem toda ferida foi causada por uma espada."},
+        {"id": "mercador_arcano", "name": "Ysara, Arcanista", "profession": "Comerciante", "home": "Porto Cinzento", "dialogue": "O poder sem estudo costuma incendiar o seu dono."},
+        {"id": "mercador_sagrado", "name": "Tomas, Devoto", "profession": "Comerciante", "home": "Porto Cinzento", "dialogue": "Uma boa vestimenta deve servir a um proposito maior."},
         {"id": "lia_moradora", "name": "Lia", "profession": "Moradora", "home": "Porto Cinzento", "dialogue": "Eu so quero que os navios e meus filhos voltem para casa."}
     ]
 }
