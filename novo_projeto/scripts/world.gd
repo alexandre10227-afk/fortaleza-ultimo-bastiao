@@ -952,6 +952,7 @@ func _create_npc_menu() -> void:
     get_node("CanvasLayer").add_child(npc_menu)
     npc_menu.action_selected.connect(_npc_action)
     npc_menu.gift_selected.connect(_npc_gift)
+    npc_menu.training_selected.connect(_npc_training)
     npc_menu.visitor_selected.connect(_show_npc_menu)
 
 func _contextual_interact() -> void:
@@ -1024,6 +1025,8 @@ func _npc_action(action: String, npc: Dictionary) -> void:
             _refresh_market()
         "gifts":
             npc_menu.show_gifts(npc, GameState.inventory)
+        "training":
+            npc_menu.show_training(npc)
         "back":
             _show_npc_menu(npc)
         "recruit":
@@ -1047,6 +1050,13 @@ func _npc_action(action: String, npc: Dictionary) -> void:
             npc_menu.hide_menu()
             if not active_interior.is_empty():
                 _interact()
+
+func _npc_training(npc: Dictionary, specialization: String) -> void:
+    var teacher_id := str(npc.get("id", ""))
+    var learned := GameState.learn_from_master(teacher_id, specialization)
+    npc_menu.hide_menu()
+    last_message = "Nova especializacao aprendida: %s" % specialization if learned else "Treinamento indisponivel. Verifique amizade, presenca e classe."
+    _refresh_hud()
 
 func _npc_gift(npc: Dictionary, item_id: String) -> void:
     var id := str(npc.get("id", ""))
