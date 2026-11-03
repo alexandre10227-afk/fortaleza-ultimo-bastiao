@@ -32,7 +32,18 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           root = Path(".")
-          mandatory = ["project.godot"]
+          mandatory = [
+              "project.godot",
+              "scripts/main.gd",
+              "scripts/world_map.gd",
+              "scenes/title.tscn",
+              "scenes/village_iso.tscn",
+              "scenes/village_3d.tscn",
+              "scenes/world_map.tscn",
+              "scenes/tactical_battle.tscn",
+              "assets/environment/beta3/terrain.png",
+              "assets/environment/beta2/houses.png",
+          ]
           missing = [p for p in mandatory if not (root / p).is_file()]
           scripts = list(root.rglob("*.gd"))
           scenes = list(root.rglob("*.tscn"))
@@ -41,7 +52,7 @@ jobs:
           print(f"Scripts: {len(scripts)} | Cenas: {len(scenes)} | Texturas: {len(images)}")
           if missing or len(scripts) < 30 or len(scenes) < 8 or len(images) < 50:
               raise SystemExit(
-                  "ERRO: repositorio ainda nao contem a Beta completa. "
+                  "ERRO: repositorio nao contem cenas e recursos da Beta real. "
                   f"Arquivos ausentes: {missing}. "
                   "O pacote de diagnostico nao pode ser publicado como jogo final."
               )
