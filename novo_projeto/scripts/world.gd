@@ -684,6 +684,20 @@ func _spawn_resources() -> void:
         resource.material_override = mat
         settlement.add_child(resource)
         resource_visuals[node_id] = resource
+    for index in range(3):
+        var wood_id := "%s_madeira_%d" % [GameState.current_region, index]
+        var log_mesh := MeshInstance3D.new()
+        var log := CylinderMesh.new()
+        log.top_radius = .45
+        log.bottom_radius = .55
+        log.height = 1.2
+        log_mesh.mesh = log
+        log_mesh.position = Vector3(1.0 + float(index) * 2.7, .58, 15)
+        var bark := StandardMaterial3D.new()
+        bark.albedo_color = Color("#795638")
+        log_mesh.material_override = bark
+        settlement.add_child(log_mesh)
+        resource_visuals[wood_id] = log_mesh
     _refresh_resource_visibility()
 
 func _refresh_resource_visibility() -> void:
@@ -699,7 +713,7 @@ func _gather_nearby() -> void:
         if not is_instance_valid(obj) or not obj.visible:
             continue
         if Vector2(player.position.x, player.position.z).distance_to(Vector2(obj.position.x, obj.position.z)) < 2.0:
-            var item_id := "ferro" if GameState.current_region == "Fortaleza" else "ervas"
+            var item_id := "madeira" if str(node_id).contains("_madeira_") else ("ferro" if GameState.current_region == "Fortaleza" else "ervas")
             if GameState.collect_resource(str(node_id), item_id):
                 last_message = "Coletou 1 %s. Veja seu inventario com I." % item_id
                 _refresh_resource_visibility()
