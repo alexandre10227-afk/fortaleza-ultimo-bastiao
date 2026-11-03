@@ -145,3 +145,17 @@ Controles temporários no mundo: `V` abre visitantes da taverna; teclas `1` a `5
 **Ainda pendente antes de qualquer ZIP:** revisão visual em janela gráfica, responsividade 16:9 e resoluções menores, ícones originais, retratos, fontes, HUD/inventário/taverna/lojas totalmente tematizados, acessibilidade, otimização visual e medição real de FPS.
 
 **Direito de uso:** arquivos pagos de lojas não foram adicionados ao repositório; uso de terceiros somente após obtenção autorizada e conferência da licença de redistribuição dentro de um projeto público.
+
+
+## Incremento narrativo — revisão temática do manhwa e diálogos profundos (03/11/2026)
+
+- Fonte primária de referência temática: [sinopse oficial do WEBTOON](https://m.webtoons.com/en/fantasy/i-became-the-tyrant-of-a-defense-game/list?title_no=10765); estrutura de arcos consultada como contexto em [Fabledex](https://www.fabledex.com/stories/tyrant-of-the-tower-defense-game). **A campanha de Fortaleza tem diálogos, nomes e enredo originais**. Ver a [bíblia narrativa](../HISTORIA_ORIGINAL.md).
+- `scripts/story_content.gd`: conteúdo autoral com o dilema de salvar um ferido versus manter o portão fechado; reações do rei e diálogos regionais que mudam conforme rota, missão e memória.
+- `scripts/start.gd`: audiência real dividida em cenas de texto e duas escolhas consecutivas. A primeira registra `first_principle = compassion/duty` e a segunda seleciona Guardião/Exilado, preservando o fluxo já existente.
+- `scripts/game_state.gd`: `narrative_flags` no mesmo save versionado; decisões só podem ser registradas uma vez por chave e são relatadas nas Crônicas do Mundo.
+- `scripts/world.gd`: Doran e Elira lembram encontros e serviços; Mira e Kael expressam preocupações e respondem ao caminho inicial.
+- `tests/test_story.gd`: verifica sequência, decisão irreversível, consequências de Exilado, diferenças de texto e persistência.
+
+**Validação local no Godot 4.7.2:** testes `test_state`, `test_town`, `test_exploration`, `test_optimization`, `test_regions`, `test_dialogue`, `test_quests` e `test_story` passaram; `test_ui_theme` também reportou PASS, porém mantém avisos de recursos ao fechar abruptamente no headless. A abertura da cena principal com `--quit-after 15` terminou sem erros. Não houve revisão gráfica em janela Windows.
+
+**Pendências:** História das cinco rotas e desenvolvimento dos NPCs são conteúdo futuro; as falas condicionais da Etapa 1 não equivalem a IA social completa. A Etapa 1 permanece incompleta e **nenhum ZIP de aceite foi gerado**.
