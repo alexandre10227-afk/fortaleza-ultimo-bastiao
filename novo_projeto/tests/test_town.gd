@@ -1,0 +1,31 @@
+extends SceneTree
+
+func _initialize() -> void:
+    call_deferred("run")
+
+func run() -> void:
+    var g := root.get_node("GameState")
+    var towns = load("res://scripts/town_system.gd")
+    g.new_game("Testador", "Impossivel")
+    g.choose_oath(false)
+    assert(towns.price("pao", "Fortaleza", g.oath) == 24)
+    assert(towns.price("pao", "Porto Cinzento", g.oath) == 8)
+    assert(not towns.can_recruit(towns.VISITORS[1], g.oath))
+    assert(towns.can_recruit(towns.VISITORS[0], g.oath))
+    assert(not g.recruit_visitor(towns.VISITORS[1]))
+    assert(g.recruit_visitor(towns.VISITORS[0]))
+    assert(not g.recruit_visitor(towns.VISITORS[0]))
+    var money_before: int = g.money
+    assert(g.buy_item("pao"))
+    assert(g.money == money_before - 8)
+    assert(g.inventory["pao"] == 3)
+    assert(g.save_game())
+    g.new_game("Outro", "Normal")
+    assert(g.load_game())
+    assert(g.recruited.has("elira"))
+    assert(g.inventory["pao"] == 3)
+    assert(g.money == money_before - 8)
+    var first: Array[Dictionary] = towns.tavern_visitors("Fortaleza", 3)
+    assert(first == towns.tavern_visitors("Fortaleza", 3))
+    print("TEST_TOWN_PASS")
+    quit(0)
