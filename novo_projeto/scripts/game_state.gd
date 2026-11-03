@@ -20,6 +20,7 @@ var character_name := ""
 var character_origin := "Andarilho"
 var character_stats: Dictionary = CHARACTER.default_stats()
 var character_appearance := 0
+var region_positions: Dictionary = {"Fortaleza":[0.0, 0.0, 13.0],"Porto Cinzento":[0.0, 0.0, 13.0]}
 var hero_build: Dictionary = HERO_CLASSES.starter("Guerreiro")
 var protagonist_track: Dictionary = PLAYER_CLASSES.starting_track("Guerreiro")
 var npc_hero_builds: Dictionary = {}
@@ -61,6 +62,7 @@ func new_game(hero_name: String, mode: String) -> void:
     character_origin = "Andarilho"
     character_stats = CHARACTER.default_stats()
     character_appearance = 0
+    region_positions = {"Fortaleza":[0.0,0.0,13.0],"Porto Cinzento":[0.0,0.0,13.0]}
     hero_build = HERO_CLASSES.starter("Guerreiro")
     protagonist_track = PLAYER_CLASSES.starting_track("Guerreiro")
     npc_hero_builds = HERO_CLASSES.default_npc_builds()
@@ -287,8 +289,19 @@ func advance_days(days: int) -> void:
                 record_event("dungeon_unlocked", "Lago Antigo", [], "Masmorra descoberta")
     save_game()
 
+func set_region_position(position: Vector3) -> void:
+    if current_region in ["Fortaleza", "Porto Cinzento"]:
+        # Store as array: JSON-compatible and safe after loading a save.
+        region_positions[current_region] = [clampf(position.x, -26, 26), 0.0, clampf(position.z, -29, 29)]
+
+func get_region_position() -> Vector3:
+    var values: Array = region_positions.get(current_region, [0.0, 0.0, 13.0])
+    if values.size() != 3:
+        return Vector3(0, 0, 13)
+    return Vector3(float(values[0]), 0.0, float(values[2]))
+
 func travel(destination: String, distance: float) -> bool:
-    if energy < 5 or destination == current_region:
+    if energy < 5 or destination == current_region or not ["Fortaleza", "Porto Cinzento"].has(destination):
         return false
     energy -= 5
     agility_xp += mini(15, maxi(1, ceili(distance / 35.0)))
@@ -537,7 +550,7 @@ func save_game() -> bool:
     var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if file == null:
         return false
-    var data := {"schema": 1, "name": character_name, "character_origin": character_origin, "character_stats": character_stats, "character_appearance": character_appearance, "hero_build": hero_build, "protagonist_track": protagonist_track, "npc_hero_builds": npc_hero_builds, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "npc_lives": npc_lives, "npc_story_flags": npc_story_flags, "last_gift_day": last_gift_day, "food_bonuses": active_food_bonuses, "building_levels": building_levels, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "recruited": recruited, "bestiary": discovered_bestiary, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
+    var data := {"schema": 1, "name": character_name, "character_origin": character_origin, "character_stats": character_stats, "character_appearance": character_appearance, "region_positions": region_positions, "hero_build": hero_build, "protagonist_track": protagonist_track, "npc_hero_builds": npc_hero_builds, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "npc_lives": npc_lives, "npc_story_flags": npc_story_flags, "last_gift_day": last_gift_day, "food_bonuses": active_food_bonuses, "building_levels": building_levels, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "recruited": recruited, "bestiary": discovered_bestiary, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
     file.store_string(JSON.stringify(data))
     return true
 
@@ -554,6 +567,11 @@ func load_game() -> bool:
     character_origin = str(parsed.get("character_origin", "Andarilho"))
     character_stats = parsed.get("character_stats", CHARACTER.default_stats())
     character_appearance = int(parsed.get("character_appearance", 0))
+    region_positions = {"Fortaleza":[0.0,0.0,13.0],"Porto Cinzento":[0.0,0.0,13.0]}
+    var loaded_positions: Dictionary = parsed.get("region_positions", {})
+    for region_key in region_positions:
+        if loaded_positions.has(region_key) and loaded_positions[region_key] is Array and loaded_positions[region_key].size() == 3:
+            region_positions[region_key] = loaded_positions[region_key]
     protagonist_track = parsed.get("protagonist_track", PLAYER_CLASSES.starting_track("Guerreiro"))
     if not PLAYER_CLASSES.valid_track(protagonist_track):
         protagonist_track = PLAYER_CLASSES.starting_track("Guerreiro")
