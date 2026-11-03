@@ -669,6 +669,14 @@ func load_game() -> bool:
     npc_friendship = parsed.get("npc_friendship", {})
     last_friendship_interaction = parsed.get("friendship_days", {})
     npc_lives = parsed.get("npc_lives", {})
+    # JSON devolve numeros como float; normalizar IDs de calendário para
+    # manter comparacoes e rotinas deterministas apos carregar o save.
+    for npc_id in npc_lives:
+        if npc_lives[npc_id] is Dictionary:
+            var itinerary: Dictionary = npc_lives[npc_id]
+            for numeric_key in ["arrival_day", "departure_day", "next_arrival_day", "visits"]:
+                if itinerary.has(numeric_key):
+                    itinerary[numeric_key] = int(itinerary[numeric_key])
     npc_story_flags = parsed.get("npc_story_flags", {})
     last_gift_day = parsed.get("last_gift_day", {})
     active_food_bonuses = parsed.get("food_bonuses", {})
