@@ -712,6 +712,31 @@ func _active_city_residents() -> Array:
             seen[id] = true
     return residents
 
+func _create_npc_visual(data: Dictionary) -> Sprite3D:
+    var npc := Sprite3D.new()
+    var id := str(data["id"])
+    npc.name = "NPC_" + id
+    npc.texture = _sprite_texture
+    npc.pixel_size = 0.026
+    npc.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+    npc.shaded = false
+    npc.position = ROUTINES.position_for(id, GameState.day) + Vector3(0, 1, 0)
+    # Corpo move com o sprite. Pedir passagem desloca ambos.
+    var body := AnimatableBody3D.new()
+    body.name = "PassageCollider"
+    body.collision_layer = 1
+    body.collision_mask = 1
+    body.position.y = -0.35
+    var collider := CollisionShape3D.new()
+    var capsule := CapsuleShape3D.new()
+    capsule.radius = 0.4
+    capsule.height = 1.3
+    collider.shape = capsule
+    body.add_child(collider)
+    npc.add_child(body)
+    settlement.add_child(npc)
+    return npc
+
 func _spawn_residents() -> void:
     for visual in npc_visuals.values():
         if is_instance_valid(visual):
@@ -719,18 +744,28 @@ func _spawn_residents() -> void:
     npc_visuals.clear()
     for data in _active_city_residents():
         var id := str(data["id"])
-        var npc := Sprite3D.new()
-        npc.name = "NPC_" + id
-        npc.texture = _sprite_texture
-        npc.pixel_size = 0.026
-        npc.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-        npc.shaded = false
-        npc.position = ROUTINES.position_for(id, GameState.day) + Vector3(0, 1, 0)
-        settlement.add_child(npc)
-        npc_visuals[id] = npc
+        npc_visuals[id] = _create_npc_visual(data)
 
 func _refresh_resident_positions() -> void:
-    _spawn_residents()
+    # Mantem instancias e recursos se o NPC continua na cidade;
+    # so aloca/remove para quem chegou ou partiu.
+    var visible_ids: Dictionary = {}
+    for data in _active_city_residents():
+        var id := str(data["id"])
+        visible_ids[id] = true
+        if not npc_visuals.has(id) or not is_instance_valid(npc_visuals[id]):
+            npc_visuals[id] = _create_npc_visual(data)
+            continue
+        var visual: Sprite3D = npc_visuals[id]
+        var goal := ROUTINES.position_for(id, GameState.day) + Vector3(0, 1, 0)
+        if visual.position.distance_to(goal) > 0.1:
+            var tween := create_tween()
+            tween.tween_property(visual, "position", goal, 1.8).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+    for id in npc_visuals.keys():
+        if not visible_ids.has(id):
+            if is_instance_valid(npc_visuals[id]):
+                npc_visuals[id].queue_free()
+            npc_visuals.erase(id)
 
 func _nearest_npc() -> Dictionary:
     for data in _active_city_residents():
@@ -1259,7 +1294,14 @@ func _npc_step_aside(npc: Dictionary) -> void:
         start_position + Vector3(0, 0, -1.7)
     ]
     for target in candidates:
-        if not _is_blocked(target) and target.distance_to(player.position) > start_position.distance_to(player.position):
+        var occupied := false
+        for other_id in npc_visuals:
+            if other_id == id or not is_instance_valid(npc_visuals[other_id]):
+                continue
+            if npc_visuals[other_id].position.distance_to(target) < 1.25:
+                occupied = true
+                break
+        if not occupied and not _is_blocked(target) and target.distance_to(player.position) > start_position.distance_to(player.position):
             visual.position = target
             last_message = "%s se afastou para liberar a passagem, sem penalidade." % str(npc.get("name", "NPC"))
             return
