@@ -1,4 +1,5 @@
 extends Node3D
+const UI = preload("res://scripts/ui_theme.gd")
 
 var player: Node3D
 var hud: Label
@@ -166,6 +167,7 @@ func _generate_ui() -> void:
     town_panel.visible = false
     town_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
     frame.add_child(town_panel)
+    town_panel.add_theme_color_override("default_color", UI.LIGHT_TEXT)
 
 func _process(delta: float) -> void:
     if map_open or (dialogue_ui != null and dialogue_ui.visible):
@@ -370,6 +372,7 @@ func _make_terrain_texture(parent: Node3D) -> void:
 
 func _generate_map_dialog() -> void:
     map_dialog = PanelContainer.new()
+    UI.apply_panel(map_dialog)
     map_dialog.position = Vector2(370, 165)
     map_dialog.custom_minimum_size = Vector2(450, 260)
     var layout := VBoxContainer.new()
@@ -380,10 +383,12 @@ func _generate_map_dialog() -> void:
     for destination in ["Fortaleza", "Porto Cinzento"]:
         var button := Button.new()
         button.text = "Viajar para " + destination
+        UI.apply_button(button)
         button.pressed.connect(_travel_to.bind(destination))
         layout.add_child(button)
     var close := Button.new()
     close.text = "Fechar mapa"
+    UI.apply_button(close)
     close.pressed.connect(_toggle_map)
     layout.add_child(close)
     get_node("CanvasLayer/Control").add_child(map_dialog)
