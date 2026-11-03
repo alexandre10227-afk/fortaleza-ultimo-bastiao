@@ -43,8 +43,8 @@ func _draw() -> void:
         draw_line(Vector2(x,size.y*.63),Vector2(x,size.y*.71),Color("#736049"),4.0,true)
     for region in clickable_regions:
         var pos := _point(region)
-        var selected := region == current_region
-        var hovered := region == hover_region
+        var selected: bool = region == current_region
+        var hovered: bool = region == hover_region
         draw_circle(pos,19 if selected or hovered else 15,Color("#3e362b"))
         draw_circle(pos,14 if selected or hovered else 10,Color("#d0af69") if selected else Color("#dcc895"))
         var label := str(region)
