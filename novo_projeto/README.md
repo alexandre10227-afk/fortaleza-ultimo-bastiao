@@ -169,3 +169,14 @@ Controles temporários no mundo: `V` abre visitantes da taverna; teclas `1` a `5
 - `tests/test_duke_event.gd`: testes de requisitos, prazo, exclusividade da armadura, boss pendente, save/load e evolução condicional **adicionados ao repositório, porém ainda não executados nesta atualização**.
 - A integração de combate real do boss, o vídeo/cutscene de morte e os drops completos da masmorra dependem das Etapas 2–4. **Não relatar esses elementos como prontos.**
 - **Sem ZIP:** prevalecem otimização, polimento gráfico e verificação técnica real antes de entregar a etapa para aceite.
+
+
+## Incremento social: cinco niveis de amizade e estadias de quatro dias (03/11/2026)
+
+- `scripts/friendship_system.gd`: Indiferente 0–19, Conhecido 20–39, Amigos 40–59, Confidente 60–79, Leal ate a Morte 80–100; somente ultimo nivel habilita **recrutamento comum**.
+- `scripts/town_system.gd`: visitantes chegam em dias programados e ficam **quatro dias consecutivos**. Na manha do quinto dia deixam a taverna; podem fixar residencia na vila ou viajar para outra cidade. Alguns retornam em estadias posteriores.
+- `scripts/game_state.gd`: itinerarios `npc_lives` e condicoes de historia `npc_story_flags` persistem no save. Dia a dia gera eventos de chegada e saida no diario. Memoria e amizade nao reiniciam quando o NPC viaja.
+- Quando Elira conclui sua missao inicial, o roteiro dela passa a priorizar fixar residencia depois de uma visita. NPC recrutado deixa sua agenda automatica de visitante.
+- A herdeira especial do Duque obedece a mesma permanencia de quatro dias quando sua aparicao rara de 1% ocorre.
+- `scripts/world.gd`: a taverna mostra o nivel de amizade e os dias restantes. NPCs que ficam na cidade podem participar da lista de moradores visiveis.
+- Novos testes em `tests/test_tavern_life.gd`; `test_town.gd` e `test_duke_event.gd` atualizados conforme as regras. **Esses testes ainda necessitam uma rodada completa de execucao na versao publicada**. Nenhum ZIP de aceite gerado.
