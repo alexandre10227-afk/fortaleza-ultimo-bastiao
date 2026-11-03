@@ -21,7 +21,7 @@ func run() -> void:
     assert(scene.player.position == Vector3(2.5, 0, 11.5))
     assert(scene.travel_map_canvas != null)
     assert(scene.travel_map_canvas.clickable_regions.size() == 2)
-    assert(scene._player_walk_frames.size() == 12)
+    assert(scene._player_walk_frames.size() == 24)
     assert(scene._active_city_residents().size() > 0)
     scene._build_interior("Ferraria")
     scene._set_interior_collision(true)
