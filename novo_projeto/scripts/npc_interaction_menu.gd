@@ -54,6 +54,11 @@ func show_npc(npc: Dictionary, friendship: int, level: String, preferred: String
     var classification: Dictionary = NPCS.profile(str(npc.get("id", "")))
     _line("Grupo: %s | %s" % [classification["category"], "Importante para a historia" if classification["important"] else "Personagem comum"])
     _line("Cadastro: " + ("Recrutavel" if classification["recruitable"] else "Nao recrutavel"))
+    var class_build: Dictionary = GameState.npc_hero_builds.get(str(npc.get("id", "")), {})
+    if not class_build.is_empty():
+        _line("Combate: %s / %s | Subclasse %s" % [class_build.get("class", ""), class_build.get("subclass", ""), class_build.get("rarity", "")])
+        if not class_build.get("elements", []).is_empty():
+            _line("Elementos: " + ", ".join(class_build["elements"]))
     _line("Amizade: %d/100 — %s" % [friendship, level])
     _line("Presentes preferidos: " + preferred)
     _choice("Conversar", "talk")
