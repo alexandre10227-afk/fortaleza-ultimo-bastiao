@@ -4,6 +4,7 @@ const FRIENDSHIP = preload("res://scripts/friendship_system.gd")
 const TOWN = preload("res://scripts/town_system.gd")
 const ITEMS = preload("res://scripts/item_catalog.gd")
 const ECONOMY = preload("res://scripts/economy_system.gd")
+const NPC_REGISTRY = preload("res://scripts/npc_registry.gd")
 
 const SAVE_PATH := "user://fortaleza_stage1_v1.json"
 const DIFFICULTIES := {
@@ -205,7 +206,7 @@ func recruit_visitor(npc: Dictionary) -> bool:
     if recruited.has(str(npc.get("id", ""))) or not preload("res://scripts/town_system.gd").can_recruit(npc, oath):
         return false
     var id := str(npc.get("id", ""))
-    if id.is_empty() or id == "duque" or id == DUKE.DAUGHTER_ID:
+    if id.is_empty() or not NPC_REGISTRY.base_recruitable(id) or id == "duque" or id == DUKE.DAUGHTER_ID:
         return false
     var itinerary: Dictionary = npc_lives.get(id, {})
     if itinerary.get("status", "") != "tavern" or itinerary.get("region", "") != current_region:
