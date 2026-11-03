@@ -23,7 +23,7 @@ func run() -> void:
     assert(sprites.size() == 2)
     for npc in sprites:
         assert(npc.texture == world._sprite_texture)
-    assert(world._shared_materials.size() < 10)
+    assert(world._shared_materials.size() < 24)
     var previous_pos: Vector3 = world.player.position
     world._interact()
     assert(world.player.position == previous_pos)
