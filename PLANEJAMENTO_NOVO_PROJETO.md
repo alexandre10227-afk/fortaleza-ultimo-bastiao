@@ -234,3 +234,43 @@ Checklist de bloqueio para o ZIP:
 6. **Somente depois** gerar o ZIP da etapa e entregá-lo como `Aguardando aceitação do usuário no Windows`.
 
 O código e as cenas iniciais do `novo_projeto/` continuam **em desenvolvimento**; resultados headless não provam FPS real ou polimento artístico.
+
+
+## Adendo 1.3 — Evento do Duque, herdeira e boss extra (03/11/2026)
+
+**Evento original**, incorporado ao jogo sem reproduzir personagens ou falas de obras de terceiros.
+
+### Personagens e pré-requisitos
+- **Duque**, NPC único e recrutável de **rank A**, na **Mansão do Duque (Fortaleza)**.
+- Visitar a mansão e responder **seis charadas, no máximo uma por dia do jogo**. Perguntas e escolhas narrativas são originais. O sistema marca respostas e dias para impedir múltiplas tentativas por save/load.
+- É preciso terminar as seis perguntas e atingir **amizade de pelo menos 75 pontos (Amigo Leal)** para recrutá-lo, **antes do início da onda 10**. Escala inicial: resposta certa +15, errada +5, máximo 100; com seis perguntas são necessários ao menos cinco acertos (+80).
+- A regra de Exilado permanece: não pode recrutar moradores da Fortaleza, incluindo o Duque.
+
+### Bifurcação irrevogável na onda 10
+- **Com o Duque recrutado antes da onda 10:** surge um **boss extra original**, provisoriamente chamado **Carrasco do Juramento**. Ao derrotá-lo, inicia-se uma **cutscene** da morte do Duque. Ao concluir essa cena, o Duque morre permanentemente; a **Armadura do Duque**, item único, é concedida uma única vez; a **filha do Duque**, heroína de **rank S**, passa a aparecer na mansão, podendo ser recrutada. Boss, batalha e encenação cinematográfica completos serão implementados na Etapa 3/4; a Etapa 1 somente registra e protege esses estados.
+- **Sem cumprir os requisitos e recrutar antes da onda 10:** o Duque **morre em casa**, sem boss extra, sem cutscene especial e **sem possibilidade de obter a Armadura do Duque**. Morte e consequências permanecem registradas.
+- Após a **onda 30** (ou seja, a partir da onda 31), a filha poderá aparecer na taverna de Porto Cinzento, com **1% de chance por renovação diária elegível**. Uma mesma data não deve gerar novas tentativas ao reabrir a taverna. Ela continua rank S, mas, por não haver Armadura do Duque nessa rota, não completa o ritual de legado necessário para evoluir a SS.
+
+### Evolução da filha S → SS
+- Precisa ser recrutada.
+- Precisa concluir a missão **O Legado da Armadura**, apresentando a Armadura do Duque (exclusiva do evento completo).
+- Precisa de materiais da Masmorra Antiga do Lago: valores iniciais para balanceamento **3 Cristais do Lago e 1 Núcleo Ancestral**, consumidos uma única vez na evolução. A masmorra é liberada depois da onda 20.
+- A evolução será implementada no sistema completo de personagens/itens, sem criar meios de obter a armadura no caminho da morte em casa.
+
+### Fases
+- **Etapa 1:** dados persistentes, cena inicial de mansão, seis perguntas originais, amizade, recrutamento e estado do evento; registros de crônicas.
+- **Etapa 2:** personagem A, filha S e missões de relacionamento/equipamentos devidamente integrados ao combate, inventário e lealdade.
+- **Etapa 3:** boss extra na onda 10, batalha verdadeira, animação de morte, armadura única, acesso à filha na mansão e materiais da Masmorra do Lago.
+- **Etapa 4:** evolução S→SS, narrativa refinada, retratos, dublagem/sons opcionais e cenas cinematográficas polidas.
+
+### Critérios de validação
+- Não permitir mais de uma pergunta por dia nem recrutamento com menos de seis perguntas/75 pontos, ou após iniciar a onda 10.
+- A onda 10 deve resolver o destino uma única vez, mesmo com múltiplos saves/loads.
+- A morte em casa nunca concede armadura.
+- Boss extra não concede automaticamente armadura antes de sua derrota e do fim da cutscene.
+- O evento concluído concede uma única Armadura do Duque e desbloqueia a filha na mansão.
+- A herdeira rara surge na taverna apenas após a onda 30, chance real de 1% por renovação elegível, não por cada clique.
+- A evolução SS requer armadura, missão e materiais, sem gastos duplicados.
+- A regra absoluta de otimização, polimento e testes ANTES do ZIP continua em vigor.
+
+**Estado técnico:** regras e alguns caminhos de interface implementados inicialmente em `novo_projeto/scripts/duke_event.gd`, `game_state.gd` e `world.gd`; boss/cutscene não são jogáveis ainda. O teste automatizado de regressão `tests/test_duke_event.gd` foi criado e precisa de execução/validação técnica no motor antes da entrega da etapa.
