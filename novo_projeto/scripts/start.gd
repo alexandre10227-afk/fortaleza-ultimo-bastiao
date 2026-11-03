@@ -1,11 +1,17 @@
 extends Control
 const UI = preload("res://scripts/ui_theme.gd")
 const STORY = preload("res://scripts/story_content.gd")
+const CHARACTER = preload("res://scripts/character_profile.gd")
 
 var panel: VBoxContainer
 var name_input: LineEdit
 var difficulty_input: OptionButton
 var dialogue_ui: Control
+var origin_input: OptionButton
+var appearance_input: OptionButton
+var _stats: Dictionary = CHARACTER.default_stats()
+var _stat_labels: Dictionary = {}
+var _points_label: Label
 var _prologue_step := 0
 
 func _ready() -> void:
@@ -17,12 +23,16 @@ func _ready() -> void:
     center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     add_child(center)
     var frame := PanelContainer.new()
-    frame.custom_minimum_size = Vector2(580, 560)
+    frame.custom_minimum_size = Vector2(760, 640)
     UI.apply_panel(frame)
     center.add_child(frame)
+    var scroll := ScrollContainer.new()
+    scroll.custom_minimum_size = Vector2(720, 580)
+    frame.add_child(scroll)
     panel = VBoxContainer.new()
-    panel.add_theme_constant_override("separation", 17)
-    frame.add_child(panel)
+    panel.custom_minimum_size.x = 685
+    panel.add_theme_constant_override("separation", 10)
+    scroll.add_child(panel)
     _show_creation()
 
 func _clear() -> void:
@@ -58,6 +68,50 @@ func _show_creation() -> void:
     UI.apply_input(name_input)
     name_input.max_length = 24
     panel.add_child(name_input)
+    _label("Origem do aventureiro", 18)
+    origin_input = OptionButton.new()
+    for origin in CHARACTER.ORIGINS:
+        origin_input.add_item(str(origin))
+    origin_input.add_theme_stylebox_override("normal", UI.button_style())
+    origin_input.add_theme_color_override("font_color", UI.LIGHT_TEXT)
+    panel.add_child(origin_input)
+    _label("A origem concede um bonus fixo; nao substitui a escolha do juramento.", 15)
+    _label("Aparencia inicial", 18)
+    appearance_input = OptionButton.new()
+    for style_name in ["Viajante de manto", "Guarda sem brasao", "Aprendiz de oficina", "Explorador"]:
+        appearance_input.add_item(style_name)
+    panel.add_child(appearance_input)
+    _label("Distribua 10 pontos iniciais", 18)
+    _stats = CHARACTER.default_stats()
+    _stat_labels.clear()
+    _points_label = Label.new()
+    UI.apply_text(_points_label)
+    panel.add_child(_points_label)
+    for stat in CHARACTER.ATTRIBUTES:
+        var row := HBoxContainer.new()
+        row.add_theme_constant_override("separation", 8)
+        panel.add_child(row)
+        var name_label := Label.new()
+        name_label.text = str(stat)
+        name_label.custom_minimum_size.x = 140
+        UI.apply_text(name_label)
+        row.add_child(name_label)
+        var minus := Button.new()
+        minus.text = "-"
+        UI.apply_button(minus)
+        minus.pressed.connect(_edit_stat.bind(str(stat), -1))
+        row.add_child(minus)
+        var value_label := Label.new()
+        value_label.custom_minimum_size.x = 35
+        UI.apply_text(value_label)
+        row.add_child(value_label)
+        _stat_labels[stat] = value_label
+        var plus := Button.new()
+        plus.text = "+"
+        UI.apply_button(plus)
+        plus.pressed.connect(_edit_stat.bind(str(stat), 1))
+        row.add_child(plus)
+    _refresh_stats()
     _label("Dificuldade da campanha")
     difficulty_input = OptionButton.new()
     for item in ["Facil", "Normal", "Dificil", "Impossivel"]:
@@ -74,7 +128,26 @@ func _show_creation() -> void:
 
 func _create_character() -> void:
     GameState.new_game(name_input.text, difficulty_input.get_item_text(difficulty_input.selected))
+    var selected_origin := origin_input.get_item_text(origin_input.selected)
+    if not GameState.configure_character(selected_origin, _stats, appearance_input.selected):
+        _label("Verifique a origem e os pontos de atributos.", 15)
+        return
     _show_audience()
+
+func _edit_stat(stat: String, amount: int) -> void:
+    var updated := int(_stats.get(stat, 1)) + amount
+    if updated < CHARACTER.MIN_STAT or updated > CHARACTER.MAX_STAT:
+        return
+    if amount > 0 and CHARACTER.points_remaining(_stats) <= 0:
+        return
+    _stats[stat] = updated
+    _refresh_stats()
+
+func _refresh_stats() -> void:
+    for key in _stat_labels:
+        var label: Label = _stat_labels[key]
+        label.text = str(_stats[key])
+    _points_label.text = "Pontos restantes: %d" % CHARACTER.points_remaining(_stats)
 
 func _show_audience() -> void:
     _clear()
