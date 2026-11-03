@@ -278,3 +278,21 @@ Analise das 5 imagens e do video de ~48m54s documentada em [REFERENCIAS_VISUAIS.
 - `GameState.protagonist_track` salva classe, especializações, habilidades e fonte de aprendizado. Um mestre presente com amizade **Confidente (60+)** pode ensinar uma especialização compatível; `GameState.learn_from_boss_book` consome um livro de chefe compatível, se houver no inventário.
 - No menu contextual `E` de um mestre cadastrado aparece **Treinar com mestre**; a seleção mostra as técnicas e bloqueia requisitos não atendidos. A ficha do protagonista mostra especializações aprendidas, sem raridade de NPC.
 - `tests/test_protagonist_progression.gd` acrescentado, mas a versão remota atual ainda requer testes de integração com o Godot. Livros de boss ainda não possuem drops automáticos e habilidades aprendidas ainda não executam golpes reais, que pertencem à etapa de combate.
+
+
+## Versão para aceite do usuário — polimento e testes (03/11/2026)
+
+**Código-fonte revisado para Windows / Godot 4.7.2. A decisão de liberar a Etapa 2 depende do teste do usuário.**
+
+- Correção da inferência de tipo no cálculo da chance da herdeira do Duque (`game_state.gd`).
+- Correção da tipagem de seleção e hover no mapa de viagem.
+- Normalização dos campos numéricos de itinerários dos NPCs depois de carregar JSON para evitar inconsistências de save e regressões da taverna.
+- Correção do teste de treinamento com Doran: a rota Guardião precisa estar ativa e o mestre na região.
+- Novo teste de colisão real com raycast: divisórias da ferraria sólidas no interior, desativadas ao voltar para a rua.
+- Retratos pixel-art originais e cacheados (`portrait_factory.gd`), ícones de itens por categoria (`item_icon_factory.gd`), usados nas telas de NPC, presentes e diálogos.
+- Casas com telhados inclinados, portas, janelas, faixas de identificação e acabamento cromático mais discreto no solo; sprites mais legíveis.
+- **Validação local completa da revisão:** 25/25 testes automatizados aprovados em Godot 4.7.2 headless. Jogo aberto em renderização gráfica Linux/Xvfb OpenGL Compatibility, incluindo capturas reais de menu e mundo.
+- Medição gráfica de 120 quadros: cerca de **57,8 FPS sob Mesa llvmpipe** e **42,6 MiB no monitor MEMORY_STATIC**; estes valores não representam FPS nem consumo total do processo no Windows.
+- ZIP de código-fonte com `LEIA-ME_TESTE_WINDOWS.md` e `RELATORIO_QA_ETAPA1.md` preparado para avaliação direta do usuário. Este pacote **não inclui executável**, exigindo Godot 4.7.2. Nunca interpretar como aceite automático da Etapa 2.
+
+**Pendente do aceite:** verificação de FPS real no Windows, animações/câmera em diferentes máquinas e opinião visual final do usuário.
