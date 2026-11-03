@@ -73,3 +73,25 @@ static func become_elementalist(build: Dictionary) -> Dictionary:
 
 static func multiplier(build: Dictionary) -> float:
     return float(POWER.get(str(build.get("rarity","")),0)) if valid(build) else 0.0
+
+static func learn_element(build: Dictionary, element: String) -> Dictionary:
+    if not valid(build) or build["class"] != "Mago" or build["subclass"] != "Mago Elemental":
+        return {}
+    if not ELEMENTS.has(element) or build["elements"].has(element) or build["elements"].size() >= 3:
+        return {}
+    var known: Array = build["elements"].duplicate()
+    known.append(element)
+    var tiers := permitted("Mago","Mago Elemental",known)
+    if tiers.is_empty():
+        return {}
+    return make("Mago","Mago Elemental",known,str(tiers[0]),true)
+
+static func promote_specialist(build: Dictionary, next_subclass: String) -> Dictionary:
+    if not valid(build) or build["class"] == "Mago" or build["rarity"] != "Epico":
+        return {}
+    var class_name := str(build["class"])
+    if not CLASSES[class_name].has(next_subclass):
+        return {}
+    if not CLASSES[class_name][next_subclass].has("Lendario"):
+        return {}
+    return make(class_name,next_subclass,[],"Lendario",true)
