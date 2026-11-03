@@ -1,5 +1,6 @@
 extends Node
 const DUKE = preload("res://scripts/duke_event.gd")
+const FRIENDSHIP = preload("res://scripts/friendship_system.gd")
 
 const SAVE_PATH := "user://fortaleza_stage1_v1.json"
 const DIFFICULTIES := {
@@ -17,6 +18,8 @@ var energy := 40
 var agility_xp := 0
 var events: Array[Dictionary] = []
 var npc_memory: Dictionary = {}
+var npc_friendship: Dictionary = {}
+var last_friendship_interaction: Dictionary = {}
 var region_reputation: Dictionary = {"Fortaleza": 0, "Porto Cinzento": 0}
 var wave_number := 0
 var dungeon_unlocked := false
@@ -47,6 +50,8 @@ func new_game(hero_name: String, mode: String) -> void:
     agility_xp = 0
     events.clear()
     npc_memory.clear()
+    npc_friendship.clear()
+    last_friendship_interaction.clear()
     region_reputation = {"Fortaleza": 0, "Porto Cinzento": 0}
     wave_number = 0
     dungeon_unlocked = false
@@ -95,6 +100,32 @@ func remember(npc_id: String, event_kind: String) -> void:
     npc_memory[npc_id].append({"day": day, "kind": event_kind})
     record_event("npc_memory", current_region, [npc_id], event_kind)
 
+func friendship_points(npc_id: String) -> int:
+    return int(npc_friendship.get(npc_id, 0))
+
+func friendship_level(npc_id: String) -> String:
+    if npc_id == "duque":
+        return FRIENDSHIP.level_name(int(duke_state.get("friendship", 0)))
+    return FRIENDSHIP.level_name(friendship_points(npc_id))
+
+func gain_friendship(npc_id: String, points: int, source: String, once_per_day: bool = false) -> bool:
+    if npc_id.is_empty() or points <= 0 or npc_id == "duque" or npc_id == DUKE.DAUGHTER_ID:
+        return false
+    var key := npc_id + ":" + source
+    if once_per_day and int(last_friendship_interaction.get(key, -1)) == day:
+        return false
+    var previous := friendship_points(npc_id)
+    var updated := FRIENDSHIP.adjust(previous, points)
+    if once_per_day:
+        last_friendship_interaction[key] = day
+    if updated == previous:
+        return false
+    npc_friendship[npc_id] = updated
+    if FRIENDSHIP.level_name(previous) != FRIENDSHIP.level_name(updated):
+        record_event("friendship_level", current_region, [npc_id], "%s: %s" % [npc_id, FRIENDSHIP.level_name(updated)])
+    save_game()
+    return true
+
 func advance_days(days: int) -> void:
     for _i in range(maxi(0, days)):
         day += 1
@@ -138,6 +169,8 @@ func recruit_visitor(npc: Dictionary) -> bool:
     var id := str(npc.get("id", ""))
     if id.is_empty():
         return false
+    if not FRIENDSHIP.can_recruit(friendship_points(id)):
+        return false
     recruited.append(id)
     remember(id, "recrutado")
     save_game()
@@ -163,6 +196,7 @@ func complete_quest(npc_id: String) -> bool:
     money += int(quest["reward"])
     quest_progress[npc_id] = "complete"
     remember(npc_id, "missao_concluida")
+    gain_friendship(npc_id, 25, "missao")
     record_event("quest_completed", current_region, [npc_id], str(quest["title"]))
     save_game()
     return true
@@ -258,7 +292,7 @@ func save_game() -> bool:
     var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if file == null:
         return false
-    var data := {"schema": 1, "name": character_name, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "recruited": recruited, "bestiary": discovered_bestiary, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
+    var data := {"schema": 1, "name": character_name, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "recruited": recruited, "bestiary": discovered_bestiary, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
     file.store_string(JSON.stringify(data))
     return true
 
@@ -283,6 +317,8 @@ func load_game() -> bool:
         if event is Dictionary:
             events.append(event)
     npc_memory = parsed.get("npc_memory", {})
+    npc_friendship = parsed.get("npc_friendship", {})
+    last_friendship_interaction = parsed.get("friendship_days", {})
     region_reputation = parsed.get("reputation", {})
     wave_number = int(parsed.get("wave", 0))
     dungeon_unlocked = bool(parsed.get("dungeon", false))
