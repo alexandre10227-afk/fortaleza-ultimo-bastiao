@@ -1,0 +1,33 @@
+extends SceneTree
+
+func _initialize() -> void:
+    call_deferred("run_tests")
+
+func run_tests() -> void:
+    var g := root.get_node("GameState")
+    g.new_game("Ayla", "Impossivel")
+    assert(g.difficulty == "Impossivel")
+    assert(g.DIFFICULTIES["Impossivel"]["xp"] == 3.0)
+    g.choose_oath(false)
+    assert(g.oath == "exile")
+    assert(g.current_region == "Porto Cinzento")
+    assert(g.fortress_price_multiplier() == 3)
+    assert(not g.can_recruit_fortress_resident())
+    g.advance_days(95)
+    assert(g.wave_number == 19)
+    assert(not g.dungeon_unlocked)
+    g.advance_days(5)
+    assert(g.wave_number == 20)
+    assert(g.dungeon_unlocked)
+    g.remember("npc_elira", "ajudou")
+    assert(g.travel("Fortaleza", 210.0))
+    assert(g.agility_xp == 6)
+    assert(g.energy == 35)
+    assert(g.save_game())
+    g.new_game("Outro", "Facil")
+    assert(g.load_game())
+    assert(g.character_name == "Ayla")
+    assert(g.wave_number == 20)
+    assert(g.npc_memory.has("npc_elira"))
+    print("TESTES ETAPA 1: ASSERTS PASSARAM")
+    quit(0)
