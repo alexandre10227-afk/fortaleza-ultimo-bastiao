@@ -2,7 +2,7 @@ extends Control
 const UI = preload("res://scripts/ui_theme.gd")
 const STORY = preload("res://scripts/story_content.gd")
 const CHARACTER = preload("res://scripts/character_profile.gd")
-const HERO_CLASSES = preload("res://scripts/hero_classes.gd")
+const PLAYER_CLASSES = preload("res://scripts/protagonist_progression.gd")
 
 var panel: VBoxContainer
 var name_input: LineEdit
@@ -11,7 +11,6 @@ var dialogue_ui: Control
 var origin_input: OptionButton
 var appearance_input: OptionButton
 var class_input: OptionButton
-var element_input: OptionButton
 var _stats: Dictionary = CHARACTER.default_stats()
 var _stat_labels: Dictionary = {}
 var _points_label: Label
@@ -82,17 +81,10 @@ func _show_creation() -> void:
     _label("A origem concede um bonus fixo; nao substitui a escolha do juramento.", 15)
     _label("Classe inicial do heroi", 18)
     class_input = OptionButton.new()
-    for archetype_name in HERO_CLASSES.STARTERS.keys():
+    for archetype_name in PLAYER_CLASSES.BASE_CLASSES:
         class_input.add_item(str(archetype_name))
-    class_input.item_selected.connect(_on_class_changed)
     panel.add_child(class_input)
-    _label("Afinidade inicial (somente magos)", 15)
-    element_input = OptionButton.new()
-    for element_name in HERO_CLASSES.ELEMENTS:
-        element_input.add_item(str(element_name))
-    panel.add_child(element_input)
-    _on_class_changed(0)
-    _label("Subclasses superiores sao desbloqueadas por evolucao, nao na criacao.", 15)
+    _label("Especializacoes sao aprendidas durante a campanha.", 15)
     _label("Aparencia inicial", 18)
     appearance_input = OptionButton.new()
     for style_name in ["Viajante de manto", "Guarda sem brasao", "Aprendiz de oficina", "Explorador"]:
@@ -152,16 +144,10 @@ func _create_character() -> void:
         _label("Verifique a origem e os pontos de atributos.", 15)
         return
     var archetype_name := class_input.get_item_text(class_input.selected)
-    var element_name := element_input.get_item_text(element_input.selected)
-    if not GameState.choose_starting_class(archetype_name, element_name):
+    if not GameState.choose_starting_class(archetype_name):
         _label("Classe e afinidade selecionadas nao sao validas.", 15)
         return
     _show_audience()
-
-func _on_class_changed(_index: int) -> void:
-    if class_input == null or element_input == null:
-        return
-    element_input.visible = class_input.get_item_text(class_input.selected) == "Mago"
 
 func _edit_stat(stat: String, amount: int) -> void:
     var updated := int(_stats.get(stat, 1)) + amount
