@@ -128,3 +128,20 @@ Controles temporários no mundo: `V` abre visitantes da taverna; teclas `1` a `5
 **Validação executada localmente no Godot 4.7.2 em modo headless:** os seis testes anteriores e o novo `test_quests.gd` passaram (7/7), e o editor importou o projeto sem erros de script. Não são testes de FPS nem de aceitação no Windows.
 
 **Limitações:** recursos ainda usam malhas simples; missões são exemplos iniciais, não os cinco arcos completos. Ainda faltam painéis de missões, animações, navegação, arte e interiores definitivos. A Etapa 1 **não está concluída** e nenhum ZIP de aceite foi gerado.
+
+
+## Pesquisa e aplicação do visual Wuxia/Dark Fantasy — 03/11/2026
+
+**Fontes pesquisadas:** [Willosuna Fantasy UI Kit](https://willosuna.itch.io/fantasy-ui-kit), [Drakesigil Dark Fantasy RPG UI Essentials](https://drakesigil.itch.io/drakesigil-dark-fantasy-rpg-ui-essentials), [Gilded Fantasy UI Kit Lite](https://gildedforge.itch.io/gilded-fantasy-ui-kit-lite-free-sample), [Abyssal Forge no Unity Asset Store](https://assetstore.unity.com/packages/2d/gui/abyssal-forge-dark-fantasy-rpg-ui-kit-410980). Os kits serviram como **referências de características genéricas**, não foram comprados nem copiados.
+
+**Aplicado de modo original no Godot:**
+- `scripts/ui_theme.gd`: paleta própria de pergaminho claro, madeira escura e bronze envelhecido, com `StyleBoxFlat` para painéis, botões nos estados normal/hover/pressionado/desabilitado, campos de texto e cores de raridade (Comum a Mítico).
+- Criação de personagem e seletor de dificuldade usam a nova biblioteca de estilos.
+- Escolhas e botão de continuar no diálogo 9-slice original usam botões do tema. Continua preservado o efeito Typewriter e a NameBox.
+- Mapa mundial recebe moldura e botões correspondentes à mesma identidade.
+- Nova bateria `tests/test_ui_theme.gd` verifica estilos, cores de raridade e integração inicial com diálogos.
+- **Validação local:** importação sem erros no Godot 4.7.2 Linux headless e oito conjuntos de testes lógicos executados: campanha, comércio, exploração, otimização, regiões, diálogo, missões e tema. O teste isolado de interface passou mas imprimiu avisos de limpeza de objetos ao encerrar abruptamente em modo headless; a limpeza do teste deve ser melhorada.
+
+**Ainda pendente antes de qualquer ZIP:** revisão visual em janela gráfica, responsividade 16:9 e resoluções menores, ícones originais, retratos, fontes, HUD/inventário/taverna/lojas totalmente tematizados, acessibilidade, otimização visual e medição real de FPS.
+
+**Direito de uso:** arquivos pagos de lojas não foram adicionados ao repositório; uso de terceiros somente após obtenção autorizada e conferência da licença de redistribuição dentro de um projeto público.
