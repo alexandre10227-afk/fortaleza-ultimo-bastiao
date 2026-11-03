@@ -1,0 +1,1 @@
+Godot 4.7.2: regressao completa com 27 suites, ferraria, texturas, portas, mercado, inventario e salvamento.
