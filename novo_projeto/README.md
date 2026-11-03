@@ -204,3 +204,14 @@ Controles temporários no mundo: `V` abre visitantes da taverna; teclas `1` a `5
 - `F`: consumir comida do inventário e aplicar bônus temporários ao protagonista. `H`: abrir receitas iniciais dentro da ferraria. `Y`: aprimorar a ferraria com materiais e moedas.
 - Esses são controles provisórios e menus simples, ainda não a interface gráfica final. Outros estabelecimentos e buffs para companheiros aguardam integração nas próximas etapas.
 - **Teste novo `test_item_economy.gd` escrito, mas não executado nesta rodada no Godot:** cobre recusa para todas as categorias incompatíveis de todos os NPCs, presentes aceitos por raridade, compra/venda, consumo, receita, aprimoramento e save/load. Não declarar testes ou desempenho aprovados antes da validação de execução.
+
+
+## Incremento: E contextual, menu clicável de NPC e pedir passagem (03/11/2026)
+
+- Novo `scripts/npc_interaction_menu.gd`: janela de NPC em tema próprio, com nome, profissão, raridade, amizade, categoria favorita e botões clicáveis.
+- `E` próximo de NPC: **Conversar**, **Abrir loja** somente quando mercador/vendedor/ferreiro, **Presentear**, **Recrutar** somente com requisitos satisfeitos, **Pedir passagem** sem penalidade e **Fechar**.
+- Presentes: clicar **Presentear** abre itens do inventário com raridade, quantidade e indicação de aceitação; categorias incompatíveis são desabilitadas. Selecionar um item aceito tenta entregá-lo uma vez, respeitando limite diário e estado do NPC.
+- Taverna: `E` abre lista clicável dos visitantes presentes por quatro dias; selecionar visitante abre perfil. Mansão: `E` abre perfil do Duque ou herdeira, mantendo exigências excepcionais. Botão **Sair do prédio** disponível nos menus de interiores.
+- **Pedir passagem:** deslocamento lateral de sprite quando existe posição livre, sem tocar na economia, reputação ou amizade. É um primeiro comportamento visual; ainda não há `NavigationAgent3D` para navegação de NPCs.
+- Menu impede mover o personagem enquanto estiver aberto. O mapeamento antigo de teclas segue temporariamente no código para debug; o fluxo de jogador prioriza `E` + clique.
+- Criado `tests/test_npc_interaction.gd` para regras de visibilidade de botões, presentes aceitos/recusados e sinais de clique. **Teste ainda precisa ser executado no Godot da revisão publicada**; a inspeção estática confirmou conexões e funções sem duplicidade, mas não prova execução ou desempenho.
