@@ -142,3 +142,61 @@ Versões planejadas: `Fortaleza_Etapa_01_Godot.zip`, `Fortaleza_Etapa_02_Godot.z
 | Migração regional | Populações e eventos | Movimentos de NPCs | Refugiados e êxodo | Consequências regionais |
 
 **Este arquivo define o escopo; não certifica implementação.**
+
+
+## Adendo 1.1 — Chefes, Masmorra Antiga do Lago, equipamentos e construções (03/11/2026)
+
+### Progressão de chefes
+- **Dez chefes principais** ligados à campanha, **cada um de uma raça diferente**, com identidade, mecânicas, arena, fraquezas e consequências próprias. Seus IDs e estados de vitória devem ser persistentes.
+- **Minichefes** distribuídos por áreas, ondas, eventos e masmorras; derrotas e reaparições obedecem às regras explícitas de cada encontro, sem reiniciar chefes únicos ao carregar o jogo.
+- **Chefe final** é desbloqueado apenas depois da derrota confirmada do **décimo chefe principal**; a condição de progresso exigirá registro persistente de vitória nos dez chefes, evitando atalhos por recarga de save. O encontro final estará sujeito à campanha/rota de forma que as cinco ramificações permaneçam concluíveis.
+- Raças e identidades dos dez chefes serão desenvolvidas como **conteúdo original**. A especificação não pressupõe nomes ou espécies definidos pelo usuário.
+
+### Masmorra Antiga do Lago e raridades
+- Entrada liberada **após concluir a onda 20**, preservando a regra anterior.
+- O conjunto de recompensas exclusivas da masmorra contém itens **Raros, Épicos e Lendários**.
+- **Chefes derrotados dentro da masmorra** têm **chance de conceder itens Míticos**. Mítico é uma categoria de drop excepcional de chefe de masmorra, não um produto fabricável pela forja comum.
+- **Baús** podem conter **receitas de fabricação** nas raridades **Rara, Épica e Lendária**. Ter a receita Lendária não elimina as restrições de capacidade da forja: ela poderá exigir um meio especial de fabricação/desbloqueio em etapa futura, ainda a especificar. Receitas não devem criar automaticamente itens sem custo/material.
+- Cada item/receita terá identificador único, raridade, fonte, condições de obtenção, efeitos, atributos, requisitos e flag de unicidade quando aplicável.
+- Chance exata de drop, garantias por repetição e distribuição de baús serão definidas durante o balanceamento, não presumidas agora.
+- Itens únicos não podem ser duplicados por reabertura de baú, reinício de cena ou carregamento de save.
+
+### Forja e progressão geral de construções
+**Todas as construções evolutivas terão nível máximo 5**, com custos, requisitos, melhorias visuais e funções específicas por nível. O nível deve persistir em saves e contribuir para empregos, produção e economia.
+
+| Nível da forja | Qualidade máxima regular fabricável | Comércio e função |
+| --- | --- | --- |
+| 1 | Comum | Ferreiros iniciantes fabricam itens Comuns |
+| 2 | Incomum | Aprimora ferramentas e opções de fabricação |
+| 3 | Raro | Produção de itens Raros com receita e materiais |
+| 4 | Épico | Produção de Épicos; **chance de aparecerem itens Lendários na loja da forja** |
+| 5 | Épico | Capacidade produtiva máxima regular continua Épica; maior eficiência, catálogo e melhoria de chances de oferta Lendária |
+
+**Regra expressa:** upgrade para nível 5 **não libera fabricação regular Lendária ou Mítica**; itens Lendários podem aparecer para compra **desde o nível 4**. Receitas Lendárias obtidas em baús são colecionáveis/úteis para futuros meios especiais de produção, sem contradizer o teto Épico da forja regular. Os preços também respeitam o modificador regional de **3× para o Exilado** quando a loja pertencer à fortaleza.
+
+O nível do prédio não substitui a habilidade do ferreiro: a produção requer simultaneamente prédio compatível, profissional habilitado, materiais, receita quando exigida e recursos/tempo suficientes. Ferreiros iniciantes produzem Comuns independentemente de edifícios avançados até se qualificarem.
+
+### Modelo de dados para estes sistemas
+- `BossState`: id, raça, tipo (principal/minichefe/final/masmorra), derrotado, histórico do encontro, progressão de desbloqueios.
+- `DungeonState`: entrada liberada, andares, salas, chefes, baús e recompensas já reivindicadas.
+- `ItemDefinition`/`ItemInstance`: id, raridade, singularidade, fonte, atributos e propriedades; sem duplicação de itens únicos.
+- `RecipeDefinition`/`RecipeUnlock`: raridade e estado persistente de receita descoberta.
+- `BuildingState`: tipo, nível de 1 a 5, custo e efeitos de upgrade; `ForgeState`: catálogo, estoque, trabalhador e qualidade máxima regular.
+- Tabelas de drops e comércio serão configuráveis/testáveis e usarão aleatoriedade salva de modo verificável.
+
+### Distribuição obrigatória nas etapas
+1. **Etapa 1 — Fundação:** estruturas de dados de raridade, itens únicos, receitas, prédios de nível 1–5, chefes e progresso persistente; primeiras construções e interface de progressão como base técnica, sem prometer masmorra completa.
+2. **Etapa 2 — RPG/combate/profissões:** itens por raridade, receitas, ferreiro com evolução de habilidade, combate e estruturas reutilizáveis de minichefes; validar teto de qualidade por trabalhador e nível.
+3. **Etapa 3 — Fortaleza e masmorra:** construções evolutivas de nível máximo 5, loja da forja com chance de Lendários desde nível 4, onda 20 liberando Masmorra Antiga do Lago, chefes e drops da masmorra, baús com receitas; integrar recursos e economia.
+4. **Etapa 4 — Campanha e finais:** completar conteúdo dos **dez chefes principais de raças diferentes**, desbloqueio do chefe final após o décimo, integração aos cinco finais, desafios finais, balanceamento e testes de regressão.
+
+### Critérios de aceitação adicionais
+- A conclusão da onda 19 **não** libera a masmorra; a conclusão da onda 20 libera, inclusive na rota Exilado após simulação válida da defesa.
+- Derrotar nove chefes principais **não** desbloqueia o chefe final; derrotar todos os dez desbloqueia uma única vez.
+- A forja no nível 3 fabrica até Raro, no nível 4 até Épico e já pode vender Lendário, e no nível 5 continua limitada a Épico na fabricação regular.
+- O profissional iniciante não produz Épico só porque o edifício tem nível alto.
+- Mítico só participa da tabela especial de chefes da masmorra, e não do catálogo regular da forja.
+- Receitas e drops únicos persistem sem duplicação após save/load.
+- Construções não ultrapassam o nível 5; custos e efeitos são aplicados exatamente uma vez.
+- **Regra de entrega permanece:** gerar ZIP da etapa somente após implementação integral, revisão de código e testes técnicos passarem; resta apenas a aceitação do usuário em Windows.
+
