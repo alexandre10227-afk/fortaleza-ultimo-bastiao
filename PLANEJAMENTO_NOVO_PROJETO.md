@@ -325,3 +325,15 @@ Arquivos iniciais: `novo_projeto/scripts/item_catalog.gd`, `unique_weapons.gd`, 
 - As janelas impedem o deslocamento do protagonista durante sua exibição e reutilizam o tema original de madeira/pergaminho/bronze.
 - Arquivo: `novo_projeto/scripts/npc_interaction_menu.gd`; integrado a `scripts/world.gd`. O comportamento físico de desvio, retratos e menus de mercado completos serão aprimorados com navegação real e testes visuais nas próximas iterações.
 - **Ainda sem ZIP:** antes da entrega, testar no Godot, otimizar e polir a interface. Atalhos antigos do protótipo permanecem temporariamente como debug e serão removidos ou remapeados durante a revisão final de controles.
+
+
+## Adendo 1.7 — Cadastro de NPCs por ocupacao, recrutamento e importancia (03/11/2026)
+
+**Regra aprovada:** classificar NPCs por um eixo profissional primario em seis topicos: **Comerciantes, Soldados, Ferreiros, Cidadaos comuns, Fazendeiros e Nobres**. Para cada topico, oferecer subtopicos/filtros de **Recrutaveis / Nao recrutaveis** e **Importantes para a historia / Personagens comuns**. A condicao de recrutamento e a importancia narrativa sao informacoes distintas: um personagem pode ser importante e nao recrutavel, ou comum e recrutavel em conteudo futuro.
+
+- O cadastro `novo_projeto/scripts/npc_registry.gd` e a unica fonte de categoria, elegibilidade-base, importancia narrativa e capacidade de comerciar. Profissoes secundarias (curandeira, explorador, estrategista, mercenario etc.) aparecem como especialidades, sem criar centenas de categorias sobrepostas.
+- Os NPCs especiais preservam requisitos de evento: Duque rank A (seis charadas, amizade >=75 antes da onda 10) e Herdeira rank S/SS. Aldric e General Vaelor nao sao recrutaveis.
+- Os NPCs comuns/nao recrutaveis tambem poderao ter dialogos, trabalho, itens preferidos e rotina, sem precisarem integrar o grupo.
+- A ficha contextual do NPC deve mostrar categoria, tipo narrativo e classificacao de recrutamento, e continuar exibindo **Recrutar** apenas quando os requisitos efetivos estiverem cumpridos.
+- O diretorio de NPCs deve poder ser consultado no mapa e no menu contextual, com filtros por categoria e subtopico. O registro e tambem uma estrutura para catalogar novos habitantes conforme a historia cresce.
+- Nova verificacao automatizada de registro, filtros e menu: `tests/test_npc_registry.gd`. Os testes novos ainda devem ser executados na versao sincronizada do Godot, antes de qualquer pacote ZIP.
