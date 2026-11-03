@@ -1,0 +1,121 @@
+extends Node
+
+const SAVE_PATH := "user://fortaleza_stage1_v1.json"
+const DIFFICULTIES := {
+    "Facil": {"xp": 1.25, "damage": 0.8, "resources": 1.25, "enemies": 0.8, "rare": 1.0},
+    "Normal": {"xp": 1.1, "damage": 1.0, "resources": 1.1, "enemies": 1.0, "rare": 1.0},
+    "Dificil": {"xp": 1.75, "damage": 1.35, "resources": 0.8, "enemies": 1.4, "rare": 1.25},
+    "Impossivel": {"xp": 3.0, "damage": 1.8, "resources": 0.55, "enemies": 1.8, "rare": 1.6},
+}
+var character_name := ""
+var difficulty := "Normal"
+var oath := ""
+var current_region := ""
+var day := 1
+var energy := 40
+var agility_xp := 0
+var events: Array[Dictionary] = []
+var npc_memory: Dictionary = {}
+var region_reputation: Dictionary = {"Fortaleza": 0, "Porto Cinzento": 0}
+var wave_number := 0
+var dungeon_unlocked := false
+var discovered_bestiary: Dictionary = {}
+
+func new_game(hero_name: String, mode: String) -> void:
+    character_name = hero_name.strip_edges().substr(0, 24)
+    if character_name.is_empty():
+        character_name = "Viajante"
+    difficulty = mode if DIFFICULTIES.has(mode) else "Normal"
+    oath = ""
+    current_region = ""
+    day = 1
+    energy = 40
+    agility_xp = 0
+    events.clear()
+    npc_memory.clear()
+    region_reputation = {"Fortaleza": 0, "Porto Cinzento": 0}
+    wave_number = 0
+    dungeon_unlocked = false
+    record_event("character_created", "Palacio", [character_name], "Criacao do protagonista")
+
+func choose_oath(protect: bool) -> void:
+    if not oath.is_empty():
+        return
+    oath = "guardian" if protect else "exile"
+    current_region = "Fortaleza" if protect else "Porto Cinzento"
+    if not protect:
+        region_reputation["Fortaleza"] = -100
+        record_event("ss_defender_assigned", "Fortaleza", ["General Vaelor"], "Defesa delegada ao heroi rank SS")
+    record_event("oath_chosen", "Palacio", [character_name], oath)
+    save_game()
+
+func fortress_price_multiplier() -> int:
+    return 3 if oath == "exile" else 1
+
+func can_recruit_fortress_resident() -> bool:
+    return oath != "exile"
+
+func record_event(kind: String, region: String, actors: Array, description: String) -> void:
+    var key := "%s_%s_%s_%s" % [str(day), kind, region, str(events.size())]
+    events.append({"id": key, "day": day, "kind": kind, "region": region, "actors": actors, "description": description})
+
+func remember(npc_id: String, event_kind: String) -> void:
+    if not npc_memory.has(npc_id):
+        npc_memory[npc_id] = []
+    npc_memory[npc_id].append({"day": day, "kind": event_kind})
+    record_event("npc_memory", current_region, [npc_id], event_kind)
+
+func advance_days(days: int) -> void:
+    for _i in range(maxi(0, days)):
+        day += 1
+        if (day - 1) % 5 == 0:
+            wave_number += 1
+            record_event("wave", "Fortaleza", ["General Vaelor" if oath == "exile" else character_name], "Onda %d" % wave_number)
+            if wave_number == 20:
+                dungeon_unlocked = true
+                record_event("dungeon_unlocked", "Lago Antigo", [], "Masmorra descoberta")
+    save_game()
+
+func travel(destination: String, distance: float) -> bool:
+    if energy < 5 or destination == current_region:
+        return false
+    energy -= 5
+    agility_xp += mini(15, maxi(1, ceili(distance / 35.0)))
+    current_region = destination
+    record_event("travel", destination, [character_name], "Viagem concluida")
+    save_game()
+    return true
+
+func save_game() -> bool:
+    var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+    if file == null:
+        return false
+    var data := {"schema": 1, "name": character_name, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked}
+    file.store_string(JSON.stringify(data))
+    return true
+
+func load_game() -> bool:
+    if not FileAccess.file_exists(SAVE_PATH):
+        return false
+    var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
+    if file == null:
+        return false
+    var parsed: Variant = JSON.parse_string(file.get_as_text())
+    if not (parsed is Dictionary) or parsed.get("schema", -1) != 1:
+        return false
+    character_name = str(parsed.get("name", "Viajante"))
+    difficulty = str(parsed.get("difficulty", "Normal"))
+    oath = str(parsed.get("oath", ""))
+    current_region = str(parsed.get("region", ""))
+    day = int(parsed.get("day", 1))
+    energy = int(parsed.get("energy", 40))
+    agility_xp = int(parsed.get("agility_xp", 0))
+    events.clear()
+    for event in parsed.get("events", []):
+        if event is Dictionary:
+            events.append(event)
+    npc_memory = parsed.get("npc_memory", {})
+    region_reputation = parsed.get("reputation", {})
+    wave_number = int(parsed.get("wave", 0))
+    dungeon_unlocked = bool(parsed.get("dungeon", false))
+    return true
