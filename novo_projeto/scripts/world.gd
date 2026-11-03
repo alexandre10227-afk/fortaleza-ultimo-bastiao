@@ -650,7 +650,7 @@ func _gather_nearby() -> void:
 func _current_tavern_visitors() -> Array[Dictionary]:
     var visitors: Array[Dictionary] = preload("res://scripts/town_system.gd").tavern_visitors(GameState.current_region, GameState.day, GameState.npc_lives)
     if GameState.duke_tavern_visitor() and not bool(GameState.duke_state.get("daughter_recruited", false)):
-        visitors.append({"id": DUKE.DAUGHTER_ID, "name": "Herdeira do Duque", "rarity": "S", "home": "Porto Cinzento", "profession": "Espadachim"})
+        visitors.append({"id": DUKE.DAUGHTER_ID, "name": "Herdeira do Duque", "rarity": "S", "home": "Porto Cinzento", "profession": "Espadachim", "departure_day": int(GameState.duke_state.get("daughter_tavern_departure", GameState.day + 4))})
     return visitors
 
 func _talk_in_manor() -> void:
