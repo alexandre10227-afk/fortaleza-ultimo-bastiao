@@ -44,6 +44,9 @@ const NPC_GIFT_CATEGORY := {
     "selene": "Estudos",
     "duque": "Arte",
     "herdeira_duque": "Arte",
+    "iris_feirante": "Arte",
+    "bento_agricultor": "Comestiveis",
+    "lia_moradora": "Estudos",
 }
 const PROFESSION_GIFT_CATEGORY := {
     "Ferreiro": "Minerios",
@@ -55,6 +58,9 @@ const PROFESSION_GIFT_CATEGORY := {
     "Mercenaria": "Armas",
     "Escriba": "Estudos",
     "Artista": "Arte",
+    "Feirante": "Arte",
+    "Agricultor": "Comestiveis",
+    "Moradora": "Estudos",
 }
 const RARITY_BASE_AFFECTION := {"Comum":4,"Raro":7,"Epico":11,"Lendario":16}
 
