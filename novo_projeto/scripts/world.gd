@@ -764,3 +764,37 @@ func _present_to(npc: Dictionary) -> void:
     choices.append("Cancelar")
     var preference := ITEMS.preferred_category(str(npc.get("id", "")), str(npc.get("profession", "")))
     dialogue_ui.show_dialogue(str(npc.get("name", "Morador")), "Aceito somente presentes de %s. Outros itens serao recusados." % preference, choices)
+
+func _refresh_market() -> void:
+    _market_ids.clear()
+    var mode := "VENDA" if _market_selling else "COMPRA"
+    var title := "CARAVANA VIAJANTE" if _market_travelling else "MERCADO DA CIDADE"
+    var lines: Array[String] = ["%s | %s | Moedas: %d" % [title, mode, GameState.money]]
+    for id in ITEMS.ITEMS.keys():
+        var item_id := str(id)
+        var data: Dictionary = ITEMS.get_item(item_id)
+        var available := int(GameState.inventory.get(item_id, 0)) > 0
+        if _market_selling and not available:
+            continue
+        if not _market_travelling:
+            if active_interior == "Ferraria" and not ["Minerios", "Armas"].has(str(data["category"])):
+                continue
+            if active_interior == "Taverna" and str(data["category"]) != "Comestiveis":
+                continue
+        _market_ids.append(item_id)
+        var price := ITEMS.sell_price(item_id) if _market_selling else ITEMS.price(item_id, GameState.current_region, GameState.oath, _market_travelling)
+        lines.append("[%d] %s | %s | %s | %d moedas" % [_market_ids.size(), data["name"], data["category"], data["rarity"], price])
+        if _market_ids.size() == 5:
+            break
+    lines.append("1-5: confirmar | Z: compra/venda | O: reabrir | V: fechar")
+    town_panel.text = "\n".join(lines)
+    town_panel.visible = true
+
+func _market_transaction(index: int) -> void:
+    if index < 0 or index >= _market_ids.size():
+        return
+    var item_id := _market_ids[index]
+    var success := GameState.market_sell(item_id) if _market_selling else GameState.market_buy(item_id, _market_travelling)
+    last_message = ("Negociado: " if success else "Nao foi possivel negociar: ") + item_id
+    _refresh_market()
+    _refresh_hud()
