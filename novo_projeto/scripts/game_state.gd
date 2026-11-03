@@ -24,6 +24,13 @@ var money := 60
 var inventory: Dictionary = {"pao": 2}
 var recruited: Array[String] = []
 var discovered_regions: Array[String] = ["Fortaleza", "Porto Cinzento"]
+var quest_progress: Dictionary = {}
+var collected_nodes: Dictionary = {}
+const OPENING_QUESTS := {
+    "doran": {"item": "ferro", "amount": 3, "reward": 35, "title": "Ferro para as muralhas"},
+    "elira": {"item": "ervas", "amount": 3, "reward": 35, "title": "Suprimentos do porto"},
+}
+
 
 func new_game(hero_name: String, mode: String) -> void:
     character_name = hero_name.strip_edges().substr(0, 24)
@@ -44,6 +51,8 @@ func new_game(hero_name: String, mode: String) -> void:
     inventory = {"pao": 2}
     recruited.clear()
     discovered_bestiary.clear()
+    quest_progress.clear()
+    collected_nodes.clear()
     record_event("character_created", "Palacio", [character_name], "Criacao do protagonista")
 
 func choose_oath(protect: bool) -> void:
@@ -115,11 +124,46 @@ func recruit_visitor(npc: Dictionary) -> bool:
     save_game()
     return true
 
+func start_quest(npc_id: String) -> bool:
+    if not OPENING_QUESTS.has(npc_id) or quest_progress.has(npc_id):
+        return false
+    quest_progress[npc_id] = "active"
+    record_event("quest_started", current_region, [npc_id], str(OPENING_QUESTS[npc_id]["title"]))
+    save_game()
+    return true
+
+func complete_quest(npc_id: String) -> bool:
+    if quest_progress.get(npc_id, "") != "active" or not OPENING_QUESTS.has(npc_id):
+        return false
+    var quest: Dictionary = OPENING_QUESTS[npc_id]
+    var item_id := str(quest["item"])
+    var amount := int(quest["amount"])
+    if int(inventory.get(item_id, 0)) < amount:
+        return false
+    inventory[item_id] = int(inventory[item_id]) - amount
+    money += int(quest["reward"])
+    quest_progress[npc_id] = "complete"
+    remember(npc_id, "missao_concluida")
+    record_event("quest_completed", current_region, [npc_id], str(quest["title"]))
+    save_game()
+    return true
+
+func collect_resource(node_id: String, item_id: String) -> bool:
+    if not ["ferro", "ervas"].has(item_id):
+        return false
+    if int(collected_nodes.get(node_id, -1)) == day:
+        return false
+    collected_nodes[node_id] = day
+    inventory[item_id] = int(inventory.get(item_id, 0)) + 1
+    record_event("resource_collected", current_region, [character_name], "Coletou " + item_id)
+    save_game()
+    return true
+
 func save_game() -> bool:
     var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if file == null:
         return false
-    var data := {"schema": 1, "name": character_name, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "recruited": recruited, "bestiary": discovered_bestiary}
+    var data := {"schema": 1, "name": character_name, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "recruited": recruited, "bestiary": discovered_bestiary, "quests": quest_progress, "collected_nodes": collected_nodes}
     file.store_string(JSON.stringify(data))
     return true
 
@@ -153,4 +197,6 @@ func load_game() -> bool:
     for id in parsed.get("recruited", []):
         recruited.append(str(id))
     discovered_bestiary = parsed.get("bestiary", {})
+    quest_progress = parsed.get("quests", {})
+    collected_nodes = parsed.get("collected_nodes", {})
     return true
