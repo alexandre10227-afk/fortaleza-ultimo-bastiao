@@ -27,6 +27,7 @@ static func initial_state() -> Dictionary:
         "armor_claimed": false, "daughter_recruited": false,
         "daughter_rank": "S", "daughter_evolved": false,
         "daughter_quest_complete": false, "daughter_tavern_checks": {},
+        "daughter_tavern_arrival": -1, "daughter_tavern_departure": -1,
     }
 
 static func can_visit_for_question(state: Dictionary, day: int, wave: int) -> bool:
@@ -91,8 +92,12 @@ static func daughter_at_manor(state: Dictionary) -> bool:
     return bool(state.get("daughter_unlocked", false)) and bool(state.get("cutscene_seen", false))
 
 static func tavern_roll(state: Dictionary, day: int, wave: int, roll_0_to_99: int) -> bool:
-    if wave <= DAUGHTER_TAVERN_WAVE or str(state.get("status", "")) != "died_at_home":
+    if wave <= DAUGHTER_TAVERN_WAVE or str(state.get("status", "")) != "died_at_home" or bool(state.get("daughter_recruited", false)):
         return false
+    var arrival := int(state.get("daughter_tavern_arrival", -1))
+    var departure := int(state.get("daughter_tavern_departure", -1))
+    if arrival >= 0 and day >= arrival and day < departure:
+        return true
     var checks: Dictionary = state.get("daughter_tavern_checks", {})
     if checks.has(str(day)):
         return bool(checks[str(day)])
@@ -101,6 +106,8 @@ static func tavern_roll(state: Dictionary, day: int, wave: int, roll_0_to_99: in
     state["daughter_tavern_checks"] = checks
     if appeared:
         state["daughter_unlocked"] = true
+        state["daughter_tavern_arrival"] = day
+        state["daughter_tavern_departure"] = day + 4
     return appeared
 
 static func can_evolve_daughter(state: Dictionary, materials: Dictionary) -> bool:
