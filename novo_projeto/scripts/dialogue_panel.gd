@@ -5,6 +5,7 @@ signal choice_selected(index: int)
 signal dialogue_closed
 const CHARACTER_INTERVAL := 0.025
 var speaker_label: Label
+var portrait_letter: Label
 var body_label: RichTextLabel
 var choice_column: VBoxContainer
 var continue_button: Button
@@ -74,6 +75,22 @@ func _ready() -> void:
     name_style.content_margin_right = 12
     name_frame.add_theme_stylebox_override("panel", name_style)
     add_child(name_frame)
+    var portrait_panel := PanelContainer.new()
+    portrait_panel.name = "OriginalPortraitFrame"
+    portrait_panel.anchor_left = .025
+    portrait_panel.anchor_right = .118
+    portrait_panel.anchor_top = 1.0
+    portrait_panel.anchor_bottom = 1.0
+    portrait_panel.offset_top = -248
+    portrait_panel.offset_bottom = -70
+    UI.apply_panel(portrait_panel)
+    add_child(portrait_panel)
+    portrait_letter = Label.new()
+    portrait_letter.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    portrait_letter.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+    portrait_letter.add_theme_font_size_override("font_size", 53)
+    portrait_letter.add_theme_color_override("font_color", UI.MUTED_GOLD)
+    portrait_panel.add_child(portrait_letter)
     speaker_label = Label.new()
     speaker_label.name = "Speaker"
     speaker_label.add_theme_font_size_override("font_size", 21)
@@ -117,6 +134,7 @@ func _make_nine_slice() -> StyleBoxTexture:
 
 func show_dialogue(speaker: String, message: String, choices: Array = []) -> void:
     speaker_label.text = speaker
+    portrait_letter.text = speaker.substr(0, 1).to_upper()
     body_label.text = message
     body_label.visible_characters = 0
     _full_length = message.length()
