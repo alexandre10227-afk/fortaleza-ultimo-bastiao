@@ -1,5 +1,6 @@
 extends Node3D
 const UI = preload("res://scripts/ui_theme.gd")
+const STORY = preload("res://scripts/story_content.gd")
 
 var player: Node3D
 var hud: Label
@@ -486,15 +487,19 @@ func _talk_to_nearest_npc() -> void:
         last_message = "Nao ha moradores proximos para conversar."
     else:
         var id := str(npc["id"])
-        var first_meeting := not GameState.npc_memory.has(id)
-        GameState.remember(id, "primeiro_encontro" if first_meeting else "conversa")
+        var memory_count := 0
+        if GameState.npc_memory.has(id):
+            memory_count = GameState.npc_memory[id].size()
+        GameState.remember(id, "primeiro_encontro" if memory_count == 0 else "conversa")
         GameState.save_game()
         _dialogue_npc = npc
         var options := ["Conte-me sobre seu trabalho."]
         if GameState.OPENING_QUESTS.has(id):
             options.append("Precisa de ajuda? / Entregar materiais")
         options.append("Ate logo.")
-        dialogue_ui.show_dialogue(str(npc["name"]), str(npc["dialogue"]), options)
+        var quest_status := str(GameState.quest_progress.get(id, ""))
+        var line := STORY.npc_line(id, GameState.oath, quest_status, memory_count)
+        dialogue_ui.show_dialogue(str(npc["name"]), line, options)
     _refresh_hud()
 
 func _create_dialogue_ui() -> void:
