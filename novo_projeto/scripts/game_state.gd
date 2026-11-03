@@ -189,7 +189,7 @@ func duke_answer(selected: int) -> Dictionary:
     return answer
 
 func duke_recruit() -> bool:
-    if current_region != "Fortaleza" or not DUKE.recruit_duke(duke_state, wave_number):
+    if current_region != "Fortaleza" or oath == "exile" or not DUKE.recruit_duke(duke_state, wave_number):
         return false
     if not recruited.has("duque"):
         recruited.append("duque")
