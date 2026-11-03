@@ -288,3 +288,25 @@ O código e as cenas iniciais do `novo_projeto/` continuam **em desenvolvimento*
 - Estruturas iniciais no `novo_projeto/`: `friendship_system.gd`, `town_system.gd`, `game_state.gd`, `duke_event.gd` e `world.gd`. Testes de regressao criados/atualizados, ainda requerendo execucao da versao sincronizada antes de qualquer entrega.
 
 **Importante:** esse sistema de agendas e uma base funcional de dados e regras; movimentacao animada e rotina fisica completa dos NPCs em cena ainda pertencem a iteracoes futuras. Mantem-se a regra de nao gerar ZIP antes da conclusao da etapa, otimizacao, polimento e testes.
+
+
+## Adendo 1.5 — Categorias exclusivas de presentes, itens e economia (03/11/2026)
+
+### Regra de presentes aprovada
+Cada NPC tem **exatamente uma categoria de itens preferida** e **recusa todas as demais**. Presentes recusados **nao consomem inventario, nao alteram amizade e nao sao contabilizados como presentes entregues**. A raridade define a quantidade de pontos recebidos quando o item e da categoria correta. Um personagem aceita, no maximo, um presente por dia. A amizade continua com os cinco niveis aprovados; presentes nao removem requisitos excepcionais de personagens especiais, incluindo as seis charadas do Duque.
+
+Preferencias iniciais, sujeitas a evolucao narrativa: **Doran — Minerios; Elira — Armas; Mira — Comestiveis; Kael — Armas; Selene — Estudos; Duque — Arte; Herdeira do Duque — Arte**. NPCs novos podem receber a categoria definida por sua historia ou profissao, mas nunca mais de uma categoria simultaneamente.
+
+### Inventario e raridade
+Raridades comerciaveis: **Comum, Raro, Epico e Lendario**. Categorias: **Arte** (estatuas, xicaras antigas, pinturas), **Comestiveis** (frutas, legumes, carnes, sopas), **Estudos** (livros, pergaminhos, penas), **Minerios** (pedras incomuns, cristais, meteoritos) e **Armas comuns/cerimoniais** (espada de madeira, bainha sob medida, espada de cerimonia).
+**Espada do Heroi** e **Armadura do Duque** sao itens **especiais isolados**: nunca integram a tabela de compra, venda, presente ou receitas comuns.
+
+### Economia e utilizacao
+- Compra e venda por moedas em mercados locais; caravanas de mercadores viajantes trazem itens de varias categorias e cobram acrescimo inicial de 20% sobre o preco normal. Na Fortaleza, os precos do Exilado continuam 3 vezes mais altos.
+- Comestiveis consumidos fornecem bonus temporarios de atributos. Comer e presentear sao acoes diferentes e consomem um item cada quando bem sucedidas.
+- Fabricacao: materiais, dinheiro, receita e nivel minimo de oficina/ferraria/cozinha/escritorio.
+- Construcoes: melhorias custam dinheiro e materiais, com limite absoluto de nivel 5.
+- Evitar abusos: nao comprar/vender itens especiais; nao permitir fabricar acima do nivel; sem amizade por recusas; um presente por NPC por dia; salvamento persistente de economia, construcao, bonus e presentes.
+
+### Implementacao e limites
+Arquivos iniciais: `novo_projeto/scripts/item_catalog.gd`, `unique_weapons.gd`, `economy_system.gd`, `game_state.gd`, `world.gd`. Primeiro menu de presentes e mercado integrado; interface e representacao visual ainda sao temporarias. Fabricacao/obras precisam de interfaces completas e balanceamento antes da etapa de aceite. Testes novos em `tests/test_item_economy.gd`, cuja execucao na versao remota ainda precisa ser feita. **Nao gerar ZIP antes de otimizar, testar e polir a Etapa 1 completa.**
