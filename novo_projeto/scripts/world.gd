@@ -245,8 +245,21 @@ func _unhandled_key_input(event: InputEvent) -> void:
             var selected: int = event.keycode - KEY_1
             if town_panel.visible and selected < visitors.size():
                 var npc: Dictionary = visitors[selected]
-                var success := GameState.duke_daughter_recruit() if str(npc.get("id", "")) == DUKE.DAUGHTER_ID else GameState.recruit_visitor(npc)
-                last_message = ("Recrutado: " if success else "Recrutamento bloqueado: ") + str(npc["name"])
+                var npc_id := str(npc.get("id", ""))
+                var success := false
+                if npc_id == DUKE.DAUGHTER_ID:
+                    success = GameState.duke_daughter_recruit()
+                elif GameState.recruited.has(npc_id):
+                    last_message = "Esse aventureiro ja integra seu grupo."
+                elif not preload("res://scripts/town_system.gd").can_recruit(npc, GameState.oath):
+                    last_message = "Este residente nao pode ser recrutado por um Exilado."
+                elif GameState.recruit_visitor(npc):
+                    success = true
+                else:
+                    GameState.gain_friendship(npc_id, 10, "taverna", true)
+                    last_message = "Vinculo com %s: %d/100 (%s). Converse em outros dias para criar confianca." % [npc["name"], GameState.friendship_points(npc_id), GameState.friendship_level(npc_id)]
+                if success:
+                    last_message = "Recrutado: " + str(npc["name"])
                 _refresh_tavern()
                 _refresh_hud()
         KEY_F5:
@@ -267,7 +280,9 @@ func _refresh_tavern() -> void:
     for i in range(visitors.size()):
         var npc: Dictionary = visitors[i]
         var can_join: bool = true if str(npc.get("id", "")) == DUKE.DAUGHTER_ID else preload("res://scripts/town_system.gd").can_recruit(npc, GameState.oath)
-        lines.append("[%d] %s (%s) / %s %s" % [i + 1, npc["name"], npc["rarity"], npc["profession"], "" if can_join else "[NAO RECRUTAVEL]"])
+        var id := str(npc["id"])
+        var affinity := "Especial" if id == DUKE.DAUGHTER_ID else "%d/100 (%s)" % [GameState.friendship_points(id), GameState.friendship_level(id)]
+        lines.append("[%d] %s (%s) / %s / %s %s" % [i + 1, npc["name"], npc["rarity"], npc["profession"], affinity, "" if can_join else "[NAO RECRUTAVEL]"])
     lines.append("Teclas 1-5: tentar recrutar | V: fechar")
     lines.append("Pao: %d moedas | B: comprar" % preload("res://scripts/town_system.gd").price("pao", GameState.current_region, GameState.oath))
     town_panel.text = "\n".join(lines)
@@ -505,6 +520,7 @@ func _talk_to_nearest_npc() -> void:
         if GameState.npc_memory.has(id):
             memory_count = GameState.npc_memory[id].size()
         GameState.remember(id, "primeiro_encontro" if memory_count == 0 else "conversa")
+        GameState.gain_friendship(id, 8, "dialogo", true)
         GameState.save_game()
         _dialogue_npc = npc
         var options := ["Conte-me sobre seu trabalho."]
@@ -513,6 +529,7 @@ func _talk_to_nearest_npc() -> void:
         options.append("Ate logo.")
         var quest_status := str(GameState.quest_progress.get(id, ""))
         var line := STORY.npc_line(id, GameState.oath, quest_status, memory_count)
+        line += "\nVinculo: %d/100 — %s." % [GameState.friendship_points(id), GameState.friendship_level(id)]
         dialogue_ui.show_dialogue(str(npc["name"]), line, options)
     _refresh_hud()
 
