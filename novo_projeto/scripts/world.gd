@@ -592,6 +592,11 @@ func _generate_map_dialog() -> void:
         UI.apply_button(button)
         button.pressed.connect(_travel_to.bind(destination))
         layout.add_child(button)
+    var scout_button := Button.new()
+    scout_button.text = "Enviar expedicao de reconhecimento (10 moedas, 5 energia)"
+    UI.apply_button(scout_button)
+    scout_button.pressed.connect(_launch_scouting)
+    layout.add_child(scout_button)
     var codex := Button.new()
     codex.text = "Consultar NPCs por categoria"
     UI.apply_button(codex)
@@ -604,6 +609,14 @@ func _generate_map_dialog() -> void:
     layout.add_child(close)
     get_node("CanvasLayer/Control").add_child(map_dialog)
     map_dialog.visible = false
+
+func _launch_scouting() -> void:
+    var destination := "Estrada da Fortaleza" if GameState.current_region == "Fortaleza" else "Caminho de Porto Cinzento"
+    var success := GameState.launch_reconnaissance(destination)
+    last_message = "Expedicao enviada: volta em 2 dias." if success else "Expedicao indisponivel: dinheiro ou energia insuficientes, ou ja existe uma ativa."
+    map_open = false
+    map_dialog.visible = false
+    _refresh_hud()
 
 func _toggle_map() -> void:
     map_open = not map_open
