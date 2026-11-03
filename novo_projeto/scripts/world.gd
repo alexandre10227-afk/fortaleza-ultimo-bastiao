@@ -99,7 +99,8 @@ func _generate_world() -> void:
     world_env.environment.background_mode = Environment.BG_COLOR
     world_env.environment.background_color = Color("#9cb4ad")
     add_child(world_env)
-    var settlement := Node3D.new()
+    settlement = Node3D.new()
+    settlement.name = "RegionSettlement"
     add_child(settlement)
     _make_terrain_texture(settlement)
     interior_node = Node3D.new()
@@ -129,7 +130,7 @@ func _generate_world() -> void:
     physical_shape.shape = capsule
     physical_shape.position.y = 0.78
     player.add_child(physical_shape)
-    player.position = Vector3(0, 0, 13)
+    player.position = GameState.get_region_position()
     add_child(player)
     var character := Sprite3D.new()
     character.texture = _make_sprite_texture(GameState.character_appearance + 1)
@@ -206,28 +207,43 @@ func _generate_ui() -> void:
     town_panel.add_theme_color_override("default_color", UI.LIGHT_TEXT)
 
 func _process(delta: float) -> void:
-    if map_open or (dialogue_ui != null and dialogue_ui.visible) or (npc_menu != null and npc_menu.is_open()) or (character_sheet != null and character_sheet.visible):
+    if _controls_blocked():
         return
     _hint_accumulator += delta
-    var direction := Vector3.ZERO
-    if Input.is_key_pressed(KEY_W): direction.z -= 1.0
-    if Input.is_key_pressed(KEY_S): direction.z += 1.0
-    if Input.is_key_pressed(KEY_A): direction.x -= 1.0
-    if Input.is_key_pressed(KEY_D): direction.x += 1.0
-    if direction.length_squared() > 0:
-        var target := player.position + direction.normalized() * WALK_SPEED * delta
-        target.x = clampf(target.x, -26, 26)
-        target.z = clampf(target.z, -29, 29)
-        if active_interior.is_empty():
-            if not _is_blocked(target):
-                player.velocity = direction.normalized() * WALK_SPEED
-                player.move_and_slide()
-        else:
-            player.position = Vector3(clampf(target.x, -5.2, 5.2), 0, clampf(target.z, -4.5, 4.5))
-        camera.position = player.position + Vector3(16, 19, 23)
     if _hint_accumulator >= HINT_REFRESH_SECONDS:
         _hint_accumulator = 0.0
         _update_hint()
+
+func _controls_blocked() -> bool:
+    return map_open or (dialogue_ui != null and dialogue_ui.visible) or (npc_menu != null and npc_menu.is_open()) or (character_sheet != null and character_sheet.visible)
+
+func _physics_process(delta: float) -> void:
+    if player == null:
+        return
+    var direction := Vector3.ZERO
+    if not _controls_blocked():
+        if Input.is_key_pressed(KEY_W): direction.z -= 1.0
+        if Input.is_key_pressed(KEY_S): direction.z += 1.0
+        if Input.is_key_pressed(KEY_A): direction.x -= 1.0
+        if Input.is_key_pressed(KEY_D): direction.x += 1.0
+    direction = direction.normalized()
+    var target := player.position + direction * WALK_SPEED * delta
+    target.x = clampf(target.x, -26.0, 26.0)
+    target.z = clampf(target.z, -29.0, 29.0)
+    if active_interior.is_empty():
+        player.velocity = direction * WALK_SPEED
+        if direction != Vector3.ZERO and not _is_blocked(target):
+            player.move_and_slide()
+        else:
+            player.velocity = Vector3.ZERO
+        player.position.x = clampf(player.position.x, -26.0, 26.0)
+        player.position.z = clampf(player.position.z, -29.0, 29.0)
+        if direction != Vector3.ZERO:
+            GameState.set_region_position(player.position)
+    elif direction != Vector3.ZERO:
+        player.velocity = Vector3.ZERO
+        player.position = Vector3(clampf(target.x, -5.2, 5.2), 0, clampf(target.z, -4.5, 4.5))
+    camera.position = player.position + Vector3(16, 19, 23)
 
 func _unhandled_key_input(event: InputEvent) -> void:
     if not event is InputEventKey or not event.pressed or event.echo:
@@ -429,6 +445,7 @@ func _interact() -> void:
             last_message = "Nao ha entrada perto de voce."
         else:
             _interior_return_position = player.position
+            GameState.set_region_position(player.position)
             active_interior = str(target["room"])
             settlement.visible = false
             interior_node.visible = true
@@ -517,7 +534,7 @@ func _travel_to(destination: String) -> void:
         active_interior = ""
         settlement.visible = true
         interior_node.visible = false
-        player.position = Vector3(0, 0, 13)
+        player.position = GameState.get_region_position()
         _interior_return_position = player.position
         _apply_region_theme()
         last_message = "Viagem concluida: -5 energia e XP de Agilidade."
