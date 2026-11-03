@@ -9,6 +9,14 @@ func run_tests() -> void:
     var unique = load("res://scripts/unique_weapons.gd")
     var economy = load("res://scripts/economy_system.gd")
     assert(catalog.is_valid_catalog())
+    for npc_id in catalog.NPC_GIFT_CATEGORY:
+        var only_category := str(catalog.NPC_GIFT_CATEGORY[npc_id])
+        assert(catalog.CATEGORIES.has(only_category))
+        for item_id in catalog.ITEMS:
+            var should_accept := str(catalog.ITEMS[item_id]["category"]) == only_category
+            assert(catalog.accepts_gift(str(npc_id), "Nobre", str(item_id)) == should_accept)
+            if not should_accept:
+                assert(catalog.gift_affection(str(npc_id), "Nobre", str(item_id)) == 0)
     assert(catalog.ITEMS.size() >= 20)
     assert(catalog.RARITIES.size() == 4)
     assert(catalog.preferred_category("doran", "Ferreiro") == "Minerios")
