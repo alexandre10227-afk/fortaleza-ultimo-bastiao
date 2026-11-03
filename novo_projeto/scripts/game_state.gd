@@ -242,7 +242,11 @@ func give_gift(npc_id: String, profession: String, item_id: String) -> bool:
     elif npc_id == DUKE.DAUGHTER_ID:
         duke_state["daughter_friendship"] = mini(100, int(duke_state.get("daughter_friendship", 0)) + affinity)
     else:
-        gain_friendship(npc_id, affinity, "presente")
+        var old_points := friendship_points(npc_id)
+        var next_points := FRIENDSHIP.adjust(old_points, affinity)
+        npc_friendship[npc_id] = next_points
+        if FRIENDSHIP.level_name(old_points) != FRIENDSHIP.level_name(next_points):
+            record_event("friendship_level", current_region, [npc_id], "%s: %s" % [npc_id, FRIENDSHIP.level_name(next_points)])
     remember(npc_id, "presente_" + item_id)
     record_event("gift", current_region, [npc_id], "Presente aceito: %s (+%d amizade)" % [item_id, affinity])
     save_game()
