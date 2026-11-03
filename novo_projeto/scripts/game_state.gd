@@ -26,6 +26,7 @@ var recruited: Array[String] = []
 var discovered_regions: Array[String] = ["Fortaleza", "Porto Cinzento"]
 var quest_progress: Dictionary = {}
 var collected_nodes: Dictionary = {}
+var narrative_flags: Dictionary = {}
 const OPENING_QUESTS := {
     "doran": {"item": "ferro", "amount": 3, "reward": 35, "title": "Ferro para as muralhas"},
     "elira": {"item": "ervas", "amount": 3, "reward": 35, "title": "Suprimentos do porto"},
@@ -53,7 +54,16 @@ func new_game(hero_name: String, mode: String) -> void:
     discovered_bestiary.clear()
     quest_progress.clear()
     collected_nodes.clear()
+    narrative_flags.clear()
     record_event("character_created", "Palacio", [character_name], "Criacao do protagonista")
+
+func record_narrative_choice(key: String, value: String) -> bool:
+    if narrative_flags.has(key):
+        return false
+    narrative_flags[key] = value
+    record_event("narrative_choice", "Palacio", [character_name], key + ": " + value)
+    save_game()
+    return true
 
 func choose_oath(protect: bool) -> void:
     if not oath.is_empty():
@@ -163,7 +173,7 @@ func save_game() -> bool:
     var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if file == null:
         return false
-    var data := {"schema": 1, "name": character_name, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "recruited": recruited, "bestiary": discovered_bestiary, "quests": quest_progress, "collected_nodes": collected_nodes}
+    var data := {"schema": 1, "name": character_name, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "recruited": recruited, "bestiary": discovered_bestiary, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags}
     file.store_string(JSON.stringify(data))
     return true
 
@@ -199,4 +209,5 @@ func load_game() -> bool:
     discovered_bestiary = parsed.get("bestiary", {})
     quest_progress = parsed.get("quests", {})
     collected_nodes = parsed.get("collected_nodes", {})
+    narrative_flags = parsed.get("narrative_flags", {})
     return true
