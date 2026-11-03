@@ -94,3 +94,20 @@ Controles temporários no mundo: `V` abre visitantes da taverna; teclas `1` a `5
 - **Limitações:** cenário ainda usa blocos 3D; NPCs mudam de posição no calendário, mas ainda não caminham animados em tempo real; não há biomas finalizados nem cidades com plantas arquitetônicas próprias. Não tratar esta atualização como arte final.
 
 **Em seguida:** organizar mapas e interiores em cenas reutilizáveis, criar animação de movimento e rotina real de NPCs e integrar missões iniciais. Antes do ZIP haverá otimização e polimento artístico obrigatórios.
+
+
+## Incremento: caixa de diálogo oriental original 9-slice (03/11/2026)
+
+**Implementado:** componente reutilizável `scripts/dialogue_panel.gd`, integrado às cenas `start.gd` (audiência com Rei Aldric) e `world.gd` (conversas com residentes).
+
+- Moldura original com visual **madeira/pergaminho**, criada proceduralmente (não são arquivos extraídos de Hero's Adventure).
+- `StyleBoxTexture` com **margens 9-slice de 16 px** para preservar os quatro cantos quando o painel é redimensionado.
+- Caixa de nome (`NameBox`), texto progressivo **Typewriter** (0,025 s por caractere), botão para avançar e opção de pular a animação.
+- Escolhas clicáveis que disparam sinal; o juramento do rei aplica Guardião ou Exilado, e os NPCs têm primeira pergunta e despedida.
+- Durante a conversa, os controles de movimentação e os atalhos da exploração ficam bloqueados; a interface usa apenas um componente e pode ser reaproveitada em missões e romances.
+- `tests/test_dialogue.gd`: verifica nome, revelação, pulo da animação, opções, sinal e fechamento.
+- **Testado localmente no Godot 4.7.2**: seis testes (`test_state`, `test_town`, `test_exploration`, `test_optimization`, `test_regions`, `test_dialogue`) aprovados em headless. Inicialização da cena principal também não mostrou erro no teste headless.
+
+**Pendente:** arte/texturas definitivas, fonte caligráfica licenciada, retratos individuais, sons de máquina de escrever, transições animadas, navegação por controle e validação visual em resolução diferente. Não confundir com UI final polida nem com etapa concluída.
+
+**Entrega:** sem ZIP; valem as exigências de otimização, revisão de interface e medição de desempenho antes do pacote de aceitação.
