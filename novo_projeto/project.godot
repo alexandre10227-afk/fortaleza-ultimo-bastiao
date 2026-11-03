@@ -1,0 +1,17 @@
+config_version=5
+
+[application]
+config/name="Fortaleza: Ultimo Bastiao - Nova Etapa 1"
+run/main_scene="res://scenes/start.tscn"
+config/features=PackedStringArray("4.3", "GL Compatibility")
+
+[autoload]
+GameState="*res://scripts/game_state.gd"
+
+[display]
+window/size/viewport_width=1200
+window/size/viewport_height=720
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
