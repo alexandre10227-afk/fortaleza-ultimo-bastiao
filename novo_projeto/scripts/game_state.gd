@@ -222,6 +222,14 @@ func give_gift(npc_id: String, profession: String, item_id: String) -> bool:
     # Nenhum NPC aceita itens de outra categoria. Recusa nao consome nem pontua.
     if not ITEMS.accepts_gift(npc_id, profession, item_id):
         return false
+    if npc_id == "duque" and (not bool(duke_state.get("duke_alive", false)) or current_region != "Fortaleza"):
+        return false
+    if npc_id == DUKE.DAUGHTER_ID and not bool(duke_state.get("daughter_unlocked", false)):
+        return false
+    if npc_lives.has(npc_id) and not recruited.has(npc_id):
+        var life: Dictionary = npc_lives[npc_id]
+        if life.get("region", "") != current_region or life.get("status", "") == "travelling":
+            return false
     if int(inventory.get(item_id, 0)) <= 0 or int(last_gift_day.get(npc_id, -1)) == day:
         return false
     var affinity := ITEMS.gift_affection(npc_id, profession, item_id)
