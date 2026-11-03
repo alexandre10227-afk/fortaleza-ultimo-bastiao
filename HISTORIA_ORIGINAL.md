@@ -73,3 +73,14 @@ Arquivos:
 - `tests/test_story.gd`: regressão das escolhas, consequências iniciais e save/load.
 
 **Restrições remanescentes:** Os dois atos iniciais são esboços; histórias pessoais completas, sistema de consequências complexo, chefes e cinco finais jogáveis permanecem para etapas posteriores. A interface visual e a narrativa requerem revisão em janela e polimento antes do ZIP.
+
+
+## História secundária especial — O Último Juramento do Duque
+
+O Duque (herói rank A) vive na mansão da Fortaleza e testa a integridade do protagonista com seis charadas diárias sobre dever, compaixão, verdade, confiança, escassez e legado. A amizade deve chegar a 75 pontos até antes da onda 10. Ao ser recrutado, ele decide defender a cidade com o grupo.
+
+**Caminho especial:** na décima onda aparece um boss extra, o Carrasco do Juramento. Após a vitória, uma cutscene mostra a morte permanente do Duque, e o jogador recebe a Armadura do Duque, item único. A filha do Duque (rank S) passa a residir na mansão e pode ser recrutada. Sua missão, **O Legado da Armadura**, exige apresentar o item do pai; para evoluir a rank SS precisa ainda de materiais raros da Masmorra Antiga do Lago.
+
+**Caminho perdido:** sem recrutamento elegível até o início da onda 10, o Duque morre em casa e não há boss extra nem armadura. Sua filha poderá aparecer na taverna após a onda 30, com chance de 1% por renovação diária elegível, permanecendo no rank S sem acesso à evolução baseada na armadura.
+
+As seis charadas e os diálogos são conteúdo original. **O boss extra, a cinematografia da morte e a evolução visual/combatente ainda são conteúdo planejado para as próximas etapas, não encontros completos já programados.**
