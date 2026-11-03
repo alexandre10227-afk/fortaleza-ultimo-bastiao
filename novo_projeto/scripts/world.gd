@@ -14,6 +14,7 @@ var last_message := ""
 var active_interior := ""
 var interior_node: Node3D
 var map_dialog: PanelContainer
+var travel_map_canvas: Control
 var map_open := false
 var interact_hint: Label
 var settlement: Node3D
@@ -242,6 +243,12 @@ func _physics_process(delta: float) -> void:
         if Input.is_key_pressed(KEY_D): direction.x += 1.0
     direction = direction.normalized()
     var target := player.position + direction * WALK_SPEED * delta
+    if active_interior.is_empty() and direction != Vector3.ZERO and (absf(target.x) >= 26.0 or absf(target.z) >= 29.0):
+        map_open = true
+        map_dialog.visible = true
+        travel_map_canvas.configure(GameState.current_region)
+        player.velocity = Vector3.ZERO
+        return
     target.x = clampf(target.x, -26.0, 26.0)
     target.z = clampf(target.z, -29.0, 29.0)
     if active_interior.is_empty():
@@ -517,12 +524,16 @@ func _generate_map_dialog() -> void:
     map_dialog = PanelContainer.new()
     UI.apply_panel(map_dialog)
     map_dialog.position = Vector2(370, 165)
-    map_dialog.custom_minimum_size = Vector2(450, 260)
+    map_dialog.custom_minimum_size = Vector2(600, 455)
     var layout := VBoxContainer.new()
     map_dialog.add_child(layout)
     var title := Label.new()
-    title.text = "MAPA MUNDIAL | viagem: 5 energia"
+    title.text = "MAPA DO VALE | Viagem: 5 energia + XP de Agilidade"
+    UI.apply_title(title)
     layout.add_child(title)
+    travel_map_canvas = preload("res://scripts/travel_map.gd").new()
+    layout.add_child(travel_map_canvas)
+    travel_map_canvas.destination_selected.connect(_travel_to)
     for destination in ["Fortaleza", "Porto Cinzento"]:
         var button := Button.new()
         button.text = "Viajar para " + destination
@@ -544,6 +555,8 @@ func _generate_map_dialog() -> void:
 
 func _toggle_map() -> void:
     map_open = not map_open
+    if map_open:
+        travel_map_canvas.configure(GameState.current_region)
     map_dialog.visible = map_open
 
 func _travel_to(destination: String) -> void:
