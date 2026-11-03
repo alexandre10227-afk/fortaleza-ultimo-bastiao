@@ -7,6 +7,7 @@ const NPCS = preload("res://scripts/npc_registry.gd")
 const ROUTINES = preload("res://scripts/npc_daily_routines.gd")
 const ACTOR_ANIM = preload("res://scripts/actor_animation.gd")
 const GEAR = preload("res://scripts/equipment_catalog.gd")
+const TEXTURES = preload("res://scripts/world_texture_factory.gd")
 
 var player: CharacterBody3D
 var hud: Label
@@ -89,8 +90,8 @@ func _make_box(parent: Node3D, location: Vector3, dimensions: Vector3, tint: Col
     mesh.position = location
     var key := tint.to_html()
     if not _shared_materials.has(key):
-        var mat := StandardMaterial3D.new()
-        mat.albedo_color = tint
+        var material_kind := "stone" if dimensions.y >= 2.6 and tint.r > .35 and tint.g > .35 and tint.b > .35 else "wood" if dimensions.y >= 1.2 else "road" if dimensions.x >= 4.0 and dimensions.y < 0.2 else "grass"
+        var mat := TEXTURES.material_for(material_kind, Color.WHITE.lerp(tint, 0.22))
         _shared_materials[key] = mat
     mesh.material_override = _shared_materials[key]
     parent.add_child(mesh)
@@ -125,8 +126,7 @@ func _decorate_house(side: float, z: float, index: int) -> void:
         var tint := Color("#574139") if index in [0, 2] else Color("#4e514b")
         var material_key := tint.to_html()
         if not _shared_materials.has(material_key):
-            var roof_mat := StandardMaterial3D.new()
-            roof_mat.albedo_color = tint
+            var roof_mat := TEXTURES.material_for("wood", Color.WHITE.lerp(tint, 0.20))
             _shared_materials[material_key] = roof_mat
         roof.material_override = _shared_materials[material_key]
         settlement.add_child(roof)
@@ -690,6 +690,8 @@ func _make_terrain_texture(parent: Node3D) -> void:
     var mat := StandardMaterial3D.new()
     mat.albedo_texture = ImageTexture.create_from_image(img)
     mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+    mat.texture_repeat = BaseMaterial3D.TEXTURE_REPEAT_ENABLED
+    mat.uv1_scale = Vector3(20, 20, 1)
     var tile := MeshInstance3D.new()
     var mesh := PlaneMesh.new()
     mesh.size = Vector2(79, 79)
