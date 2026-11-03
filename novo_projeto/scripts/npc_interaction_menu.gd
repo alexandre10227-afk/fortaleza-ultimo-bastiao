@@ -44,7 +44,7 @@ func _ready() -> void:
 func is_open() -> bool:
     return visible
 
-func show_npc(npc: Dictionary, friendship: int, level: String, preferred: String, recruitable: bool, is_merchant: bool) -> void:
+func show_npc(npc: Dictionary, friendship: int, level: String, preferred: String, recruitable: bool, is_merchant: bool, inside_building: bool = false) -> void:
     selected_npc = npc.duplicate(true)
     _clear()
     _heading(str(npc.get("name", "Morador")))
@@ -58,6 +58,8 @@ func show_npc(npc: Dictionary, friendship: int, level: String, preferred: String
     if recruitable:
         _choice("Recrutar", "recruit")
     _choice("Pedir passagem (sem penalidade)", "step_aside")
+    if inside_building:
+        _choice("Sair do predio", "exit")
     _choice("Fechar", "close")
     visible = true
 
@@ -96,6 +98,7 @@ func show_visitors(visitors: Array[Dictionary]) -> void:
     for npc in visitors:
         var button := _button("%s — %s" % [npc.get("name", "Viajante"), npc.get("profession", "")])
         button.pressed.connect(_on_visitor.bind(npc))
+    _choice("Sair da taverna", "exit")
     var close_button := _button("Fechar")
     close_button.pressed.connect(hide_menu)
     visible = true
