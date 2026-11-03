@@ -1,6 +1,7 @@
 extends Node
 const DUKE = preload("res://scripts/duke_event.gd")
 const FRIENDSHIP = preload("res://scripts/friendship_system.gd")
+const TOWN = preload("res://scripts/town_system.gd")
 
 const SAVE_PATH := "user://fortaleza_stage1_v1.json"
 const DIFFICULTIES := {
@@ -20,6 +21,8 @@ var events: Array[Dictionary] = []
 var npc_memory: Dictionary = {}
 var npc_friendship: Dictionary = {}
 var last_friendship_interaction: Dictionary = {}
+var npc_lives: Dictionary = {}
+var npc_story_flags: Dictionary = {}
 var region_reputation: Dictionary = {"Fortaleza": 0, "Porto Cinzento": 0}
 var wave_number := 0
 var dungeon_unlocked := false
@@ -52,6 +55,9 @@ func new_game(hero_name: String, mode: String) -> void:
     npc_memory.clear()
     npc_friendship.clear()
     last_friendship_interaction.clear()
+    npc_story_flags.clear()
+    npc_lives = TOWN.initial_lives()
+    _advance_npc_lives(day)
     region_reputation = {"Fortaleza": 0, "Porto Cinzento": 0}
     wave_number = 0
     dungeon_unlocked = false
@@ -126,9 +132,24 @@ func gain_friendship(npc_id: String, points: int, source: String, once_per_day: 
     save_game()
     return true
 
+func _advance_npc_lives(target_day: int) -> void:
+    for movement in TOWN.advance_lives(npc_lives, target_day, npc_story_flags):
+        var id := str(movement["npc_id"])
+        var new_region := str(movement["region"])
+        record_event(str(movement["kind"]), new_region, [id], "%s: %s" % [id, str(movement["status"])])
+
+func set_npc_story_disposition(npc_id: String, disposition: String) -> bool:
+    if not npc_lives.has(npc_id) or not ["village", "travel"].has(disposition):
+        return false
+    npc_story_flags[npc_id] = disposition
+    record_event("npc_story_decision", current_region, [npc_id], disposition)
+    save_game()
+    return true
+
 func advance_days(days: int) -> void:
     for _i in range(maxi(0, days)):
         day += 1
+        _advance_npc_lives(day)
         if (day - 1) % 5 == 0:
             wave_number += 1
             if wave_number == DUKE.DEADLINE_WAVE:
@@ -197,6 +218,8 @@ func complete_quest(npc_id: String) -> bool:
     quest_progress[npc_id] = "complete"
     remember(npc_id, "missao_concluida")
     gain_friendship(npc_id, 25, "missao")
+    if npc_id == "elira":
+        set_npc_story_disposition("elira", "village")
     record_event("quest_completed", current_region, [npc_id], str(quest["title"]))
     save_game()
     return true
@@ -292,7 +315,7 @@ func save_game() -> bool:
     var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if file == null:
         return false
-    var data := {"schema": 1, "name": character_name, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "recruited": recruited, "bestiary": discovered_bestiary, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
+    var data := {"schema": 1, "name": character_name, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "npc_lives": npc_lives, "npc_story_flags": npc_story_flags, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "recruited": recruited, "bestiary": discovered_bestiary, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
     file.store_string(JSON.stringify(data))
     return true
 
@@ -319,6 +342,12 @@ func load_game() -> bool:
     npc_memory = parsed.get("npc_memory", {})
     npc_friendship = parsed.get("npc_friendship", {})
     last_friendship_interaction = parsed.get("friendship_days", {})
+    npc_lives = parsed.get("npc_lives", {})
+    npc_story_flags = parsed.get("npc_story_flags", {})
+    if npc_lives.is_empty():
+        npc_lives = TOWN.initial_lives()
+        for simulated_day in range(1, day + 1):
+            TOWN.advance_lives(npc_lives, simulated_day, npc_story_flags)
     region_reputation = parsed.get("reputation", {})
     wave_number = int(parsed.get("wave", 0))
     dungeon_unlocked = bool(parsed.get("dungeon", false))
