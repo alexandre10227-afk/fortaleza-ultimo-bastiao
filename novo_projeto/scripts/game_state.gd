@@ -190,8 +190,12 @@ func recruit_visitor(npc: Dictionary) -> bool:
     var id := str(npc.get("id", ""))
     if id.is_empty() or id == "duque" or id == DUKE.DAUGHTER_ID:
         return false
+    var itinerary: Dictionary = npc_lives.get(id, {})
+    if itinerary.get("status", "") != "tavern" or itinerary.get("region", "") != current_region:
+        return false
     if not FRIENDSHIP.can_recruit(friendship_points(id)):
         return false
+    itinerary["status"] = "recruited"
     recruited.append(id)
     remember(id, "recrutado")
     save_game()
