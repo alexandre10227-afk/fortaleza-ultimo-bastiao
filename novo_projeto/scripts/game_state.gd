@@ -1,4 +1,5 @@
 extends Node
+const DUKE = preload("res://scripts/duke_event.gd")
 
 const SAVE_PATH := "user://fortaleza_stage1_v1.json"
 const DIFFICULTIES := {
@@ -27,6 +28,7 @@ var discovered_regions: Array[String] = ["Fortaleza", "Porto Cinzento"]
 var quest_progress: Dictionary = {}
 var collected_nodes: Dictionary = {}
 var narrative_flags: Dictionary = {}
+var duke_state: Dictionary = DUKE.initial_state()
 const OPENING_QUESTS := {
     "doran": {"item": "ferro", "amount": 3, "reward": 35, "title": "Ferro para as muralhas"},
     "elira": {"item": "ervas", "amount": 3, "reward": 35, "title": "Suprimentos do porto"},
@@ -55,6 +57,7 @@ func new_game(hero_name: String, mode: String) -> void:
     quest_progress.clear()
     collected_nodes.clear()
     narrative_flags.clear()
+    duke_state = DUKE.initial_state()
     record_event("character_created", "Palacio", [character_name], "Criacao do protagonista")
 
 func record_narrative_choice(key: String, value: String) -> bool:
@@ -97,6 +100,12 @@ func advance_days(days: int) -> void:
         day += 1
         if (day - 1) % 5 == 0:
             wave_number += 1
+            if wave_number == DUKE.DEADLINE_WAVE:
+                var duke_outcome := DUKE.resolve_tenth_wave(duke_state)
+                if duke_outcome == "extra_boss":
+                    record_event("duke_extra_boss", "Fortaleza", ["duque"], "O Carrasco do Juramento aparece na onda 10")
+                elif duke_outcome == "died_at_home":
+                    record_event("duke_death", "Mansao do Duque", ["duque"], "O Duque morreu em casa; a armadura nao foi obtida")
             record_event("wave", "Fortaleza", ["General Vaelor" if oath == "exile" else character_name], "Onda %d" % wave_number)
             if wave_number == 20:
                 dungeon_unlocked = true
@@ -169,11 +178,87 @@ func collect_resource(node_id: String, item_id: String) -> bool:
     save_game()
     return true
 
+func duke_answer(selected: int) -> Dictionary:
+    if current_region != "Fortaleza":
+        return {"accepted": false, "correct": false}
+    var answer := DUKE.answer_question(duke_state, day, wave_number, selected)
+    if bool(answer.get("accepted", false)):
+        remember("duque", "charada_correta" if bool(answer.get("correct", false)) else "charada_errada")
+        record_event("duke_riddle", "Mansao do Duque", ["duque"], "Charada %d de 6" % int(duke_state["question_index"]))
+        save_game()
+    return answer
+
+func duke_recruit() -> bool:
+    if current_region != "Fortaleza" or not DUKE.recruit_duke(duke_state, wave_number):
+        return false
+    if not recruited.has("duque"):
+        recruited.append("duque")
+    remember("duque", "amigo_leal")
+    record_event("duke_recruited", "Mansao do Duque", ["duque"], "O Duque rank A se uniu ao grupo")
+    save_game()
+    return true
+
+func duke_boss_defeated() -> bool:
+    if not DUKE.defeat_extra_boss(duke_state):
+        return false
+    record_event("duke_boss_defeated", "Fortaleza", ["duque"], "O boss extra foi derrotado; cena de despedida pendente")
+    save_game()
+    return true
+
+func duke_finish_cutscene() -> bool:
+    if not DUKE.finish_death_cutscene(duke_state):
+        return false
+    recruited.erase("duque")
+    inventory[DUKE.ARMOR_ID] = 1
+    remember("duque", "morte_em_batalha")
+    record_event("duke_death", "Fortaleza", ["duque"], "O duque morreu defendendo a fortaleza; armadura unica concedida")
+    save_game()
+    return true
+
+func duke_daughter_recruit() -> bool:
+    if not bool(duke_state.get("daughter_unlocked", false)) or bool(duke_state.get("daughter_recruited", false)):
+        return false
+    # Exilado nao pode recrutar residentes da Fortaleza; a herdeira que
+    # surgir na taverna fora da regiao vira uma aventureira independente.
+    if oath == "exile" and DUKE.daughter_at_manor(duke_state):
+        return false
+    duke_state["daughter_recruited"] = true
+    if not recruited.has(DUKE.DAUGHTER_ID):
+        recruited.append(DUKE.DAUGHTER_ID)
+    record_event("daughter_recruited", current_region, [DUKE.DAUGHTER_ID], "Herdeira rank S recrutada")
+    save_game()
+    return true
+
+func duke_daughter_quest() -> bool:
+    if not DUKE.finish_daughter_quest(duke_state, int(inventory.get(DUKE.ARMOR_ID, 0)) > 0):
+        return false
+    record_event("daughter_quest", current_region, [DUKE.DAUGHTER_ID], "Armadura do Duque apresentada a herdeira")
+    save_game()
+    return true
+
+func duke_daughter_evolve() -> bool:
+    if not DUKE.evolve_daughter(duke_state, inventory):
+        return false
+    record_event("daughter_evolved", current_region, [DUKE.DAUGHTER_ID], "Herdeira evoluiu do rank S ao SS")
+    save_game()
+    return true
+
+func duke_tavern_visitor() -> bool:
+    if current_region != "Porto Cinzento":
+        return false
+    # A semente e o dia permanecem constantes; consultar a taverna
+    # varias vezes no mesmo dia nao cria novas tentativas.
+    var roll := abs(hash("duke_daughter:%d" % day)) % 100
+    var present := DUKE.tavern_roll(duke_state, day, wave_number, roll)
+    if present:
+        save_game()
+    return present
+
 func save_game() -> bool:
     var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if file == null:
         return false
-    var data := {"schema": 1, "name": character_name, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "recruited": recruited, "bestiary": discovered_bestiary, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags}
+    var data := {"schema": 1, "name": character_name, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "recruited": recruited, "bestiary": discovered_bestiary, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
     file.store_string(JSON.stringify(data))
     return true
 
@@ -210,4 +295,8 @@ func load_game() -> bool:
     quest_progress = parsed.get("quests", {})
     collected_nodes = parsed.get("collected_nodes", {})
     narrative_flags = parsed.get("narrative_flags", {})
+    duke_state = DUKE.initial_state()
+    var persisted_duke: Variant = parsed.get("duke_state", {})
+    if persisted_duke is Dictionary:
+        duke_state.merge(persisted_duke, true)
     return true
