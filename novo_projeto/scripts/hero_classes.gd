@@ -89,9 +89,9 @@ static func learn_element(build: Dictionary, element: String) -> Dictionary:
 static func promote_specialist(build: Dictionary, next_subclass: String) -> Dictionary:
     if not valid(build) or build["class"] == "Mago" or build["rarity"] != "Epico":
         return {}
-    var class_name := str(build["class"])
-    if not CLASSES[class_name].has(next_subclass):
+    var archetype_name := str(build["class"])
+    if not CLASSES[archetype_name].has(next_subclass):
         return {}
-    if not CLASSES[class_name][next_subclass].has("Lendario"):
+    if not CLASSES[archetype_name][next_subclass].has("Lendario"):
         return {}
-    return make(class_name,next_subclass,[],"Lendario",true)
+    return make(archetype_name,next_subclass,[],"Lendario",true)
