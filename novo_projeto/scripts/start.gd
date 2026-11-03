@@ -19,6 +19,8 @@ var _radar: Control
 var _prologue_step := 0
 
 func _ready() -> void:
+    if DisplayServer.get_name() != "headless":
+        OPTIONS.apply(OPTIONS.read())
     var backdrop := ColorRect.new()
     backdrop.color = Color("#202e29")
     backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
