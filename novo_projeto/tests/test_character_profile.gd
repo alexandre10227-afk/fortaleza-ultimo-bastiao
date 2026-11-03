@@ -19,6 +19,7 @@ func run() -> void:
     var start = load("res://scenes/start.tscn").instantiate()
     root.add_child(start)
     await process_frame
+    start._show_creation()
     assert(start.origin_input.item_count == 4)
     assert(start.appearance_input.item_count == 4)
     assert(start.class_input.item_count == 4)
