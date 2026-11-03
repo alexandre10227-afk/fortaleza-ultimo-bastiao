@@ -20,6 +20,10 @@ var region_reputation: Dictionary = {"Fortaleza": 0, "Porto Cinzento": 0}
 var wave_number := 0
 var dungeon_unlocked := false
 var discovered_bestiary: Dictionary = {}
+var money := 60
+var inventory: Dictionary = {"pao": 2}
+var recruited: Array[String] = []
+var discovered_regions: Array[String] = ["Fortaleza", "Porto Cinzento"]
 
 func new_game(hero_name: String, mode: String) -> void:
     character_name = hero_name.strip_edges().substr(0, 24)
@@ -36,6 +40,10 @@ func new_game(hero_name: String, mode: String) -> void:
     region_reputation = {"Fortaleza": 0, "Porto Cinzento": 0}
     wave_number = 0
     dungeon_unlocked = false
+    money = 60
+    inventory = {"pao": 2}
+    recruited.clear()
+    discovered_bestiary.clear()
     record_event("character_created", "Palacio", [character_name], "Criacao do protagonista")
 
 func choose_oath(protect: bool) -> void:
@@ -86,11 +94,32 @@ func travel(destination: String, distance: float) -> bool:
     save_game()
     return true
 
+func buy_item(item_id: String) -> bool:
+    var price: int = preload("res://scripts/town_system.gd").price(item_id, current_region, oath)
+    if price < 0 or money < price:
+        return false
+    money -= price
+    inventory[item_id] = int(inventory.get(item_id, 0)) + 1
+    record_event("purchase", current_region, [character_name], "Compra de " + item_id)
+    save_game()
+    return true
+
+func recruit_visitor(npc: Dictionary) -> bool:
+    if recruited.has(str(npc.get("id", ""))) or not preload("res://scripts/town_system.gd").can_recruit(npc, oath):
+        return false
+    var id := str(npc.get("id", ""))
+    if id.is_empty():
+        return false
+    recruited.append(id)
+    remember(id, "recrutado")
+    save_game()
+    return true
+
 func save_game() -> bool:
     var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if file == null:
         return false
-    var data := {"schema": 1, "name": character_name, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked}
+    var data := {"schema": 1, "name": character_name, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "recruited": recruited, "bestiary": discovered_bestiary}
     file.store_string(JSON.stringify(data))
     return true
 
@@ -118,4 +147,10 @@ func load_game() -> bool:
     region_reputation = parsed.get("reputation", {})
     wave_number = int(parsed.get("wave", 0))
     dungeon_unlocked = bool(parsed.get("dungeon", false))
+    money = int(parsed.get("money", 60))
+    inventory = parsed.get("inventory", {"pao": 2})
+    recruited.clear()
+    for id in parsed.get("recruited", []):
+        recruited.append(str(id))
+    discovered_bestiary = parsed.get("bestiary", {})
     return true
