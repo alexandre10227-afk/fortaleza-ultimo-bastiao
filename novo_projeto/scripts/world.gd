@@ -6,6 +6,7 @@ const RECIPES = preload("res://scripts/economy_system.gd")
 const NPCS = preload("res://scripts/npc_registry.gd")
 const ROUTINES = preload("res://scripts/npc_daily_routines.gd")
 const ACTOR_ANIM = preload("res://scripts/actor_animation.gd")
+const GEAR = preload("res://scripts/equipment_catalog.gd")
 
 var player: CharacterBody3D
 var hud: Label
@@ -42,6 +43,7 @@ var _market_mode := false
 var _market_selling := false
 var _market_travelling := false
 var _market_ids: Array[String] = []
+var _market_vendor_id := ""
 var npc_menu: Control
 var character_sheet: Control
 var _door_cooldown := 0.0
@@ -1163,11 +1165,16 @@ func _present_to(npc: Dictionary) -> void:
 func _refresh_market() -> void:
     _market_ids.clear()
     var mode := "VENDA" if _market_selling else "COMPRA"
-    var title := "CARAVANA VIAJANTE" if _market_travelling else "MERCADO DA CIDADE"
+    var title := "LOJA: %s" % _market_vendor_id if not _market_vendor_id.is_empty() else ("CARAVANA VIAJANTE" if _market_travelling else "MERCADO DA CIDADE")
     var available_ids: Array[String] = []
     for id in ITEMS.ITEMS.keys():
         var item_id := str(id)
         var data: Dictionary = ITEMS.get_item(item_id)
+        if not _market_selling and GEAR.is_equipment(item_id):
+            if _market_vendor_id.is_empty() or not GEAR.vendor_inventory(_market_vendor_id).has(item_id):
+                continue
+        elif not _market_selling and not _market_vendor_id.is_empty():
+            continue
         if _market_selling and int(GameState.inventory.get(item_id, 0)) < 1:
             continue
         if not _market_travelling:
@@ -1194,7 +1201,7 @@ func _market_transaction(index: int) -> void:
     if index < 0 or index >= _market_ids.size():
         return
     var item_id := _market_ids[index]
-    var success := GameState.market_sell(item_id) if _market_selling else GameState.market_buy(item_id, _market_travelling)
+    var success := GameState.market_sell(item_id) if _market_selling else (GameState.buy_from_merchant(_market_vendor_id, item_id) if not _market_vendor_id.is_empty() else GameState.market_buy(item_id, _market_travelling))
     last_message = ("Negociado: " if success else "Nao foi possivel negociar: ") + item_id
     _refresh_market()
     _refresh_hud()
@@ -1313,6 +1320,7 @@ func _npc_action(action: String, npc: Dictionary) -> void:
             _market_page = 0
             _market_selling = false
             _market_travelling = false
+            _market_vendor_id = ""
             _refresh_market()
         "service_craft":
             npc_menu.hide_menu()
@@ -1344,6 +1352,7 @@ func _npc_action(action: String, npc: Dictionary) -> void:
             _market_page = 0
             _market_selling = false
             _market_travelling = str(npc.get("id", "")) == "mercador_viajante"
+            _market_vendor_id = str(npc.get("id", "")) if GEAR.MERCHANT_ARCHETYPES.has(str(npc.get("id", ""))) else ""
             _refresh_market()
         "gifts":
             npc_menu.show_gifts(npc, GameState.inventory)
