@@ -1,6 +1,6 @@
 extends RefCounted
 ## Sprites pixel art autorais, frames previamente gerados para evitar alocacao por quadro.
-const DIRECTIONS := ["down", "up", "left", "right"]
+const DIRECTIONS := ["down", "up", "left", "right", "down-left", "down-right", "up-left", "up-right"]
 const COATS := [Color("#3d597e"), Color("#755347"), Color("#5b7550"), Color("#4a5b6b")]
 const HAIR := Color("#352a25")
 const SKIN := Color("#dfae8a")
@@ -27,10 +27,10 @@ static func make_frames(style_index: int = 0) -> Dictionary:
             elif direction == "down":
                 img.set_pixel(10, 9 + bounce, Color("#2f2929"))
                 img.set_pixel(14, 9 + bounce, Color("#2f2929"))
-            elif direction == "left":
+            elif direction == "left" or direction == "down-left" or direction == "up-left":
                 img.set_pixel(9, 9 + bounce, Color("#2f2929"))
                 _rectangle(img, 14, 9 + bounce, 16, 14 + bounce, HAIR)
-            elif direction == "right":
+            elif direction == "right" or direction == "down-right" or direction == "up-right":
                 img.set_pixel(15, 9 + bounce, Color("#2f2929"))
                 _rectangle(img, 8, 9 + bounce, 10, 14 + bounce, HAIR)
             frames["%s:%d" % [direction, step]] = ImageTexture.create_from_image(img)
@@ -44,6 +44,10 @@ static func _rectangle(img: Image, x1: int, y1: int, x2: int, y2: int, color: Co
 static func direction_from_vector(direction: Vector3, last_direction: String) -> String:
     if direction.length_squared() < 0.001:
         return last_direction
+    var x_dir := "right" if direction.x > 0 else "left"
+    var z_dir := "down" if direction.z > 0 else "up"
+    if absf(direction.x) > 0.28 and absf(direction.z) > 0.28:
+        return z_dir + "-" + x_dir
     if absf(direction.x) > absf(direction.z):
-        return "right" if direction.x > 0 else "left"
-    return "down" if direction.z > 0 else "up"
+        return x_dir
+    return z_dir
