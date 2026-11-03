@@ -223,6 +223,14 @@ func _unhandled_key_input(event: InputEvent) -> void:
                 _recruit_at_manor()
         KEY_G:
             _gather_nearby()
+        KEY_P:
+            if active_interior == "Mansao do Duque":
+                var special := "herdeira_duque" if GameState.DUKE.daughter_at_manor(GameState.duke_state) else "duque"
+                _present_to({"id":special,"name":"Herdeira do Duque" if special == "herdeira_duque" else "Duque","profession":"Nobre"})
+            elif active_interior == "Taverna" and not _tavern_selected.is_empty():
+                _present_to(_tavern_selected)
+            elif active_interior.is_empty():
+                _present_to(_nearest_npc())
         KEY_T, KEY_M:
             _toggle_map()
         KEY_E:
@@ -577,6 +585,19 @@ func _create_dialogue_ui() -> void:
     dialogue_ui.choice_selected.connect(_on_dialogue_choice)
 
 func _on_dialogue_choice(index: int) -> void:
+    if _gift_mode:
+        _gift_mode = false
+        if index >= 0 and index < _gift_ids.size():
+            var item_id := _gift_ids[index]
+            var npc_id := str(_gift_target.get("id", ""))
+            var profession := str(_gift_target.get("profession", ""))
+            var accepted := GameState.give_gift(npc_id, profession, item_id)
+            var reply := "Presente aceito! Amizade %d/100: %s" % [GameState.friendship_points(npc_id), GameState.friendship_level(npc_id)] if accepted else "Nao aceito esse presente. Minha categoria preferida e %s (ou ja recebi um presente hoje)." % ITEMS.preferred_category(npc_id, profession)
+            dialogue_ui.show_dialogue(str(_gift_target.get("name", "Morador")), reply)
+            _refresh_hud()
+        else:
+            dialogue_ui.close_dialogue()
+        return
     if _duke_riddle_mode:
         _duke_riddle_mode = false
         var result: Dictionary = GameState.duke_answer(index)
@@ -597,6 +618,8 @@ func _on_dialogue_choice(index: int) -> void:
     if index == 0:
         var profession := str(_dialogue_npc.get("profession", "viajante"))
         dialogue_ui.show_dialogue(name_value, "Meu oficio e %s. Esta cidade muda a cada dia." % profession)
+    elif index == _gift_option:
+        _present_to(_dialogue_npc)
     elif index == 1 and GameState.OPENING_QUESTS.has(id):
         var quest: Dictionary = GameState.OPENING_QUESTS[id]
         var status := str(GameState.quest_progress.get(id, ""))
