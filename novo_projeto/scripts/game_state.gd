@@ -2,6 +2,8 @@ extends Node
 const DUKE = preload("res://scripts/duke_event.gd")
 const FRIENDSHIP = preload("res://scripts/friendship_system.gd")
 const TOWN = preload("res://scripts/town_system.gd")
+const ITEMS = preload("res://scripts/item_catalog.gd")
+const ECONOMY = preload("res://scripts/economy_system.gd")
 
 const SAVE_PATH := "user://fortaleza_stage1_v1.json"
 const DIFFICULTIES := {
@@ -23,6 +25,9 @@ var npc_friendship: Dictionary = {}
 var last_friendship_interaction: Dictionary = {}
 var npc_lives: Dictionary = {}
 var npc_story_flags: Dictionary = {}
+var last_gift_day: Dictionary = {}
+var active_food_bonuses: Dictionary = {}
+var building_levels: Dictionary = {"Ferraria":1,"Oficina":1,"Cozinha":1,"Escritorio":1,"Muralha":1}
 var region_reputation: Dictionary = {"Fortaleza": 0, "Porto Cinzento": 0}
 var wave_number := 0
 var dungeon_unlocked := false
@@ -56,6 +61,9 @@ func new_game(hero_name: String, mode: String) -> void:
     npc_friendship.clear()
     last_friendship_interaction.clear()
     npc_story_flags.clear()
+    last_gift_day.clear()
+    active_food_bonuses.clear()
+    building_levels = {"Ferraria":1,"Oficina":1,"Cozinha":1,"Escritorio":1,"Muralha":1}
     npc_lives = TOWN.initial_lives()
     _advance_npc_lives(day)
     region_reputation = {"Fortaleza": 0, "Porto Cinzento": 0}
@@ -149,6 +157,9 @@ func set_npc_story_disposition(npc_id: String, disposition: String) -> bool:
 func advance_days(days: int) -> void:
     for _i in range(maxi(0, days)):
         day += 1
+        for stat in active_food_bonuses.keys():
+            if int(active_food_bonuses[stat].get("until_day", 0)) <= day:
+                active_food_bonuses.erase(stat)
         _advance_npc_lives(day)
         if (day - 1) % 5 == 0:
             wave_number += 1
@@ -198,6 +209,87 @@ func recruit_visitor(npc: Dictionary) -> bool:
     itinerary["status"] = "recruited"
     recruited.append(id)
     remember(id, "recrutado")
+    save_game()
+    return true
+
+func give_gift(npc_id: String, profession: String, item_id: String) -> bool:
+    # Nenhum NPC aceita itens de outra categoria. Recusa nao consome nem pontua.
+    if not ITEMS.accepts_gift(npc_id, profession, item_id):
+        return false
+    if int(inventory.get(item_id, 0)) <= 0 or int(last_gift_day.get(npc_id, -1)) == day:
+        return false
+    var affinity := ITEMS.gift_affection(npc_id, profession, item_id)
+    if affinity <= 0:
+        return false
+    inventory[item_id] = int(inventory[item_id]) - 1
+    last_gift_day[npc_id] = day
+    if npc_id == "duque":
+        duke_state["friendship"] = mini(100, int(duke_state.get("friendship", 0)) + affinity)
+    elif npc_id != DUKE.DAUGHTER_ID:
+        gain_friendship(npc_id, affinity, "presente")
+    remember(npc_id, "presente_" + item_id)
+    record_event("gift", current_region, [npc_id], "Presente aceito: %s (+%d amizade)" % [item_id, affinity])
+    save_game()
+    return true
+
+func market_buy(item_id: String, travelling_merchant: bool = false) -> bool:
+    var price := ITEMS.price(item_id, current_region, oath, travelling_merchant)
+    if price <= 0 or money < price:
+        return false
+    money -= price
+    inventory[item_id] = int(inventory.get(item_id, 0)) + 1
+    record_event("market_buy", current_region, [character_name], "Comprou " + item_id)
+    save_game()
+    return true
+
+func market_sell(item_id: String) -> bool:
+    var amount := int(inventory.get(item_id, 0))
+    var income := ITEMS.sell_price(item_id)
+    if income < 1 or amount < 1:
+        return false
+    inventory[item_id] = amount - 1
+    money += income
+    record_event("market_sell", current_region, [character_name], "Vendeu " + item_id)
+    save_game()
+    return true
+
+func eat_food(item_id: String) -> bool:
+    if not ITEMS.can_eat(item_id) or int(inventory.get(item_id, 0)) < 1:
+        return false
+    var food: Dictionary = ITEMS.get_item(item_id)
+    inventory[item_id] = int(inventory[item_id]) - 1
+    for stat in food["bonus"]:
+        var until_day := day + int(food.get("duration", 1))
+        var existing: Dictionary = active_food_bonuses.get(stat, {})
+        var amount := maxi(int(existing.get("amount", 0)), int(food["bonus"][stat]))
+        var ending := maxi(int(existing.get("until_day", 0)), until_day)
+        active_food_bonuses[stat] = {"amount": amount, "until_day": ending}
+    record_event("eat", current_region, [character_name], "Consumiu " + item_id)
+    save_game()
+    return true
+
+func craft_item(item_id: String) -> bool:
+    if not ITEMS.is_tradeable(item_id):
+        return false
+    var recipe := ECONOMY.craft_cost(item_id, building_levels)
+    if recipe.is_empty() or not ECONOMY.can_pay(inventory, money, recipe["materials"], int(recipe["money"])):
+        return false
+    money -= int(recipe["money"])
+    ECONOMY.remove_materials(inventory, recipe["materials"])
+    inventory[item_id] = int(inventory.get(item_id, 0)) + 1
+    record_event("craft", current_region, [character_name], "Fabricou " + item_id)
+    save_game()
+    return true
+
+func upgrade_building(building: String) -> bool:
+    var current_level := int(building_levels.get(building, 0))
+    var cost := ECONOMY.upgrade_cost(building, current_level)
+    if cost.is_empty() or not ECONOMY.can_pay(inventory, money, cost["materials"], int(cost["money"])):
+        return false
+    money -= int(cost["money"])
+    ECONOMY.remove_materials(inventory, cost["materials"])
+    building_levels[building] = current_level + 1
+    record_event("building_upgrade", current_region, [character_name], "%s nivel %d" % [building, current_level + 1])
     save_game()
     return true
 
@@ -319,7 +411,7 @@ func save_game() -> bool:
     var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if file == null:
         return false
-    var data := {"schema": 1, "name": character_name, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "npc_lives": npc_lives, "npc_story_flags": npc_story_flags, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "recruited": recruited, "bestiary": discovered_bestiary, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
+    var data := {"schema": 1, "name": character_name, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "npc_lives": npc_lives, "npc_story_flags": npc_story_flags, "last_gift_day": last_gift_day, "food_bonuses": active_food_bonuses, "building_levels": building_levels, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "recruited": recruited, "bestiary": discovered_bestiary, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
     file.store_string(JSON.stringify(data))
     return true
 
@@ -348,6 +440,9 @@ func load_game() -> bool:
     last_friendship_interaction = parsed.get("friendship_days", {})
     npc_lives = parsed.get("npc_lives", {})
     npc_story_flags = parsed.get("npc_story_flags", {})
+    last_gift_day = parsed.get("last_gift_day", {})
+    active_food_bonuses = parsed.get("food_bonuses", {})
+    building_levels = parsed.get("building_levels", {"Ferraria":1,"Oficina":1,"Cozinha":1,"Escritorio":1,"Muralha":1})
     if npc_lives.is_empty():
         npc_lives = TOWN.initial_lives()
         for simulated_day in range(1, day + 1):
