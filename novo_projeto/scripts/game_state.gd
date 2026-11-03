@@ -10,6 +10,7 @@ const HERO_CLASSES = preload("res://scripts/hero_classes.gd")
 const PLAYER_CLASSES = preload("res://scripts/protagonist_progression.gd")
 const WORLD_RECORDS = preload("res://scripts/stage1_records.gd")
 const SIM = preload("res://scripts/simulation_foundations.gd")
+const GEAR = preload("res://scripts/equipment_catalog.gd")
 
 const SAVE_PATH := "user://fortaleza_stage1_v1.json"
 const DIFFICULTIES := {
@@ -53,6 +54,7 @@ var nemesis_records: Dictionary = SIM.initial_nemeses()
 var migration_history: Array = []
 var money := 60
 var inventory: Dictionary = {"pao": 2}
+var equipped: Dictionary = GEAR.equip_slots()
 var recruited: Array[String] = []
 var discovered_regions: Array[String] = ["Fortaleza", "Porto Cinzento"]
 var quest_progress: Dictionary = {}
@@ -101,6 +103,7 @@ func new_game(hero_name: String, mode: String) -> void:
     dungeon_unlocked = false
     money = 60
     inventory = {"pao": 2}
+    equipped = GEAR.equip_slots()
     recruited.clear()
     discovered_bestiary.clear()
     expeditions.clear()
@@ -492,6 +495,39 @@ func craft_item(item_id: String) -> bool:
     save_game()
     return true
 
+func equip_item(item_id: String) -> bool:
+    if not GEAR.can_equip(item_id, str(protagonist_track.get("base_class", ""))):
+        return false
+    if int(inventory.get(item_id, 0)) < 1:
+        return false
+    var slot := GEAR.slot_for(item_id)
+    if not GEAR.SLOTS.has(slot):
+        return false
+    equipped[slot] = item_id
+    record_event("equip", current_region, [character_name], item_id)
+    save_game()
+    return true
+
+func equipment_stats() -> Dictionary:
+    return GEAR.totals(equipped)
+
+func buy_from_merchant(merchant_id: String, item_id: String) -> bool:
+    if not GEAR.vendor_inventory(merchant_id).has(item_id):
+        return false
+    if not ITEMS.is_tradeable(item_id):
+        return false
+    if current_region == "Fortaleza" and oath == "exile":
+        # Mantem a penalidade de preco ja definida para exilados.
+        pass
+    var cost := ITEMS.price(item_id, current_region, oath)
+    if cost < 1 or money < cost:
+        return false
+    money -= cost
+    inventory[item_id] = int(inventory.get(item_id, 0)) + 1
+    record_event("merchant_equipment", current_region, [merchant_id, character_name], "Comprou: " + item_id)
+    save_game()
+    return true
+
 func upgrade_building(building: String) -> bool:
     var current_level := int(building_levels.get(building, 0))
     var cost := ECONOMY.upgrade_cost(building, current_level)
@@ -622,7 +658,7 @@ func save_game() -> bool:
     var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if file == null:
         return false
-    var data := {"schema": 1, "name": character_name, "character_origin": character_origin, "character_stats": character_stats, "character_appearance": character_appearance, "region_positions": region_positions, "hero_build": hero_build, "protagonist_track": protagonist_track, "npc_hero_builds": npc_hero_builds, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "npc_lives": npc_lives, "npc_story_flags": npc_story_flags, "last_gift_day": last_gift_day, "food_bonuses": active_food_bonuses, "building_levels": building_levels, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "recruited": recruited, "bestiary": discovered_bestiary, "expeditions": expeditions, "memorial": memorial, "military_intel": military_intel, "legacy_records": legacy_records, "nemesis_records": nemesis_records, "migration_history": migration_history, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
+    var data := {"schema": 1, "name": character_name, "character_origin": character_origin, "character_stats": character_stats, "character_appearance": character_appearance, "region_positions": region_positions, "hero_build": hero_build, "protagonist_track": protagonist_track, "npc_hero_builds": npc_hero_builds, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "npc_lives": npc_lives, "npc_story_flags": npc_story_flags, "last_gift_day": last_gift_day, "food_bonuses": active_food_bonuses, "building_levels": building_levels, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "equipped": equipped, "recruited": recruited, "bestiary": discovered_bestiary, "expeditions": expeditions, "memorial": memorial, "military_intel": military_intel, "legacy_records": legacy_records, "nemesis_records": nemesis_records, "migration_history": migration_history, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
     file.store_string(JSON.stringify(data))
     return true
 
@@ -690,6 +726,12 @@ func load_game() -> bool:
     dungeon_unlocked = bool(parsed.get("dungeon", false))
     money = int(parsed.get("money", 60))
     inventory = parsed.get("inventory", {"pao": 2})
+    equipped = GEAR.equip_slots()
+    var saved_equipment: Dictionary = parsed.get("equipped", {})
+    for slot in GEAR.SLOTS:
+        var item_id := str(saved_equipment.get(slot, ""))
+        if GEAR.can_equip(item_id, str(protagonist_track.get("base_class", ""))) and int(inventory.get(item_id, 0)) > 0 and GEAR.slot_for(item_id) == slot:
+            equipped[slot] = item_id
     recruited.clear()
     for id in parsed.get("recruited", []):
         recruited.append(str(id))
