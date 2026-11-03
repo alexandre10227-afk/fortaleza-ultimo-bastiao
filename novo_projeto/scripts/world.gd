@@ -541,6 +541,15 @@ func _apply_region_theme() -> void:
             _make_box(regional_details, Vector3(-24 + index * 8, 1.6, -33), Vector3(6, 3.2, 1.5), Color("#81857c"))
         for index in range(3):
             _make_box(regional_details, Vector3(-24 + index * 24, 3, -33), Vector3(5, 6, 5), Color("#8e9188"))
+    # Locais de trabalho, geometria compartilhada e gerada so na troca de regiao.
+    if region["type"] == "frontier":
+        _make_box(regional_details, Vector3(17.5, .45, 8), Vector3(3.5, .9, 2), Color("#836245"))
+        _make_box(regional_details, Vector3(17.5, 2.3, 8), Vector3(4, .35, 2.6), Color("#a97c54"))
+        for plot in range(3):
+            _make_box(regional_details, Vector3(-20 + plot * 2, .05, 22), Vector3(1.1, .15, 5), Color("#566b38"))
+    else:
+        _make_box(regional_details, Vector3(16, .35, 14), Vector3(3, .7, 2), Color("#8a7457"))
+        _make_box(regional_details, Vector3(16, 1.9, 14), Vector3(3.6, .25, 2.5), Color("#c0a783"))
     _spawn_residents()
     _spawn_resources()
 
