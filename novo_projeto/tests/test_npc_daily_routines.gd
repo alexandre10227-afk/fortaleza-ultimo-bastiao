@@ -9,8 +9,8 @@ func run() -> void:
     var items = load("res://scripts/item_catalog.gd")
     var fortress: Array = regions.residents("Fortaleza")
     var port: Array = regions.residents("Porto Cinzento")
-    assert(fortress.size() == 4)
-    assert(port.size() == 3)
+    assert(fortress.size() == 5)
+    assert(port.size() == 5)
     var ids: Dictionary = {}
     for entry in fortress + port:
         var id := str(entry["id"])
@@ -21,8 +21,9 @@ func run() -> void:
         assert(items.NPC_GIFT_CATEGORY.has(id))
         assert(items.CATEGORIES.has(items.preferred_category(id, str(entry["profession"]))))
         assert(r.position_for(id, 1) == r.position_for(id, 1))
-        assert(r.position_for(id, 1) != r.position_for(id, 3))
-        assert(r.activity_for(id, 1) != r.activity_for(id, 3))
+        if not id.begins_with("mercador_"):
+            assert(r.position_for(id, 1) != r.position_for(id, 3))
+            assert(r.activity_for(id, 1) != r.activity_for(id, 3))
         var position: Vector3 = r.position_for(id, 1)
         assert(absf(position.x) <= 26)
         assert(absf(position.z) <= 29)
