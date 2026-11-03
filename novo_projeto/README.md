@@ -226,3 +226,14 @@ Controles temporários no mundo: `V` abre visitantes da taverna; teclas `1` a `5
 - Entradas de contexto para NPCs novos (comerciante, fazendeiro e cidada comum) ja podem ser consultadas no cadastro, mas **nao significam personagens totalmente implementados no cenario**; vida, dialogos, imagens e atividades aguardam integracao gradual.
 - `tests/test_npc_registry.gd` criado para categorias, filtros, restricoes e janela. **Ainda nao rodado com o Godot nesta atualizacao**; nao reivindicar resultado de execucao sem validar a copia sincronizada.
 - A etapa permanece incompleta; otimizar e polir a interface, o grafico e o desempenho antes de gerar qualquer ZIP.
+
+
+## Incremento: habitantes com trabalho e descanso, e correção de duplicações (03/11/2026)
+
+- `scripts/region_system.gd`: três personagens já previstos no cadastro foram **incluídos no mundo**: Íris (feirante) e Bento (agricultor) na Fortaleza; Lia (moradora) em Porto Cinzento. Mantêm seus perfis **não recrutáveis** conforme `npc_registry.gd`.
+- `scripts/npc_daily_routines.gd`: postos de trabalho e repouso por personagem. Os moradores alternam posição/atividade de modo determinístico com o calendário, **sem atualizar IA ou instanciar assets a cada frame**. A janela de interação mostra a atividade atual.
+- `scripts/world.gd`: pequenas bancas de mercado e canteiros agrícolas ilustram o trabalho dos habitantes; a lista única `_active_city_residents()` impede que um NPC esteja visível simultaneamente na rua, taverna ou como membro recrutado. A cena de NPCs é reconstruída na mudança de dia/região.
+- `scripts/item_catalog.gd`: Íris aceita **Arte**, Bento aceita **Comestíveis**, Lia aceita **Estudos**. Mantida a regra de apenas uma categoria de presente por NPC.
+- `tests/test_npc_daily_routines.gd`: teste de profissões/locais, rotina/atividade, mapa e preferências. `test_regions.gd` e `test_optimization.gd` ajustados aos novos elementos/estados.
+- **Validação disponível nesta sessão:** o módulo `npc_daily_routines.gd` passou no Godot 4.7.2 headless em um teste de fumaça local; nove conjuntos de regressão da cópia local anterior também produziram PASS, mas **essa cópia ainda não corresponde ao HEAD completo publicado no GitHub**. Portanto, os testes da integração nova **não podem ser declarados aprovados até executar a versão sincronizada integral**. O teste antigo de UI também emite avisos de recursos ao sair.
+- **Pendente:** patrulha/rotinas animadas com navegação física, horários intradiários, estações de trabalho mais detalhadas e revisão de FPS real. Cenários ainda usam geometria provisória; a Etapa 1 continua incompleta. **Sem ZIP antes de otimização, polimento e validação.**
