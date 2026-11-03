@@ -1,6 +1,7 @@
 extends Node3D
 const UI = preload("res://scripts/ui_theme.gd")
 const STORY = preload("res://scripts/story_content.gd")
+const ITEMS = preload("res://scripts/item_catalog.gd")
 
 var player: Node3D
 var hud: Label
@@ -24,6 +25,11 @@ var _dialogue_npc: Dictionary = {}
 var resource_visuals: Dictionary = {}
 const DUKE = preload("res://scripts/duke_event.gd")
 var _duke_riddle_mode := false
+var _gift_mode := false
+var _gift_target: Dictionary = {}
+var _gift_ids: Array[String] = []
+var _gift_option := -1
+var _tavern_selected: Dictionary = {}
 const HINT_REFRESH_SECONDS := 0.18
 var _hint_accumulator := 0.0
 var _cached_hint := ""
@@ -245,6 +251,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
             var selected: int = event.keycode - KEY_1
             if town_panel.visible and selected < visitors.size():
                 var npc: Dictionary = visitors[selected]
+                _tavern_selected = npc.duplicate(true)
                 var npc_id := str(npc.get("id", ""))
                 var success := false
                 if npc_id == DUKE.DAUGHTER_ID:
@@ -554,6 +561,8 @@ func _talk_to_nearest_npc() -> void:
         var options := ["Conte-me sobre seu trabalho."]
         if GameState.OPENING_QUESTS.has(id):
             options.append("Precisa de ajuda? / Entregar materiais")
+        _gift_option = options.size()
+        options.append("Oferecer presente")
         options.append("Ate logo.")
         var quest_status := str(GameState.quest_progress.get(id, ""))
         var line := STORY.npc_line(id, GameState.oath, quest_status, memory_count)
