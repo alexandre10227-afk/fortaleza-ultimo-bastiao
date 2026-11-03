@@ -82,8 +82,8 @@ func _show_creation() -> void:
     _label("A origem concede um bonus fixo; nao substitui a escolha do juramento.", 15)
     _label("Classe inicial do heroi", 18)
     class_input = OptionButton.new()
-    for class_name in HERO_CLASSES.STARTERS.keys():
-        class_input.add_item(str(class_name))
+    for archetype_name in HERO_CLASSES.STARTERS.keys():
+        class_input.add_item(str(archetype_name))
     class_input.item_selected.connect(_on_class_changed)
     panel.add_child(class_input)
     _label("Afinidade inicial (somente magos)", 15)
@@ -151,9 +151,9 @@ func _create_character() -> void:
     if not GameState.configure_character(selected_origin, _stats, appearance_input.selected):
         _label("Verifique a origem e os pontos de atributos.", 15)
         return
-    var class_name := class_input.get_item_text(class_input.selected)
+    var archetype_name := class_input.get_item_text(class_input.selected)
     var element_name := element_input.get_item_text(element_input.selected)
-    if not GameState.choose_starting_class(class_name, element_name):
+    if not GameState.choose_starting_class(archetype_name, element_name):
         _label("Classe e afinidade selecionadas nao sao validas.", 15)
         return
     _show_audience()
