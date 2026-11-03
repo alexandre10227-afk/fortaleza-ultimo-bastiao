@@ -9,6 +9,7 @@ const CHARACTER = preload("res://scripts/character_profile.gd")
 const HERO_CLASSES = preload("res://scripts/hero_classes.gd")
 const PLAYER_CLASSES = preload("res://scripts/protagonist_progression.gd")
 const WORLD_RECORDS = preload("res://scripts/stage1_records.gd")
+const SIM = preload("res://scripts/simulation_foundations.gd")
 
 const SAVE_PATH := "user://fortaleza_stage1_v1.json"
 const DIFFICULTIES := {
@@ -46,6 +47,10 @@ var dungeon_unlocked := false
 var discovered_bestiary: Dictionary = {}
 var expeditions: Array = []
 var memorial: Array = []
+var military_intel: Dictionary = SIM.initial_intelligence()
+var legacy_records: Dictionary = SIM.initial_legacy()
+var nemesis_records: Dictionary = SIM.initial_nemeses()
+var migration_history: Array = []
 var money := 60
 var inventory: Dictionary = {"pao": 2}
 var recruited: Array[String] = []
@@ -84,6 +89,10 @@ func new_game(hero_name: String, mode: String) -> void:
     npc_story_flags.clear()
     last_gift_day.clear()
     active_food_bonuses.clear()
+    military_intel = SIM.initial_intelligence()
+    legacy_records = SIM.initial_legacy()
+    nemesis_records = SIM.initial_nemeses()
+    migration_history.clear()
     building_levels = {"Ferraria":1,"Oficina":1,"Cozinha":1,"Escritorio":1,"Muralha":1}
     npc_lives = TOWN.initial_lives()
     _advance_npc_lives(day)
@@ -205,6 +214,7 @@ func choose_oath(protect: bool) -> void:
         return
     oath = "guardian" if protect else "exile"
     current_region = "Fortaleza" if protect else "Porto Cinzento"
+    military_intel["garrison"]["Fortaleza"]["commander"] = character_name if protect else "general_vaelor"
     if not protect:
         region_reputation["Fortaleza"] = -100
         record_event("ss_defender_assigned", "Fortaleza", ["General Vaelor"], "Defesa delegada ao heroi rank SS")
@@ -263,6 +273,9 @@ func _advance_npc_lives(target_day: int) -> void:
     for movement in TOWN.advance_lives(npc_lives, target_day, npc_story_flags):
         var id := str(movement["npc_id"])
         var new_region := str(movement["region"])
+        if str(movement["kind"]) == "npc_departed_tavern" and str(movement["status"]) == "travelling":
+            var old_region := "Porto Cinzento" if new_region == "Fortaleza" else "Fortaleza"
+            SIM.register_migration(migration_history, id, old_region, new_region, target_day)
         record_event(str(movement["kind"]), new_region, [id], "%s: %s" % [id, str(movement["status"])])
 
 func set_npc_story_disposition(npc_id: String, disposition: String) -> bool:
@@ -281,6 +294,7 @@ func advance_days(days: int) -> void:
                 active_food_bonuses.erase(stat)
         _advance_npc_lives(day)
         for returned_id in WORLD_RECORDS.update_expeditions(expeditions, day):
+            SIM.add_report(military_intel, day, current_region if current_region in ["Fortaleza","Porto Cinzento"] else "Fortaleza", "Reconhecimento concluido; ameaças ainda nao verificadas")
             record_event("expedition_return", current_region, [character_name], "Expedicao %s retornou sem combate" % returned_id)
         if (day - 1) % 5 == 0:
             wave_number += 1
@@ -295,6 +309,20 @@ func advance_days(days: int) -> void:
                 dungeon_unlocked = true
                 record_event("dungeon_unlocked", "Lago Antigo", [], "Masmorra descoberta")
     save_game()
+
+func register_apprenticeship(master_id: String, apprentice_id: String) -> bool:
+    if not SIM.register_apprentice(legacy_records, master_id, apprentice_id):
+        return false
+    record_event("apprenticeship", current_region, [master_id, apprentice_id], "Vinculo mestre e aprendiz registrado")
+    save_game()
+    return true
+
+func register_nemesis(enemy_id: String, reason: String) -> bool:
+    if not SIM.remember_enemy(nemesis_records, enemy_id, day, reason):
+        return false
+    record_event("nemesis", current_region, [enemy_id], reason)
+    save_game()
+    return true
 
 func launch_reconnaissance(destination: String) -> bool:
     if energy < WORLD_RECORDS.EXPEDITION_COST_ENERGY or money < WORLD_RECORDS.EXPEDITION_COST_MONEY:
@@ -594,7 +622,7 @@ func save_game() -> bool:
     var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if file == null:
         return false
-    var data := {"schema": 1, "name": character_name, "character_origin": character_origin, "character_stats": character_stats, "character_appearance": character_appearance, "region_positions": region_positions, "hero_build": hero_build, "protagonist_track": protagonist_track, "npc_hero_builds": npc_hero_builds, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "npc_lives": npc_lives, "npc_story_flags": npc_story_flags, "last_gift_day": last_gift_day, "food_bonuses": active_food_bonuses, "building_levels": building_levels, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "recruited": recruited, "bestiary": discovered_bestiary, "expeditions": expeditions, "memorial": memorial, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
+    var data := {"schema": 1, "name": character_name, "character_origin": character_origin, "character_stats": character_stats, "character_appearance": character_appearance, "region_positions": region_positions, "hero_build": hero_build, "protagonist_track": protagonist_track, "npc_hero_builds": npc_hero_builds, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "npc_lives": npc_lives, "npc_story_flags": npc_story_flags, "last_gift_day": last_gift_day, "food_bonuses": active_food_bonuses, "building_levels": building_levels, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "recruited": recruited, "bestiary": discovered_bestiary, "expeditions": expeditions, "memorial": memorial, "military_intel": military_intel, "legacy_records": legacy_records, "nemesis_records": nemesis_records, "migration_history": migration_history, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
     file.store_string(JSON.stringify(data))
     return true
 
@@ -660,6 +688,10 @@ func load_game() -> bool:
     discovered_bestiary = parsed.get("bestiary", {})
     expeditions = parsed.get("expeditions", [])
     memorial = parsed.get("memorial", [])
+    military_intel = parsed.get("military_intel", SIM.initial_intelligence())
+    legacy_records = parsed.get("legacy_records", SIM.initial_legacy())
+    nemesis_records = parsed.get("nemesis_records", SIM.initial_nemeses())
+    migration_history = parsed.get("migration_history", [])
     quest_progress = parsed.get("quests", {})
     collected_nodes = parsed.get("collected_nodes", {})
     narrative_flags = parsed.get("narrative_flags", {})
