@@ -720,3 +720,25 @@ func _recruit_at_manor() -> void:
     else:
         dialogue_ui.show_dialogue("Mordomo", "O Duque so acompanha amigos leais, com no minimo 75 pontos, antes da onda 10.")
     _refresh_hud()
+
+func _present_to(npc: Dictionary) -> void:
+    if npc.is_empty():
+        last_message = "Nao ha personagem disponivel para receber presente."
+        _refresh_hud()
+        return
+    _gift_target = npc.duplicate(true)
+    _gift_ids.clear()
+    var choices: Array[String] = []
+    for id in GameState.inventory.keys():
+        var item_id := str(id)
+        if int(GameState.inventory[id]) > 0 and ITEMS.is_tradeable(item_id):
+            var data: Dictionary = ITEMS.get_item(item_id)
+            _gift_ids.append(item_id)
+            choices.append("%s (%s, %s)" % [str(data["name"]), str(data["category"]), str(data["rarity"])])
+    if choices.is_empty():
+        dialogue_ui.show_dialogue(str(npc.get("name", "Morador")), "Voce nao possui presentes no inventario.")
+        return
+    _gift_mode = true
+    choices.append("Cancelar")
+    var preference := ITEMS.preferred_category(str(npc.get("id", "")), str(npc.get("profession", "")))
+    dialogue_ui.show_dialogue(str(npc.get("name", "Morador")), "Aceito somente presentes de %s. Outros itens serao recusados." % preference, choices)
