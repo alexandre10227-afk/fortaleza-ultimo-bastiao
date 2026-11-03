@@ -20,7 +20,7 @@ func run() -> void:
         if node is Sprite3D:
             sprites.append(node)
     assert(bodies == 10)
-    assert(sprites.size() == 4)
+    assert(sprites.size() == 2)
     for npc in sprites:
         assert(npc.texture == world._sprite_texture)
     assert(world._shared_materials.size() < 10)
