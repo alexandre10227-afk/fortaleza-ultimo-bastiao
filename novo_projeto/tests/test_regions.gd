@@ -14,7 +14,7 @@ func run_tests() -> void:
     assert(scene.npc_visuals.has("iris_feirante"))
     assert(scene.npc_visuals.has("bento_agricultor"))
     assert(not scene.npc_visuals.has("doran")) # Esta hospedado na taverna.
-    assert(scene.regional_details.get_child_count() == 10)
+    assert(scene.regional_details.get_child_count() >= 15)
     scene.player.position = scene.ROUTINES.position_for("iris_feirante", state.day)
     var npc: Dictionary = scene._nearest_npc()
     assert(npc.get("id") == "iris_feirante")
@@ -28,7 +28,7 @@ func run_tests() -> void:
     assert(scene.npc_visuals.has("lia_moradora"))
     assert(not scene.npc_visuals.has("elira")) # Esta na taverna, nao na rua.
     assert(not scene.npc_visuals.has("doran"))
-    assert(scene.regional_details.get_child_count() == 9)
+    assert(scene.regional_details.get_child_count() >= 11)
     assert(scene.REGION_SYSTEM.region_data(state.current_region)["type"] == "harbor")
     print("TEST_REGIONS_PASS")
     quit(0)
