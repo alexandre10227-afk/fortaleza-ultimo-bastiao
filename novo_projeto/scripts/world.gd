@@ -34,6 +34,7 @@ var _market_mode := false
 var _market_selling := false
 var _market_travelling := false
 var _market_ids: Array[String] = []
+var _market_page := 0
 const HINT_REFRESH_SECONDS := 0.18
 var _hint_accumulator := 0.0
 var _cached_hint := ""
@@ -259,6 +260,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
         KEY_O:
             if active_interior == "Taverna" or active_interior == "Ferraria" or (active_interior.is_empty() and preload("res://scripts/town_system.gd").travelling_merchant_present(GameState.current_region, GameState.day)):
                 _market_mode = true
+                _market_page = 0
                 _market_selling = false
                 _market_travelling = active_interior.is_empty()
                 _refresh_market()
@@ -267,7 +269,12 @@ func _unhandled_key_input(event: InputEvent) -> void:
                 _refresh_hud()
         KEY_Z:
             if _market_mode:
+                _market_page = 0
                 _market_selling = not _market_selling
+                _refresh_market()
+        KEY_L:
+            if _market_mode:
+                _market_page += 1
                 _refresh_market()
         KEY_I:
             _market_mode = false
@@ -769,24 +776,29 @@ func _refresh_market() -> void:
     _market_ids.clear()
     var mode := "VENDA" if _market_selling else "COMPRA"
     var title := "CARAVANA VIAJANTE" if _market_travelling else "MERCADO DA CIDADE"
-    var lines: Array[String] = ["%s | %s | Moedas: %d" % [title, mode, GameState.money]]
+    var available_ids: Array[String] = []
     for id in ITEMS.ITEMS.keys():
         var item_id := str(id)
         var data: Dictionary = ITEMS.get_item(item_id)
-        var available := int(GameState.inventory.get(item_id, 0)) > 0
-        if _market_selling and not available:
+        if _market_selling and int(GameState.inventory.get(item_id, 0)) < 1:
             continue
         if not _market_travelling:
             if active_interior == "Ferraria" and not ["Minerios", "Armas"].has(str(data["category"])):
                 continue
             if active_interior == "Taverna" and str(data["category"]) != "Comestiveis":
                 continue
+        available_ids.append(item_id)
+    var pages := maxi(1, ceili(float(available_ids.size()) / 5.0))
+    _market_page %= pages
+    var lines: Array[String] = ["%s | %s | Moedas: %d | Pagina %d/%d" % [title, mode, GameState.money, _market_page + 1, pages]]
+    var start_index := _market_page * 5
+    for i in range(start_index, mini(available_ids.size(), start_index + 5)):
+        var item_id := available_ids[i]
+        var data: Dictionary = ITEMS.get_item(item_id)
         _market_ids.append(item_id)
         var price := ITEMS.sell_price(item_id) if _market_selling else ITEMS.price(item_id, GameState.current_region, GameState.oath, _market_travelling)
         lines.append("[%d] %s | %s | %s | %d moedas" % [_market_ids.size(), data["name"], data["category"], data["rarity"], price])
-        if _market_ids.size() == 5:
-            break
-    lines.append("1-5: confirmar | Z: compra/venda | O: reabrir | V: fechar")
+    lines.append("1-5: negociar | Z: compra/venda | L: proxima pagina | V: fechar")
     town_panel.text = "\n".join(lines)
     town_panel.visible = true
 
