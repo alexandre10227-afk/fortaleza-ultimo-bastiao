@@ -612,7 +612,7 @@ func duke_tavern_visitor() -> bool:
         return false
     # A semente e o dia permanecem constantes; consultar a taverna
     # varias vezes no mesmo dia nao cria novas tentativas.
-    var roll := abs(hash("duke_daughter:%d" % day)) % 100
+    var roll: int = absi(hash("duke_daughter:%d" % day)) % 100
     var present := DUKE.tavern_roll(duke_state, day, wave_number, roll)
     if present:
         save_game()
