@@ -7,6 +7,7 @@ const ECONOMY = preload("res://scripts/economy_system.gd")
 const NPC_REGISTRY = preload("res://scripts/npc_registry.gd")
 const CHARACTER = preload("res://scripts/character_profile.gd")
 const HERO_CLASSES = preload("res://scripts/hero_classes.gd")
+const PLAYER_CLASSES = preload("res://scripts/protagonist_progression.gd")
 
 const SAVE_PATH := "user://fortaleza_stage1_v1.json"
 const DIFFICULTIES := {
@@ -20,6 +21,7 @@ var character_origin := "Andarilho"
 var character_stats: Dictionary = CHARACTER.default_stats()
 var character_appearance := 0
 var hero_build: Dictionary = HERO_CLASSES.starter("Guerreiro")
+var protagonist_track: Dictionary = PLAYER_CLASSES.starting_track("Guerreiro")
 var npc_hero_builds: Dictionary = {}
 var difficulty := "Normal"
 var oath := ""
@@ -60,6 +62,7 @@ func new_game(hero_name: String, mode: String) -> void:
     character_stats = CHARACTER.default_stats()
     character_appearance = 0
     hero_build = HERO_CLASSES.starter("Guerreiro")
+    protagonist_track = PLAYER_CLASSES.starting_track("Guerreiro")
     npc_hero_builds = HERO_CLASSES.default_npc_builds()
     if character_name.is_empty():
         character_name = "Viajante"
@@ -102,18 +105,48 @@ func configure_character(origin: String, stats: Dictionary, appearance: int = 0)
     save_game()
     return true
 
-func choose_starting_class(archetype: String, element: String = "Terra") -> bool:
+func choose_starting_class(base_class: String, _element: String = "") -> bool:
+    # O protagonista NAO usa a raridade de subclasses dos NPCs.
     if not oath.is_empty():
         return false
-    var build := HERO_CLASSES.starter(archetype)
-    if build.is_empty():
+    var track := PLAYER_CLASSES.starting_track(base_class)
+    if track.is_empty():
         return false
-    if archetype == "Mago":
-        build = HERO_CLASSES.make("Mago", "Mago Elemental", [element])
-    if not HERO_CLASSES.valid(build):
+    protagonist_track = track
+    record_event("protagonist_class", "Palacio", [character_name], base_class)
+    save_game()
+    return true
+
+func learn_from_master(teacher_id: String, specialization: String) -> bool:
+    if not PLAYER_CLASSES.teacher_can_teach(teacher_id, friendship_points(teacher_id), specialization):
         return false
-    hero_build = build
-    record_event("hero_class", "Palacio", [character_name], str(build["subclass"]))
+    if not npc_lives.has(teacher_id) and not recruited.has(teacher_id):
+        return false
+    var present := recruited.has(teacher_id)
+    if npc_lives.has(teacher_id):
+        var life: Dictionary = npc_lives[teacher_id]
+        present = present or (str(life.get("region", "")) == current_region and str(life.get("status", "")) in ["tavern", "village"])
+    if not present:
+        return false
+    var upgraded := PLAYER_CLASSES.learn(protagonist_track, specialization, "mestre:" + teacher_id)
+    if upgraded.is_empty():
+        return false
+    protagonist_track = upgraded
+    remember(teacher_id, "ensinou_" + specialization)
+    record_event("specialization_learned", current_region, [character_name, teacher_id], specialization)
+    save_game()
+    return true
+
+func learn_from_boss_book(book_id: String) -> bool:
+    var specialization := PLAYER_CLASSES.specialization_from_book(book_id)
+    if specialization.is_empty() or int(inventory.get(book_id, 0)) < 1:
+        return false
+    var upgraded := PLAYER_CLASSES.learn(protagonist_track, specialization, "livro:" + book_id)
+    if upgraded.is_empty():
+        return false
+    inventory[book_id] = int(inventory[book_id]) - 1
+    protagonist_track = upgraded
+    record_event("specialization_learned", current_region, [character_name], specialization + " via livro do chefe")
     save_game()
     return true
 
@@ -504,7 +537,7 @@ func save_game() -> bool:
     var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if file == null:
         return false
-    var data := {"schema": 1, "name": character_name, "character_origin": character_origin, "character_stats": character_stats, "character_appearance": character_appearance, "hero_build": hero_build, "npc_hero_builds": npc_hero_builds, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "npc_lives": npc_lives, "npc_story_flags": npc_story_flags, "last_gift_day": last_gift_day, "food_bonuses": active_food_bonuses, "building_levels": building_levels, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "recruited": recruited, "bestiary": discovered_bestiary, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
+    var data := {"schema": 1, "name": character_name, "character_origin": character_origin, "character_stats": character_stats, "character_appearance": character_appearance, "hero_build": hero_build, "protagonist_track": protagonist_track, "npc_hero_builds": npc_hero_builds, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "npc_lives": npc_lives, "npc_story_flags": npc_story_flags, "last_gift_day": last_gift_day, "food_bonuses": active_food_bonuses, "building_levels": building_levels, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "recruited": recruited, "bestiary": discovered_bestiary, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
     file.store_string(JSON.stringify(data))
     return true
 
@@ -521,6 +554,9 @@ func load_game() -> bool:
     character_origin = str(parsed.get("character_origin", "Andarilho"))
     character_stats = parsed.get("character_stats", CHARACTER.default_stats())
     character_appearance = int(parsed.get("character_appearance", 0))
+    protagonist_track = parsed.get("protagonist_track", PLAYER_CLASSES.starting_track("Guerreiro"))
+    if not PLAYER_CLASSES.valid_track(protagonist_track):
+        protagonist_track = PLAYER_CLASSES.starting_track("Guerreiro")
     hero_build = parsed.get("hero_build", HERO_CLASSES.starter("Guerreiro"))
     if not HERO_CLASSES.valid(hero_build):
         hero_build = HERO_CLASSES.starter("Guerreiro")
