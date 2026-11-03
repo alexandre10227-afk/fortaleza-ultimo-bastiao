@@ -35,6 +35,7 @@ var _market_mode := false
 var _market_selling := false
 var _market_travelling := false
 var _market_ids: Array[String] = []
+var npc_menu: Control
 var _market_page := 0
 var _food_mode := false
 var _food_ids: Array[String] = []
@@ -55,6 +56,7 @@ func _ready() -> void:
     _generate_ui()
     _generate_map_dialog()
     _create_dialogue_ui()
+    _create_npc_menu()
     _refresh_hud()
 
 func _make_box(parent: Node3D, location: Vector3, dimensions: Vector3, tint: Color, solid: bool = false) -> void:
@@ -189,7 +191,7 @@ func _generate_ui() -> void:
     town_panel.add_theme_color_override("default_color", UI.LIGHT_TEXT)
 
 func _process(delta: float) -> void:
-    if map_open or (dialogue_ui != null and dialogue_ui.visible):
+    if map_open or (dialogue_ui != null and dialogue_ui.visible) or (npc_menu != null and npc_menu.is_open()):
         return
     _hint_accumulator += delta
     var direction := Vector3.ZERO
@@ -215,7 +217,7 @@ func _process(delta: float) -> void:
 func _unhandled_key_input(event: InputEvent) -> void:
     if not event is InputEventKey or not event.pressed or event.echo:
         return
-    if dialogue_ui != null and dialogue_ui.visible:
+    if (dialogue_ui != null and dialogue_ui.visible) or (npc_menu != null and npc_menu.is_open()):
         return
     match event.keycode:
         KEY_N:
@@ -244,7 +246,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
         KEY_T, KEY_M:
             _toggle_map()
         KEY_E:
-            _interact()
+            _contextual_interact()
         KEY_C:
             news.visible = not news.visible
             _refresh_news()
@@ -384,15 +386,16 @@ func _update_hint() -> void:
         return
     var next_hint := ""
     if active_interior == "Mansao do Duque":
-        next_hint = "Q: conversar / charada | R: recrutar Duque ou herdeira | E: sair"
+        next_hint = "E: interagir com o Duque ou sua herdeira"
     elif not active_interior.is_empty():
         next_hint = "Interior: %s | E: sair" % active_interior
     else:
         var npc := _nearest_npc()
         if not npc.is_empty():
-            next_hint = "Q: conversar com %s" % npc["name"]
+            next_hint = "E: interagir com %s" % npc["name"]
         var nearby := _nearest_building()
-        next_hint = "E: entrar em %s" % nearby["room"] if not nearby.is_empty() else "Explore a vila; aproxime-se das portas"
+        if npc.is_empty():
+            next_hint = "E: entrar em %s" % nearby["room"] if not nearby.is_empty() else "Explore a vila; aproxime-se das portas"
     if next_hint != _cached_hint:
         _cached_hint = next_hint
         interact_hint.text = next_hint
