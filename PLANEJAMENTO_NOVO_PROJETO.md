@@ -219,3 +219,18 @@ O nível do prédio não substitui a habilidade do ferreiro: a produção requer
 
 ## Registro do início da Etapa 1
 O desenvolvimento recomeça em uma **pasta independente `novo_projeto/`**, sem depender do antigo protótipo da raiz. Componentes devem ser adicionados incrementalmente, e a primeira publicação de código não constitui aprovação nem entrega da Etapa 1. Os arquivos novos precisam passar por carregamento e testes Godot antes do ZIP final.
+
+
+## Regra obrigatória permanente — desempenho e polimento ANTES de qualquer ZIP (03/11/2026)
+
+**Pedido fixado pelo usuário:** nenhuma entrega ZIP de qualquer etapa pode ser gerada antes de **otimizar o código** e **polir o visual** para reduzir travamentos e preservar uma apresentação bonita e fluida. Essa regra se soma aos requisitos de implementação completa, testes técnicos e aceitação posterior em Windows; não pode ser dispensada para protótipos.
+
+Checklist de bloqueio para o ZIP:
+1. Revisão de código: remover cálculos repetidos a cada quadro, evitar alocações desnecessárias e duplicação de texturas/materiais; usar cache, eventos, simulação por intervalos e estruturas compartilhadas; limpar nós e sinais; verificar leaks.
+2. Revisão de cena: testar movimentos, colisões físicas, câmera, interiores, transições, interface, iluminação, legibilidade, animações e consistência visual entre regiões. Evitar terrenos flutuantes e arte provisória no pacote de aceitação.
+3. Testes e medição: registrar FPS e tempos de quadro em Windows e na máquina de desenvolvimento, carregamento de cenas, uso de memória e estabilidade em regiões povoadas e durante simulação de mundo/ondas. Definir orçamentos e limites com base na máquina-alvo e nos testes, sem inventar métricas antes de medir.
+4. Ajustes de desempenho: geometria de baixa complexidade, materiais/texturas reutilizados, iluminação adequada ao hardware, culling e simulação de NPCs por proximidade, processamento de eventos só quando necessário; parâmetros gráficos ajustáveis.
+5. Verificação de regressão e integridade de saves, além de checklist de recursos, dependências e resultados de testes reproduzíveis.
+6. **Somente depois** gerar o ZIP da etapa e entregá-lo como `Aguardando aceitação do usuário no Windows`.
+
+O código e as cenas iniciais do `novo_projeto/` continuam **em desenvolvimento**; resultados headless não provam FPS real ou polimento artístico.
