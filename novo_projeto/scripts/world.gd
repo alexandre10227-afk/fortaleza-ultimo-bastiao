@@ -3,6 +3,7 @@ const UI = preload("res://scripts/ui_theme.gd")
 const STORY = preload("res://scripts/story_content.gd")
 const ITEMS = preload("res://scripts/item_catalog.gd")
 const RECIPES = preload("res://scripts/economy_system.gd")
+const NPCS = preload("res://scripts/npc_registry.gd")
 
 var player: Node3D
 var hud: Label
@@ -480,6 +481,11 @@ func _generate_map_dialog() -> void:
         UI.apply_button(button)
         button.pressed.connect(_travel_to.bind(destination))
         layout.add_child(button)
+    var codex := Button.new()
+    codex.text = "Consultar NPCs por categoria"
+    UI.apply_button(codex)
+    codex.pressed.connect(_open_npc_directory)
+    layout.add_child(codex)
     var close := Button.new()
     close.text = "Fechar mapa"
     UI.apply_button(close)
@@ -927,7 +933,7 @@ func _contextual_interact() -> void:
 
 func _npc_is_recruitable(npc: Dictionary) -> bool:
     var id := str(npc.get("id", ""))
-    if GameState.recruited.has(id):
+    if GameState.recruited.has(id) or not NPCS.base_recruitable(id):
         return false
     if id == "duque":
         return GameState.current_region == "Fortaleza" and GameState.oath != "exile" and GameState.DUKE.can_recruit_duke(GameState.duke_state, GameState.wave_number)
@@ -944,11 +950,13 @@ func _show_npc_menu(npc: Dictionary) -> void:
     _tavern_selected = npc.duplicate(true)
     var id := str(npc.get("id", ""))
     var profession := str(npc.get("profession", ""))
-    var merchant := profession in ["Ferreiro", "Mercador", "Vendedor", "Comerciante"]
+    var merchant := NPCS.is_vendor(id)
     npc_menu.show_npc(npc, GameState.friendship_points(id), GameState.friendship_level(id), ITEMS.preferred_category(id, profession), _npc_is_recruitable(npc), merchant, not active_interior.is_empty())
 
 func _npc_action(action: String, npc: Dictionary) -> void:
     match action:
+        "directory":
+            npc_menu.show_directory()
         "talk":
             npc_menu.hide_menu()
             if active_interior == "Mansao do Duque":
@@ -1021,3 +1029,8 @@ func _npc_step_aside(npc: Dictionary) -> void:
             last_message = "%s se afastou para liberar a passagem, sem penalidade." % str(npc.get("name", "NPC"))
             return
     last_message = "Nao ha espaco seguro para o personagem se afastar agora."
+
+func _open_npc_directory() -> void:
+    map_open = false
+    map_dialog.visible = false
+    npc_menu.show_directory()
