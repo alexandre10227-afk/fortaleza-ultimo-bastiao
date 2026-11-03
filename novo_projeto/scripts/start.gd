@@ -1,4 +1,5 @@
 extends Control
+const UI = preload("res://scripts/ui_theme.gd")
 
 var panel: VBoxContainer
 var name_input: LineEdit
@@ -15,6 +16,7 @@ func _ready() -> void:
     add_child(center)
     var frame := PanelContainer.new()
     frame.custom_minimum_size = Vector2(580, 560)
+    UI.apply_panel(frame)
     center.add_child(frame)
     panel = VBoxContainer.new()
     panel.add_theme_constant_override("separation", 17)
@@ -30,6 +32,9 @@ func _label(value: String, size: int = 19) -> void:
     var l := Label.new()
     l.text = value
     l.add_theme_font_size_override("font_size", size)
+    UI.apply_text(l)
+    if size >= 29:
+        UI.apply_title(l)
     l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     panel.add_child(l)
 
@@ -38,6 +43,7 @@ func _button(value: String, action: Callable) -> void:
     b.text = value
     b.custom_minimum_size.y = 43
     b.pressed.connect(action)
+    UI.apply_button(b)
     panel.add_child(b)
 
 func _show_creation() -> void:
@@ -47,6 +53,7 @@ func _show_creation() -> void:
     _label("Um desconhecido pode escolher seu destino. Crie seu personagem.")
     name_input = LineEdit.new()
     name_input.placeholder_text = "Nome do protagonista"
+    UI.apply_input(name_input)
     name_input.max_length = 24
     panel.add_child(name_input)
     _label("Dificuldade da campanha")
@@ -54,6 +61,9 @@ func _show_creation() -> void:
     for item in ["Facil", "Normal", "Dificil", "Impossivel"]:
         difficulty_input.add_item(item)
     difficulty_input.select(1)
+    difficulty_input.add_theme_stylebox_override("normal", UI.button_style())
+    difficulty_input.add_theme_stylebox_override("hover", UI.button_style("hover"))
+    difficulty_input.add_theme_color_override("font_color", UI.LIGHT_TEXT)
     panel.add_child(difficulty_input)
     _label("Impossivel concede 3x XP, mas torna a sobrevivencia mais dificil.", 15)
     _button("Comecar: audiencia com o rei", _create_character)
