@@ -447,6 +447,9 @@ func give_gift(npc_id: String, profession: String, item_id: String) -> bool:
     return true
 
 func market_buy(item_id: String, travelling_merchant: bool = false) -> bool:
+    # Equipamento de combate: apenas forja ou comerciante de arquetipo.
+    if GEAR.is_equipment(item_id):
+        return false
     var price := ITEMS.price(item_id, current_region, oath, travelling_merchant)
     if price <= 0 or money < price:
         return false
@@ -458,6 +461,8 @@ func market_buy(item_id: String, travelling_merchant: bool = false) -> bool:
 
 func market_sell(item_id: String) -> bool:
     var amount := int(inventory.get(item_id, 0))
+    if equipped.values().has(item_id) and amount <= 1:
+        return false
     var income := ITEMS.sell_price(item_id)
     if income < 1 or amount < 1:
         return false
