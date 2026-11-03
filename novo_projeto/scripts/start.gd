@@ -3,6 +3,7 @@ extends Control
 var panel: VBoxContainer
 var name_input: LineEdit
 var difficulty_input: OptionButton
+var dialogue_ui: Control
 
 func _ready() -> void:
     var backdrop := ColorRect.new()
@@ -66,12 +67,18 @@ func _create_character() -> void:
 func _show_audience() -> void:
     _clear()
     _label("O JURAMENTO DO REI", 29)
-    _label("REI ALDRIC", 19)
-    _label("A fronteira esta prestes a cair. Preciso de alguem que proteja a fortaleza. Voce tera de conquistar sua propria patente e propriedades.")
-    _label("Sua resposta define a campanha. A decisao sera permanente.", 17)
-    _button("Aceito defender a fortaleza", func(): _choose(true))
-    _button("Nao servirei a coroa (Exilado)", func(): _choose(false))
-    _label("Recusar: outra cidade, precos 3x na fortaleza e residentes nao recrutaveis.", 15)
+    _label("O salao real silencia enquanto o rei aguarda sua resposta.", 18)
+    if dialogue_ui == null:
+        dialogue_ui = preload("res://scripts/dialogue_panel.gd").new()
+        dialogue_ui.name = "DialoguePanel"
+        add_child(dialogue_ui)
+        dialogue_ui.choice_selected.connect(_on_royal_choice)
+    dialogue_ui.show_dialogue("Rei Aldric", "A fronteira esta prestes a cair. Voce aceita defender a fortaleza ou prefere seguir seu proprio destino?", ["Aceito defender a fortaleza.", "Nao servirei a coroa. Meu caminho e outro."])
+
+func _on_royal_choice(index: int) -> void:
+    if dialogue_ui != null:
+        dialogue_ui.close_dialogue()
+    _choose(index == 0)
 
 func _choose(protect: bool) -> void:
     GameState.choose_oath(protect)
