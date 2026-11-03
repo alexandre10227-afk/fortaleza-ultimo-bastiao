@@ -5,6 +5,7 @@ const TOWN = preload("res://scripts/town_system.gd")
 const ITEMS = preload("res://scripts/item_catalog.gd")
 const ECONOMY = preload("res://scripts/economy_system.gd")
 const NPC_REGISTRY = preload("res://scripts/npc_registry.gd")
+const CHARACTER = preload("res://scripts/character_profile.gd")
 
 const SAVE_PATH := "user://fortaleza_stage1_v1.json"
 const DIFFICULTIES := {
@@ -14,6 +15,9 @@ const DIFFICULTIES := {
     "Impossivel": {"xp": 3.0, "damage": 1.8, "resources": 0.55, "enemies": 1.8, "rare": 1.6},
 }
 var character_name := ""
+var character_origin := "Andarilho"
+var character_stats: Dictionary = CHARACTER.default_stats()
+var character_appearance := 0
 var difficulty := "Normal"
 var oath := ""
 var current_region := ""
@@ -49,6 +53,9 @@ const OPENING_QUESTS := {
 
 func new_game(hero_name: String, mode: String) -> void:
     character_name = hero_name.strip_edges().substr(0, 24)
+    character_origin = "Andarilho"
+    character_stats = CHARACTER.default_stats()
+    character_appearance = 0
     if character_name.is_empty():
         character_name = "Viajante"
     difficulty = mode if DIFFICULTIES.has(mode) else "Normal"
@@ -79,6 +86,16 @@ func new_game(hero_name: String, mode: String) -> void:
     narrative_flags.clear()
     duke_state = DUKE.initial_state()
     record_event("character_created", "Palacio", [character_name], "Criacao do protagonista")
+
+func configure_character(origin: String, stats: Dictionary, appearance: int = 0) -> bool:
+    if not CHARACTER.valid(stats, origin) or not oath.is_empty() or appearance < 0 or appearance > 3:
+        return false
+    character_origin = origin
+    character_stats = CHARACTER.final_stats(stats, origin)
+    character_appearance = appearance
+    record_event("character_profile", "Palacio", [character_name], origin)
+    save_game()
+    return true
 
 func record_narrative_choice(key: String, value: String) -> bool:
     if narrative_flags.has(key):
@@ -432,7 +449,7 @@ func save_game() -> bool:
     var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if file == null:
         return false
-    var data := {"schema": 1, "name": character_name, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "npc_lives": npc_lives, "npc_story_flags": npc_story_flags, "last_gift_day": last_gift_day, "food_bonuses": active_food_bonuses, "building_levels": building_levels, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "recruited": recruited, "bestiary": discovered_bestiary, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
+    var data := {"schema": 1, "name": character_name, "character_origin": character_origin, "character_stats": character_stats, "character_appearance": character_appearance, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "npc_lives": npc_lives, "npc_story_flags": npc_story_flags, "last_gift_day": last_gift_day, "food_bonuses": active_food_bonuses, "building_levels": building_levels, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "recruited": recruited, "bestiary": discovered_bestiary, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
     file.store_string(JSON.stringify(data))
     return true
 
@@ -446,6 +463,9 @@ func load_game() -> bool:
     if not (parsed is Dictionary) or parsed.get("schema", -1) != 1:
         return false
     character_name = str(parsed.get("name", "Viajante"))
+    character_origin = str(parsed.get("character_origin", "Andarilho"))
+    character_stats = parsed.get("character_stats", CHARACTER.default_stats())
+    character_appearance = int(parsed.get("character_appearance", 0))
     difficulty = str(parsed.get("difficulty", "Normal"))
     oath = str(parsed.get("oath", ""))
     current_region = str(parsed.get("region", ""))
