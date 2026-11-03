@@ -1,0 +1,40 @@
+name: Godot Stage 1 Checks
+on:
+  push:
+    paths:
+      - 'novo_projeto/**'
+      - '.github/workflows/godot-stage1.yml'
+  pull_request:
+    paths:
+      - 'novo_projeto/**'
+      - '.github/workflows/godot-stage1.yml'
+  workflow_dispatch:
+
+jobs:
+  godot-headless:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.5.1
+          use-dotnet: false
+          include-templates: false
+      - name: Import Godot project
+        run: godot --headless --path novo_projeto --editor --import --quit
+      - name: Validate all Stage 1 scripts and scenes
+        run: godot --headless --path novo_projeto --editor --quit
+      - name: Automated regression suite
+        shell: bash
+        run: |
+          set -uo pipefail
+          failed=0
+          for test in novo_projeto/tests/test_*.gd; do
+            echo "::group::$(basename "$test")"
+            timeout 75s godot --headless --path novo_projeto --script "res://tests/$(basename "$test")" || failed=1
+            echo "::endgroup::"
+          done
+          exit "$failed"
+      - name: Short scene smoke test
+        run: timeout 45s godot --headless --path novo_projeto --quit-after 5
