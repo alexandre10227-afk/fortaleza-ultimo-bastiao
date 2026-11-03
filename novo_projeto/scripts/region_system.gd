@@ -18,6 +18,7 @@ const RESIDENTS := {
     "Fortaleza": [
         {"id": "doran", "name": "Doran", "profession": "Ferreiro", "home": "Fortaleza", "dialogue": "A muralha so resiste se a forja continuar acesa."},
         {"id": "kael", "name": "Kael", "profession": "Explorador", "home": "Fortaleza", "dialogue": "Vigio as estradas antes que as ondas cheguem."},
+        {"id": "mercador_marcial", "name": "Breno, Armeiro", "profession": "Comerciante", "home": "Fortaleza", "dialogue": "Uma boa armadura protege a pessoa, nao apenas o brasao."},
         {"id": "iris_feirante", "name": "Iris", "profession": "Feirante", "home": "Fortaleza", "dialogue": "Um mercado honesto precisa de alimentos e confianca."},
         {"id": "bento_agricultor", "name": "Bento", "profession": "Agricultor", "home": "Fortaleza", "dialogue": "As sementes nao esperam que a guerra termine."}
     ],
