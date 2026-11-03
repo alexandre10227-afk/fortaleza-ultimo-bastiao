@@ -128,6 +128,17 @@ func show_page(page_name: String) -> void:
             for expedition in GameState.expeditions:
                 if expedition is Dictionary:
                     _line("%s | %s | Retorno dia %d" % [str(expedition.get("destination", "")), str(expedition.get("status", "")), int(expedition.get("return_day", 0))])
+            _line("INTELIGENCIA MILITAR", true)
+            var garrisons: Dictionary = GameState.military_intel.get("garrison", {})
+            for region_name in garrisons:
+                var garrison: Dictionary = garrisons[region_name]
+                _line("%s | Comando: %s | Defensores (base): %d" % [region_name, str(garrison.get("commander","")), int(garrison.get("defenders",0))])
+            _line("Relatorios de reconhecimento: %d (nao verificados)" % GameState.military_intel.get("scouting_reports", []).size())
+            _line("MIGRACAO E LEGADO", true)
+            _line("Movimentos entre regioes: %d" % GameState.migration_history.size())
+            _line("Vinculos de mestre e aprendiz: %d" % GameState.legacy_records.get("masters", {}).size())
+            _line("INIMIGOS PERSISTENTES", true)
+            _line("Inimigos registrados: %d" % GameState.nemesis_records.get("enemies", {}).size())
             _line("MEMORIAL DOS CAIDOS", true)
             if GameState.memorial.is_empty():
                 _line("Nenhum companheiro registrado no memorial.")
