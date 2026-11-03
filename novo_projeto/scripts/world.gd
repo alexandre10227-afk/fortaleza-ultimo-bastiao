@@ -1212,6 +1212,15 @@ func _create_equipment_market() -> void:
     equipment_market.name = "EquipmentMarket"
     get_node("CanvasLayer").add_child(equipment_market)
     equipment_market.purchase_requested.connect(_market_click_purchase)
+    equipment_market.next_page_requested.connect(func():
+        _market_page += 1
+        _refresh_market()
+    )
+    equipment_market.toggle_trade_requested.connect(func():
+        _market_selling = not _market_selling
+        _market_page = 0
+        _refresh_market()
+    )
 
 func _market_click_purchase(item_id: String) -> void:
     var success := false
