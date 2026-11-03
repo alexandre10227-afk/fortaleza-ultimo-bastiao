@@ -690,7 +690,6 @@ func _make_terrain_texture(parent: Node3D) -> void:
     var mat := StandardMaterial3D.new()
     mat.albedo_texture = ImageTexture.create_from_image(img)
     mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
-    mat.texture_repeat = BaseMaterial3D.TEXTURE_REPEAT_ENABLED
     mat.uv1_scale = Vector3(20, 20, 1)
     var tile := MeshInstance3D.new()
     var mesh := PlaneMesh.new()
