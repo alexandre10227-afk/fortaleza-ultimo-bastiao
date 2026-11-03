@@ -310,3 +310,18 @@ Raridades comerciaveis: **Comum, Raro, Epico e Lendario**. Categorias: **Arte** 
 
 ### Implementacao e limites
 Arquivos iniciais: `novo_projeto/scripts/item_catalog.gd`, `unique_weapons.gd`, `economy_system.gd`, `game_state.gd`, `world.gd`. Primeiro menu de presentes e mercado integrado; interface e representacao visual ainda sao temporarias. Fabricacao/obras precisam de interfaces completas e balanceamento antes da etapa de aceite. Testes novos em `tests/test_item_economy.gd`, cuja execucao na versao remota ainda precisa ser feita. **Nao gerar ZIP antes de otimizar, testar e polir a Etapa 1 completa.**
+
+
+## Adendo 1.6 — Interação contextual unificada por E e clique (03/11/2026)
+
+**Requisito aprovado:** substituir o excesso de atalhos de ação por interação contextual no botão `E`. Perto de NPCs, o jogador abre uma janela em estilo Wuxia/Dark Fantasy e escolhe as ações por clique. Fora do alcance, `E` continua destinado a entradas de edifícios.
+
+- **Conversar** abre o diálogo já existente, com memória e consequências.
+- **Abrir loja** aparece só para profissão comerciante/vendedor/ferreiro, usando os preços, raridades e restrições regionais.
+- **Presentear** abre uma janela de perfil/inventário com itens clicáveis. Cada NPC continua aceitando somente sua categoria predileta; itens incompatíveis aparecem identificados como recusados e são desabilitados, sem consumo.
+- **Recrutar** é visível apenas se elegível: para NPCs comuns, nível **Leal até a Morte (80–100)**, visitante presente na região e restrições de Exilado. Duque e herdeira conservam requisitos especiais próprios.
+- **Pedir passagem** é uma ação neutra: o NPC desloca sua representação visual lateralmente para liberar a passagem, quando houver espaço seguro. **Não altera amizade, reputação, inventário ou dinheiro**.
+- Na taverna, `E` abre lista de visitantes clicáveis, depois o perfil de quem o jogador escolher. Na mansão, abre o perfil do Duque/herdeira. Há opções de saída do interior pelo próprio menu.
+- As janelas impedem o deslocamento do protagonista durante sua exibição e reutilizam o tema original de madeira/pergaminho/bronze.
+- Arquivo: `novo_projeto/scripts/npc_interaction_menu.gd`; integrado a `scripts/world.gd`. O comportamento físico de desvio, retratos e menus de mercado completos serão aprimorados com navegação real e testes visuais nas próximas iterações.
+- **Ainda sem ZIP:** antes da entrega, testar no Godot, otimizar e polir a interface. Atalhos antigos do protótipo permanecem temporariamente como debug e serão removidos ou remapeados durante a revisão final de controles.
