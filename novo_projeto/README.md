@@ -50,3 +50,18 @@ Controles temporários no mundo: `V` abre visitantes da taverna; teclas `1` a `5
 **Testes locais Godot 4.7.2:** editor abriu sem erro; `tests/test_state.gd` e `tests/test_town.gd` passaram, além da inicialização headless de `world.tscn`. Testes de aceitação e revisão visual permanecem pendentes.
 
 **Limitações conhecidas:** a rotação de visitantes ainda é uma lista pequena de personagens definidos no código, não um gerador completo de raridades ponderadas; os estabelecimentos ainda não são interiores funcionais; movimentação não usa colisão de física; faltam trabalho/coleta, missões, inventário visual e mapa mundial selecionável. A etapa continua em andamento: **não gerar ZIP final**.
+
+
+## Incremento de exploração — terreno, entradas e mapa (03/11/2026)
+
+- **Terreno:** superfície ampliada com textura procedural original simples, evitando depender de assets externos neste estágio.
+- **Cenário:** NPCs em `Sprite3D` como marcadores visuais iniciais; ainda não possuem inteligência, diálogos ou rotinas visíveis.
+- **Colisões preliminares:** movimentação bloqueia volumes retangulares de casas. **Não é colisão física completa**: faltam `CharacterBody3D`, `StaticBody3D`, portas, mobília e navegação.
+- **Interiores:** entrar e sair por proximidade e tecla `E`; Taverna, Ferraria, Quarto e Salão têm layout e objetos provisórios distintos. Ainda não são cenas finais independentes.
+- **Mapa mundial:** abrir com `M` ou `T` e escolher entre Fortaleza e Porto Cinzento. Viagem desconta 5 de energia, concede XP de Agilidade e muda região no estado persistente. Ainda falta diferenciar visualmente as duas cidades.
+- **Interação contextual:** taverna só abre pelo atalho `V` dentro do interior; compras por `B` apenas em taverna/ferraria.
+- **Novo teste:** `tests/test_exploration.gd` exercita bloqueio de casas, entrada/saída de interiores, mapa e mudança de região.
+
+**Validação local efetuada:** os testes `test_state.gd`, `test_town.gd` e `test_exploration.gd` passaram no Godot 4.7.2 Linux headless; inicialização headless também não relatou erros. Esses testes **não validam qualidade visual, colisões físicas reais ou experiência Windows**.
+
+**Status:** Etapa 1 em desenvolvimento. Sem ZIP de aceite até implementar mapa e cidades distintos, NPCs com comportamento, coleta, missões, inventário visual, colisões físicas, interiores definitivos, salvamento da posição, interface e revisão geral.
