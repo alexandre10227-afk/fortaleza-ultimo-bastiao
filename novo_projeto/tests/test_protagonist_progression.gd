@@ -32,6 +32,7 @@ func run() -> void:
     assert(g.protagonist_track["specializations"].has("Mago do Trovao"))
     g.new_game("Guerreiro", "Normal")
     assert(g.choose_starting_class("Guerreiro"))
+    g.choose_oath(true) # Mestre deve estar presente na mesma regiao para ensinar.
     g.npc_friendship["doran"] = 60
     assert(g.learn_from_master("doran", "Espada e Escudo"))
     assert(not g.learn_from_master("doran", "Espada e Escudo"))
