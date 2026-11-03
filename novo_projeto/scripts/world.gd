@@ -7,7 +7,7 @@ const NPCS = preload("res://scripts/npc_registry.gd")
 const ROUTINES = preload("res://scripts/npc_daily_routines.gd")
 const ACTOR_ANIM = preload("res://scripts/actor_animation.gd")
 
-var player: Node3D
+var player: CharacterBody3D
 var hud: Label
 var news: RichTextLabel
 var town_panel: RichTextLabel
