@@ -163,6 +163,23 @@ func show_training(npc: Dictionary) -> void:
 func _on_training_click(specialization: String) -> void:
     training_selected.emit(selected_npc.duplicate(true), specialization)
 
+func show_services(service: String) -> void:
+    selected_npc = {"id": "_service_forge", "name": service, "profession": "Servicos"}
+    _clear()
+    _heading(service)
+    _line("Selecione um servico pelo mouse.")
+    if service == "Ferraria":
+        _choice("Abrir loja de armas e minerios", "service_shop")
+        _choice("Fabricar itens (receitas)", "service_craft")
+        _choice("Melhorar a ferraria", "service_upgrade")
+    elif service == "Salao":
+        _choice("Consultar ficha e diario", "service_sheet")
+    else:
+        _line("Servicos deste local serao ampliados com as missoes.")
+    _choice("Sair do predio", "exit")
+    _choice("Fechar", "close")
+    visible = true
+
 func show_visitors(visitors: Array[Dictionary]) -> void:
     selected_npc.clear()
     _clear()
