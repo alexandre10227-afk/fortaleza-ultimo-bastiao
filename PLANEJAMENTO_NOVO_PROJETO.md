@@ -337,3 +337,19 @@ Arquivos iniciais: `novo_projeto/scripts/item_catalog.gd`, `unique_weapons.gd`, 
 - A ficha contextual do NPC deve mostrar categoria, tipo narrativo e classificacao de recrutamento, e continuar exibindo **Recrutar** apenas quando os requisitos efetivos estiverem cumpridos.
 - O diretorio de NPCs deve poder ser consultado no mapa e no menu contextual, com filtros por categoria e subtopico. O registro e tambem uma estrutura para catalogar novos habitantes conforme a historia cresce.
 - Nova verificacao automatizada de registro, filtros e menu: `tests/test_npc_registry.gd`. Os testes novos ainda devem ser executados na versao sincronizada do Godot, antes de qualquer pacote ZIP.
+
+
+## Adendo 1.8 — Classes e subclasses dos herois (03/11/2026)
+
+Sistema de **classe e subclasse** para progressao das habilidades de combate, com raridade propria **Raro, Epico, Lendario e Mitico**, distinta do rank de recrutamento A/S/SS e da raridade dos itens. O catalogo completo e excecoes estao documentados em [CLASSES_E_SUBCLASSES.md](CLASSES_E_SUBCLASSES.md).
+
+- **Guerreiro:** Espada e Escudo e Samurai (Raro–Epico); Mestre Espadachim (Lendario–Mitico).
+- **Arqueiro:** Atirador e Cacador (Raro–Epico); Arqueiro Celestial (Lendario–Mitico).
+- **Assassino:** Batedor e Lamina Sombria (Raro–Epico); Mestre das Sombras (Lendario–Mitico).
+- **Defensor:** Escudeiro e Guardiao (Raro–Epico); Bastiao Vivo (Lendario–Mitico).
+- **Curandeiro:** Herbalista e Sacerdote (Raro–Epico); Sabio da Vida (Lendario–Mitico).
+- **Mago:** Terra, Agua, Fogo e Vento sao os quatro elementos basicos. Um elemento = Raro; dois = Epico; tres = Lendario. Quatro desbloqueiam a subclasse **Elementalista Lendario**, com evolucao posterior a **Mitico**.
+- **Mago do Trovao** e **Mago Verde (plantas)** sao subclasses independentes, fixas em **Epico**, nao confundidas com os quatro elementos basicos.
+- Classe inicial e primeira afinidade podem ser escolhidas na criacao, mas todas as classes comecam no estagio inicial. Promocao e evolucao exigirao marcos de historia, experiencia, materiais e treinamento na Etapa 2.
+- Perfis de classe de NPCs (incluindo Duque, herdeira e Vaelor) sao atributos separados dos ranks especiais e persistem no save.
+- Teste isolado `test_hero_classes.gd`: PASS no Godot 4.7.2 headless local; integracao total remota e desempenho ainda carecem de validacao.
