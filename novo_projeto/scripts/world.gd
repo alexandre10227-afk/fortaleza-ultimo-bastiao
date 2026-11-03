@@ -4,6 +4,7 @@ const STORY = preload("res://scripts/story_content.gd")
 const ITEMS = preload("res://scripts/item_catalog.gd")
 const RECIPES = preload("res://scripts/economy_system.gd")
 const NPCS = preload("res://scripts/npc_registry.gd")
+const ROUTINES = preload("res://scripts/npc_daily_routines.gd")
 
 var player: Node3D
 var hud: Label
@@ -565,7 +566,7 @@ func _spawn_residents() -> void:
         npc.pixel_size = 0.026
         npc.billboard = BaseMaterial3D.BILLBOARD_ENABLED
         npc.shaded = false
-        npc.position = REGION_SYSTEM.resident_position(index, GameState.day) + Vector3(0, 1, 0)
+        npc.position = ROUTINES.position_for(str(residents[index]["id"]), GameState.day) + Vector3(0, 1, 0)
         settlement.add_child(npc)
         npc_visuals[str(data["id"])] = npc
 
@@ -583,7 +584,7 @@ func _refresh_resident_positions() -> void:
     for index in range(residents.size()):
         var id := str(residents[index]["id"])
         if npc_visuals.has(id) and is_instance_valid(npc_visuals[id]):
-            npc_visuals[id].position = REGION_SYSTEM.resident_position(index, GameState.day) + Vector3(0, 1, 0)
+            npc_visuals[id].position = ROUTINES.position_for(str(residents[index]["id"]), GameState.day) + Vector3(0, 1, 0)
 
 func _nearest_npc() -> Dictionary:
     var residents: Array = REGION_SYSTEM.residents(GameState.current_region).duplicate(true)
@@ -600,7 +601,9 @@ func _nearest_npc() -> Dictionary:
         if npc_visuals.has(id) and is_instance_valid(npc_visuals[id]):
             var npc: Sprite3D = npc_visuals[id]
             if REGION_SYSTEM.can_talk(Vector2(player.position.x, player.position.z).distance_to(Vector2(npc.position.x, npc.position.z))):
-                return data
+                var info: Dictionary = data.duplicate(true)
+                info["activity"] = ROUTINES.activity_for(id, GameState.day)
+                return info
     return {}
 
 func _talk_to_nearest_npc() -> void:
