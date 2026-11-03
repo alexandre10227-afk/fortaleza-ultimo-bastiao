@@ -189,7 +189,21 @@ func _generate_ui() -> void:
     UI.apply_button(sheet_button)
     sheet_button.pressed.connect(_open_character_sheet.bind("Personagem"))
     column.add_child(sheet_button)
-    help.text = "WASD mover | E entrar/sair | Q conversar | M mapa | N dia | V taverna | G coletar | B comprar | I itens"
+    help.text = "WASD mover | E interagir/coletar | M mapa | I inventario | F5 salvar"
+    var quick_row := HBoxContainer.new()
+    quick_row.add_theme_constant_override("separation", 7)
+    column.add_child(quick_row)
+    for option in [
+        {"label": "Mapa", "action": "map"},
+        {"label": "Diario", "action": "journal"},
+        {"label": "Proximo dia", "action": "day"},
+        {"label": "Salvar", "action": "save"}
+    ]:
+        var control := Button.new()
+        control.text = str(option["label"])
+        UI.apply_button(control)
+        control.pressed.connect(_on_quick_action.bind(str(option["action"])))
+        quick_row.add_child(control)
     interact_hint = Label.new()
     column.add_child(interact_hint)
     news = RichTextLabel.new()
@@ -417,14 +431,19 @@ func _update_hint() -> void:
     if active_interior == "Mansao do Duque":
         next_hint = "E: interagir com o Duque ou sua herdeira"
     elif not active_interior.is_empty():
-        next_hint = "Interior: %s | E: sair" % active_interior
+        next_hint = "Interior: %s | E: abrir servicos / sair" % active_interior
     else:
         var npc := _nearest_npc()
         if not npc.is_empty():
             next_hint = "E: interagir com %s" % npc["name"]
         var nearby := _nearest_building()
         if npc.is_empty():
-            next_hint = "E: entrar em %s" % nearby["room"] if not nearby.is_empty() else "Explore a vila; aproxime-se das portas"
+            if not nearby.is_empty():
+                next_hint = "E: entrar em %s" % nearby["room"]
+            elif not _nearest_resource().is_empty():
+                next_hint = "E: coletar recurso"
+            else:
+                next_hint = "Explore a vila, aproxime-se dos personagens e recursos"
     if next_hint != _cached_hint:
         _cached_hint = next_hint
         interact_hint.text = next_hint
@@ -798,6 +817,35 @@ func _refresh_resource_visibility() -> void:
         if is_instance_valid(resource_visuals[node_id]):
             resource_visuals[node_id].visible = int(GameState.collected_nodes.get(node_id, -1)) != GameState.day
 
+func _nearest_resource() -> Dictionary:
+    if not active_interior.is_empty():
+        return {}
+    for node_id in resource_visuals:
+        var obj: Node3D = resource_visuals[node_id]
+        if is_instance_valid(obj) and obj.visible:
+            var horizontal_distance := Vector2(player.position.x, player.position.z).distance_to(Vector2(obj.position.x, obj.position.z))
+            if horizontal_distance <= 1.9:
+                return {"id": str(node_id), "object": obj}
+    return {}
+
+func _on_quick_action(action: String) -> void:
+    if _controls_blocked():
+        return
+    match action:
+        "map":
+            _toggle_map()
+        "journal":
+            _open_character_sheet("Diario")
+        "day":
+            GameState.advance_days(1)
+            _refresh_resident_positions()
+            _refresh_resource_visibility()
+            _refresh_hud()
+        "save":
+            GameState.save_game()
+            last_message = "Campanha salva."
+            _refresh_hud()
+
 func _gather_nearby() -> void:
     if not active_interior.is_empty() or map_open or dialogue_ui.visible:
         return
@@ -983,7 +1031,10 @@ func _contextual_interact() -> void:
         npc_menu.show_visitors(_current_tavern_visitors())
         return
     if not active_interior.is_empty():
-        _interact()
+        if active_interior == "Ferraria" or active_interior == "Salao":
+            npc_menu.show_services(active_interior)
+        else:
+            _interact()
         return
     var npc := _nearest_npc()
     if not npc.is_empty():
@@ -991,6 +1042,9 @@ func _contextual_interact() -> void:
         return
     if preload("res://scripts/town_system.gd").travelling_merchant_present(GameState.current_region, GameState.day) and player.position.distance_to(Vector3(0, 0, 13)) <= 3.0:
         _show_npc_menu({"id": "mercador_viajante", "name": "Mercador Viajante", "profession": "Mercador", "rarity": "Comum"})
+        return
+    if not _nearest_resource().is_empty():
+        _gather_nearby()
         return
     _interact()
 
@@ -1020,6 +1074,24 @@ func _npc_action(action: String, npc: Dictionary) -> void:
     match action:
         "directory":
             npc_menu.show_directory()
+        "service_shop":
+            npc_menu.hide_menu()
+            _market_mode = true
+            _market_page = 0
+            _market_selling = false
+            _market_travelling = false
+            _refresh_market()
+        "service_craft":
+            npc_menu.hide_menu()
+            _open_craft_menu()
+        "service_upgrade":
+            var success := GameState.upgrade_building("Ferraria")
+            npc_menu.hide_menu()
+            last_message = "Ferraria melhorada." if success else "Moedas ou materiais insuficientes, ou nivel maximo."
+            _refresh_hud()
+        "service_sheet":
+            npc_menu.hide_menu()
+            _open_character_sheet("Diario")
         "talk":
             npc_menu.hide_menu()
             if active_interior == "Mansao do Duque":
