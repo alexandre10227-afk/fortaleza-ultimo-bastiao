@@ -10,6 +10,7 @@ const ITEMS := {
     "estatua_jade": {"name":"Estatua de jade", "category":"Arte", "rarity":"Lendario", "price":1200},
     # Comestiveis: presentes OU refeicoes que aplicam bonus temporarios.
     "maca": {"name":"Maca fresca", "category":"Comestiveis", "rarity":"Comum", "price":6, "bonus":{"vigor":1}, "duration":1},
+    "ervas": {"name":"Ervas medicinais", "category":"Comestiveis", "rarity":"Comum", "price":12, "bonus":{"vigor":1}, "duration":1},
     "cenoura": {"name":"Cenoura", "category":"Comestiveis", "rarity":"Comum", "price":5, "bonus":{"vigor":1}, "duration":1},
     "carne_assada": {"name":"Carne assada", "category":"Comestiveis", "rarity":"Raro", "price":32, "bonus":{"forca":2}, "duration":1},
     "sopa_ervas": {"name":"Sopa de ervas", "category":"Comestiveis", "rarity":"Raro", "price":27, "bonus":{"vigor":2}, "duration":1},
@@ -22,7 +23,7 @@ const ITEMS := {
     "tratado_estrategia": {"name":"Tratado de estrategia", "category":"Estudos", "rarity":"Epico", "price":290},
     "compendio_perdido": {"name":"Compendio perdido", "category":"Estudos", "rarity":"Lendario", "price":1350},
     # Materiais: presentes, fabricacao e melhorias de construcoes.
-    "minerio_ferro": {"name":"Minerio de ferro", "category":"Minerios", "rarity":"Comum", "price":20},
+    "ferro": {"name":"Minerio de ferro", "category":"Minerios", "rarity":"Comum", "price":20},
     "pedra_incomum": {"name":"Pedra incomum", "category":"Minerios", "rarity":"Raro", "price":90},
     "cristal_azul": {"name":"Cristal azul", "category":"Minerios", "rarity":"Epico", "price":320},
     "meteorito": {"name":"Fragmento de meteorito", "category":"Minerios", "rarity":"Lendario", "price":1600},
