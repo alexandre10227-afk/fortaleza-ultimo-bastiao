@@ -37,7 +37,6 @@ static func material_for(kind: String, tint: Color) -> StandardMaterial3D:
     mat.albedo_texture = texture_for(kind)
     mat.albedo_color = tint
     mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
-    mat.texture_repeat = BaseMaterial3D.TEXTURE_REPEAT_ENABLED
     mat.uv1_scale = Vector3(2.4, 2.4, 1)
     mat.roughness = 0.92
     return mat
