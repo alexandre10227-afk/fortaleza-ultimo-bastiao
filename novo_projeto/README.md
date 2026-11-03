@@ -65,3 +65,20 @@ Controles temporários no mundo: `V` abre visitantes da taverna; teclas `1` a `5
 **Validação local efetuada:** os testes `test_state.gd`, `test_town.gd` e `test_exploration.gd` passaram no Godot 4.7.2 Linux headless; inicialização headless também não relatou erros. Esses testes **não validam qualidade visual, colisões físicas reais ou experiência Windows**.
 
 **Status:** Etapa 1 em desenvolvimento. Sem ZIP de aceite até implementar mapa e cidades distintos, NPCs com comportamento, coleta, missões, inventário visual, colisões físicas, interiores definitivos, salvamento da posição, interface e revisão geral.
+
+
+## Incremento de engenharia e desempenho — 03/11/2026
+
+**Exigência fixa do projeto:** antes de qualquer ZIP de aceite, revisar/otimizar código, polir gráficos e medir desempenho. O checklist obrigatório está em `PLANEJAMENTO_NOVO_PROJETO.md`. Uma execução headless sem erros **não equivale** a FPS verificado, ausência de lag ou aprovação visual.
+
+**Código implementado nesta atualização:**
+- Personagem principal migrou para `CharacterBody3D` com `CollisionShape3D`.
+- Dez edifícios no cenário receberam `StaticBody3D` e `BoxShape3D` para colisões físicas iniciais. Ainda não estão implementados pisos/rampas físicos, colisão de mobília ou animações.
+- Sprites provisórios compartilham um único `ImageTexture` gerado em vez de repetir a criação da textura para cada NPC.
+- Materiais 3D repetidos são compartilhados por cor (`_shared_materials`), evitando gerar recursos duplicados; seis materiais reutilizados no mapa do teste.
+- Dica contextual passou a atualizar a cada 0,18 s, apenas mudando o texto quando necessário, em vez de recalcular em todos os quadros.
+- Ao sair de um interior, o personagem retorna à posição anterior; interiores eliminam imediatamente nós anteriores da árvore ao reconstruir.
+
+**Validação técnica local:** Godot 4.7.2 em modo headless: `test_state.gd`, `test_town.gd`, `test_exploration.gd`, `test_optimization.gd` e inicialização do projeto passaram. O teste novo verifica personagem físico, dez edifícios com corpos físicos, compartilhamento dos quatro sprites e limite de materiais de cena. Não foi efetuado teste de desempenho gráfico no Windows; FPS e consumo de VRAM seguem **não medidos**.
+
+**Próximos bloqueios para o ZIP:** cidades realmente diferenciadas, interiores próprios/colisão de móveis, animação 2D direcional, NPCs autônomos, missões/coleta, UI final e medição de desempenho real antes de empacotar.
