@@ -353,3 +353,10 @@ Sistema de **classe e subclasse** para progressao das habilidades de combate, co
 - Classe inicial e primeira afinidade podem ser escolhidas na criacao, mas todas as classes comecam no estagio inicial. Promocao e evolucao exigirao marcos de historia, experiencia, materiais e treinamento na Etapa 2.
 - Perfis de classe de NPCs (incluindo Duque, herdeira e Vaelor) sao atributos separados dos ranks especiais e persistem no save.
 - Teste isolado `test_hero_classes.gd`: PASS no Godot 4.7.2 headless local; integracao total remota e desempenho ainda carecem de validacao.
+
+
+### Correção ao Adendo 1.8 — quatro classes do protagonista (03/11/2026)
+
+**Regra de maior prioridade:** a tabela das seis classes, subclasses e raridades de heróis descrita no Adendo 1.8 vale **somente para NPCs**. O **protagonista** tem quatro classes básicas: **Guerreiro, Cavaleiro, Mago e Sacerdote**; não possui raridade Raro/Épico/Lendário/Mítico de classe. Novas especializações são **ensinadas por NPCs** (amizade mínima inicial 60 pontos, mestre presente e compatibilidade) ou **aprendidas de livros de habilidade de chefes** (consumo único do livro; drop do boss ainda a implementar). A classe inicial não é substituída ao aprender uma subclasse; técnicas ficam registradas no save, incluindo fonte de aprendizado. Ver [CLASSES_E_SUBCLASSES.md](CLASSES_E_SUBCLASSES.md).
+
+Os NPCs mantêm as raridades e progressões já definidas, incluindo magos elementais, Trovão e Verde.
