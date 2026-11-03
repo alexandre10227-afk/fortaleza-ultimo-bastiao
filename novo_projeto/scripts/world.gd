@@ -2,6 +2,7 @@ extends Node3D
 const UI = preload("res://scripts/ui_theme.gd")
 const STORY = preload("res://scripts/story_content.gd")
 const ITEMS = preload("res://scripts/item_catalog.gd")
+const RECIPES = preload("res://scripts/economy_system.gd")
 
 var player: Node3D
 var hud: Label
@@ -35,6 +36,10 @@ var _market_selling := false
 var _market_travelling := false
 var _market_ids: Array[String] = []
 var _market_page := 0
+var _food_mode := false
+var _food_ids: Array[String] = []
+var _craft_mode := false
+var _craft_ids: Array[String] = []
 const HINT_REFRESH_SECONDS := 0.18
 var _hint_accumulator := 0.0
 var _cached_hint := ""
@@ -257,6 +262,15 @@ func _unhandled_key_input(event: InputEvent) -> void:
             else:
                 last_message = "Entre no estabelecimento para comprar."
             _refresh_hud()
+        KEY_F:
+            _open_food_menu()
+        KEY_H:
+            if active_interior == "Ferraria":
+                _open_craft_menu()
+        KEY_Y:
+            if active_interior == "Ferraria":
+                last_message = "Ferraria aprimorada." if GameState.upgrade_building("Ferraria") else "Faltam moedas, materiais ou nivel maximo."
+                _refresh_hud()
         KEY_O:
             if active_interior == "Taverna" or active_interior == "Ferraria" or (active_interior.is_empty() and preload("res://scripts/town_system.gd").travelling_merchant_present(GameState.current_region, GameState.day)):
                 _market_mode = true
@@ -614,6 +628,26 @@ func _create_dialogue_ui() -> void:
     dialogue_ui.choice_selected.connect(_on_dialogue_choice)
 
 func _on_dialogue_choice(index: int) -> void:
+    if _food_mode:
+        _food_mode = false
+        if index >= 0 and index < _food_ids.size():
+            var food_id := _food_ids[index]
+            var eaten := GameState.eat_food(food_id)
+            var msg := "Refeicao consumida. Bonus temporarios: %s" % str(GameState.active_food_bonuses) if eaten else "Nao foi possivel consumir este alimento."
+            dialogue_ui.show_dialogue("Suprimentos", msg)
+        else:
+            dialogue_ui.close_dialogue()
+        return
+    if _craft_mode:
+        _craft_mode = false
+        if index >= 0 and index < _craft_ids.size():
+            var crafted_id := _craft_ids[index]
+            var crafted := GameState.craft_item(crafted_id)
+            dialogue_ui.show_dialogue("Ferraria", "Fabricado: %s" % crafted_id if crafted else "Receita bloqueada ou moedas/materiais insuficientes.")
+            _refresh_hud()
+        else:
+            dialogue_ui.close_dialogue()
+        return
     if _gift_mode:
         _gift_mode = false
         if index >= 0 and index < _gift_ids.size():
