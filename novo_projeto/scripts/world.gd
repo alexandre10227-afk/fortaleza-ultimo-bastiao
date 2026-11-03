@@ -492,6 +492,7 @@ func _interact() -> void:
         active_interior = ""
         settlement.visible = true
         interior_node.visible = false
+        _set_interior_collision(false)
         player.position = _interior_return_position
         town_panel.visible = false
         last_message = "Voce voltou para a vila."
@@ -506,10 +507,21 @@ func _interact() -> void:
             settlement.visible = false
             interior_node.visible = true
             _build_interior(active_interior)
+            _set_interior_collision(true)
             player.position = Vector3(0, 0, 3)
             last_message = "Voce entrou em %s." % active_interior
     camera.position = player.position + Vector3(16, 19, 23)
     _refresh_hud()
+
+func _set_interior_collision(enabled: bool) -> void:
+    if interior_node == null:
+        return
+    # Invisibilidade nao desativa fisica no Godot: evitar colisao fantasma
+    # com paredes internas enquanto o jogador explora a vila.
+    for node in interior_node.get_children():
+        if node is StaticBody3D:
+            node.collision_layer = 1 if enabled else 0
+            node.collision_mask = 1 if enabled else 0
 
 func _build_interior(room_name: String) -> void:
     # Duas salas distintas e uma passagem aberta; geometria reconstruida apenas
@@ -631,6 +643,7 @@ func _travel_to(destination: String) -> void:
         active_interior = ""
         settlement.visible = true
         interior_node.visible = false
+        _set_interior_collision(false)
         player.position = GameState.get_region_position()
         _interior_return_position = player.position
         _apply_region_theme()
