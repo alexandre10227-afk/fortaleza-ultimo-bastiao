@@ -17,6 +17,8 @@ const REGION_SYSTEM = preload("res://scripts/region_system.gd")
 var regional_details: Node3D
 var npc_visuals: Dictionary = {}
 var world_environment: WorldEnvironment
+var dialogue_ui: Control
+var _dialogue_npc: Dictionary = {}
 const HINT_REFRESH_SECONDS := 0.18
 var _hint_accumulator := 0.0
 var _cached_hint := ""
@@ -31,6 +33,7 @@ func _ready() -> void:
     _apply_region_theme()
     _generate_ui()
     _generate_map_dialog()
+    _create_dialogue_ui()
     _refresh_hud()
 
 func _make_box(parent: Node3D, location: Vector3, dimensions: Vector3, tint: Color, solid: bool = false) -> void:
@@ -164,7 +167,7 @@ func _generate_ui() -> void:
     frame.add_child(town_panel)
 
 func _process(delta: float) -> void:
-    if map_open:
+    if map_open or (dialogue_ui != null and dialogue_ui.visible):
         return
     _hint_accumulator += delta
     var direction := Vector3.ZERO
@@ -189,6 +192,8 @@ func _process(delta: float) -> void:
 
 func _unhandled_key_input(event: InputEvent) -> void:
     if not event is InputEventKey or not event.pressed or event.echo:
+        return
+    if dialogue_ui != null and dialogue_ui.visible:
         return
     match event.keycode:
         KEY_N:
@@ -474,5 +479,23 @@ func _talk_to_nearest_npc() -> void:
         var first_meeting := not GameState.npc_memory.has(id)
         GameState.remember(id, "primeiro_encontro" if first_meeting else "conversa")
         GameState.save_game()
-        last_message = "%s (%s): %s" % [npc["name"], npc["profession"], npc["dialogue"]]
+        _dialogue_npc = npc
+        dialogue_ui.show_dialogue(str(npc["name"]), str(npc["dialogue"]), ["Conte-me sobre seu trabalho.", "Ate logo."])
     _refresh_hud()
+
+func _create_dialogue_ui() -> void:
+    dialogue_ui = preload("res://scripts/dialogue_panel.gd").new()
+    dialogue_ui.name = "DialoguePanel"
+    get_node("CanvasLayer").add_child(dialogue_ui)
+    dialogue_ui.choice_selected.connect(_on_dialogue_choice)
+
+func _on_dialogue_choice(index: int) -> void:
+    if _dialogue_npc.is_empty():
+        dialogue_ui.close_dialogue()
+        return
+    if index == 0:
+        var profession := str(_dialogue_npc.get("profession", "viajante"))
+        var name_value := str(_dialogue_npc.get("name", "Morador"))
+        dialogue_ui.show_dialogue(name_value, "Meu oficio e %s. Esta cidade muda a cada dia; precisamos cuidar uns dos outros." % profession)
+    else:
+        dialogue_ui.close_dialogue()
