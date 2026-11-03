@@ -49,6 +49,8 @@ func show_npc(npc: Dictionary, friendship: int, level: String, preferred: String
     _clear()
     _heading(str(npc.get("name", "Morador")))
     _line("Profissao: %s | Raridade: %s" % [npc.get("profession", "Morador"), npc.get("rarity", "Comum")])
+    if npc.has("activity"):
+        _line("Atividade: " + str(npc["activity"]))
     var classification: Dictionary = NPCS.profile(str(npc.get("id", "")))
     _line("Grupo: %s | %s" % [classification["category"], "Importante para a historia" if classification["important"] else "Personagem comum"])
     _line("Cadastro: " + ("Recrutavel" if classification["recruitable"] else "Nao recrutavel"))
