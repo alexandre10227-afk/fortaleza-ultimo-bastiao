@@ -94,7 +94,7 @@ func show_page(page_name: String) -> void:
             _line("Amizades e companheiros", true)
             for id in GameState.npc_friendship:
                 _line("%s: %d/100 (%s)" % [str(id).capitalize(), GameState.friendship_points(str(id)), GameState.friendship_level(str(id))])
-            _line("Grupo: " + ", ".join(GameState.recruited))
+            _line("Grupo: " + str(GameState.recruited))
             _line("Reputacao regional: " + str(GameState.region_reputation))
         "Diario":
             _line("Escolhas permanentes: " + str(GameState.narrative_flags), true)
