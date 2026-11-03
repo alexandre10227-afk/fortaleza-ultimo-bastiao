@@ -1,3 +1,5 @@
+> **STATUS CONSOLIDADO (03/11/2026):** principais sistemas da fundação foram implementados. **A Etapa 1 não está formalmente concluída** até a aprovação integral dos testes de CI, inspeção gráfica e medição de desempenho no Windows. A auditoria atual é [ETAPA_1_AUDITORIA.md](../ETAPA_1_AUDITORIA.md). O código tem mapa clicável, oito direções de caminhada, interiores separados, configurações, campanha persistente e sistemas sociais básicos. **Não gerar ZIP final antes da validação.**
+
 # Fortaleza: Último Bastião — Novo Projeto / Etapa 1
 
 **Status:** implementação inicial em andamento. **Não representa a Etapa 1 concluída nem uma versão pronta para o teste de aceitação.**
