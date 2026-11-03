@@ -262,8 +262,12 @@ func _physics_process(delta: float) -> void:
         if direction != Vector3.ZERO:
             GameState.set_region_position(player.position)
     elif direction != Vector3.ZERO:
+        player.velocity = direction * WALK_SPEED
+        player.move_and_slide()
+        player.position.x = clampf(player.position.x, -5.2, 5.2)
+        player.position.z = clampf(player.position.z, -4.5, 4.5)
+    else:
         player.velocity = Vector3.ZERO
-        player.position = Vector3(clampf(target.x, -5.2, 5.2), 0, clampf(target.z, -4.5, 4.5))
     camera.position = player.position + Vector3(16, 19, 23)
 
 func _unhandled_key_input(event: InputEvent) -> void:
@@ -482,26 +486,48 @@ func _interact() -> void:
     _refresh_hud()
 
 func _build_interior(room_name: String) -> void:
+    # Duas salas distintas e uma passagem aberta; geometria reconstruida apenas
+    # quando um novo interior e visitado, sem objetos criados a cada frame.
     for obj in interior_node.get_children():
         interior_node.remove_child(obj)
         obj.queue_free()
-    _make_box(interior_node, Vector3(0, -0.35, 0), Vector3(14, .6, 12), Color("#b3946b"))
-    _make_box(interior_node, Vector3(-6.6, 1.6, 0), Vector3(.6, 3.2, 12), Color("#6e503b"))
-    _make_box(interior_node, Vector3(6.6, 1.6, 0), Vector3(.6, 3.2, 12), Color("#6e503b"))
-    _make_box(interior_node, Vector3(0, 1.6, -5.7), Vector3(14, 3.2, .6), Color("#6e503b"))
-    if room_name == "Mansao do Duque":
-        _make_box(interior_node, Vector3(0, .95, -3), Vector3(4.6, 1.9, 1.8), Color("#785c3c"))
-        _make_box(interior_node, Vector3(-3, .8, -2), Vector3(1.8, 1.6, 2), Color("#b09563"))
-    elif room_name == "Ferraria":
-        _make_box(interior_node, Vector3(-2.0, .7, -2), Vector3(2.5, 1.4, 2), Color("#a94f28"))
-        _make_box(interior_node, Vector3(2.5, .65, -2), Vector3(1.6, 1.3, 1.6), Color("#454545"))
-    elif room_name == "Quarto":
-        _make_box(interior_node, Vector3(-2, .36, -2), Vector3(2, .7, 3), Color("#653a38"))
-    elif room_name == "Taverna":
-        for n in range(3):
-            _make_box(interior_node, Vector3(-3 + n * 3, .8, -2), Vector3(2, .4, 2), Color("#624632"))
-    else:
-        _make_box(interior_node, Vector3(0, .85, -2), Vector3(4, .4, 2), Color("#624632"))
+    var floor_color := Color("#b3946b") if room_name != "Mansao do Duque" else Color("#c0a982")
+    _make_box(interior_node, Vector3(0, -0.35, 0), Vector3(14, 0.6, 12), floor_color)
+    var dark_wood := Color("#694a34")
+    _make_box(interior_node, Vector3(-6.6, 1.6, 0), Vector3(0.5, 3.2, 12), dark_wood, true)
+    _make_box(interior_node, Vector3(6.6, 1.6, 0), Vector3(0.5, 3.2, 12), dark_wood, true)
+    _make_box(interior_node, Vector3(0, 1.6, -5.7), Vector3(14, 3.2, 0.5), dark_wood, true)
+    # Frente com entrada central, consistente em cada tipo de predio.
+    _make_box(interior_node, Vector3(-3.7, 1.6, 5.7), Vector3(6.3, 3.2, 0.5), dark_wood, true)
+    _make_box(interior_node, Vector3(3.7, 1.6, 5.7), Vector3(6.3, 3.2, 0.5), dark_wood, true)
+    # Parede divisoria: abertura central proxima ao ponto inicial (z=3).
+    _make_box(interior_node, Vector3(0, 1.6, -2.25), Vector3(0.45, 3.2, 6.5), dark_wood, true)
+    _make_box(interior_node, Vector3(0, 1.6, 4.85), Vector3(0.45, 3.2, 1.7), dark_wood, true)
+    # Sala principal no lado esquerdo; dormitorio no lado direito.
+    match room_name:
+        "Ferraria":
+            _make_box(interior_node, Vector3(-3.5, 0.9, -2.5), Vector3(2.6, 1.8, 2.3), Color("#6d6562"), true)
+            _make_box(interior_node, Vector3(-4.3, 0.25, -2.6), Vector3(0.9, 0.5, 0.9), Color("#a84f26"))
+            _make_box(interior_node, Vector3(-3.1, 1.0, 2.0), Vector3(3.3, 1.1, 1.2), Color("#81563a"), true)
+            _make_box(interior_node, Vector3(3.7, 0.35, -2.8), Vector3(2.1, 0.7, 3.0), Color("#695346"), true)
+            _make_box(interior_node, Vector3(3.7, 0.15, -2.8), Vector3(2.0, 0.2, 2.7), Color("#a59379"))
+        "Taverna":
+            for n in range(2):
+                _make_box(interior_node, Vector3(-4.3 + n * 2.8, 0.8, -2.2), Vector3(1.9, 0.45, 1.8), Color("#70513a"), true)
+            _make_box(interior_node, Vector3(3.5, 0.35, -2.3), Vector3(2.1, 0.7, 3.1), Color("#594534"), true)
+            _make_box(interior_node, Vector3(3.4, 1.1, 1.2), Vector3(2.1, 2.1, 0.7), Color("#745f4c"), true)
+        "Mansao do Duque":
+            _make_box(interior_node, Vector3(-3.3, 0.8, -2.0), Vector3(3.3, 0.7, 2.0), Color("#765333"), true)
+            _make_box(interior_node, Vector3(-3.2, 1.9, -5.2), Vector3(1.0, 1.8, 0.4), Color("#d4b877"))
+            _make_box(interior_node, Vector3(3.4, 0.4, -2.8), Vector3(2.2, 0.8, 3.1), Color("#6b4a3d"), true)
+            _make_box(interior_node, Vector3(3.7, 1.0, 1.4), Vector3(1.5, 1.9, 0.7), Color("#755c46"), true)
+        "Quarto":
+            _make_box(interior_node, Vector3(3.3, 0.4, -2.1), Vector3(2.0, 0.8, 2.7), Color("#745342"), true)
+            _make_box(interior_node, Vector3(-3.3, 0.8, -2.0), Vector3(2.5, 0.9, 1.4), Color("#816345"), true)
+        _:
+            _make_box(interior_node, Vector3(-3.3, 0.8, -2.0), Vector3(3.2, 0.7, 2), Color("#76563b"), true)
+            _make_box(interior_node, Vector3(3.3, 0.4, -2.1), Vector3(2.1, 0.8, 2.7), Color("#7e5944"), true)
+
 
 func _make_terrain_texture(parent: Node3D) -> void:
     var img := Image.create(64, 64, false, Image.FORMAT_RGB8)
