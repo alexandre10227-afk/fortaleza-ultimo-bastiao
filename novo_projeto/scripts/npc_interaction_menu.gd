@@ -10,6 +10,8 @@ signal closed
 const UI = preload("res://scripts/ui_theme.gd")
 const ITEMS = preload("res://scripts/item_catalog.gd")
 const NPCS = preload("res://scripts/npc_registry.gd")
+const PORTRAITS = preload("res://scripts/portrait_factory.gd")
+const ICONS = preload("res://scripts/item_icon_factory.gd")
 var backdrop: ColorRect
 var card: PanelContainer
 var content: VBoxContainer
@@ -48,7 +50,20 @@ func is_open() -> bool:
 func show_npc(npc: Dictionary, friendship: int, level: String, preferred: String, recruitable: bool, is_merchant: bool, inside_building: bool = false) -> void:
     selected_npc = npc.duplicate(true)
     _clear()
-    _heading(str(npc.get("name", "Morador")))
+    var profile_head := HBoxContainer.new()
+    profile_head.add_theme_constant_override("separation", 18)
+    content.add_child(profile_head)
+    var portrait_icon := TextureRect.new()
+    portrait_icon.custom_minimum_size = Vector2(96, 112)
+    portrait_icon.texture = PORTRAITS.portrait(str(npc.get("id","morador")), str(npc.get("profession","")))
+    portrait_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+    portrait_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+    portrait_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+    profile_head.add_child(portrait_icon)
+    var profile_name := Label.new()
+    profile_name.text = str(npc.get("name", "Morador"))
+    UI.apply_title(profile_name)
+    profile_head.add_child(profile_name)
     _line("Profissao: %s | Raridade: %s" % [npc.get("profession", "Morador"), npc.get("rarity", "Comum")])
     if npc.has("activity"):
         _line("Atividade: " + str(npc["activity"]))
@@ -93,13 +108,14 @@ func show_gifts(npc: Dictionary, inventory: Dictionary) -> void:
     portrait.custom_minimum_size = Vector2(160, 130)
     UI.apply_panel(portrait)
     details.add_child(portrait)
-    var portrait_text := Label.new()
-    portrait_text.text = str(npc.get("name", "?")).substr(0, 1).to_upper()
-    portrait_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    portrait_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-    portrait_text.add_theme_font_size_override("font_size", 70)
-    portrait_text.add_theme_color_override("font_color", UI.MUTED_GOLD)
-    portrait.add_child(portrait_text)
+    var portrait_image := TextureRect.new()
+    portrait_image.name = "CharacterPortrait"
+    portrait_image.texture = PORTRAITS.portrait(str(npc.get("id", "morador")), str(npc.get("profession", "")))
+    portrait_image.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+    portrait_image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+    portrait_image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+    portrait_image.custom_minimum_size = Vector2(145, 155)
+    portrait.add_child(portrait_image)
     var preferred := ITEMS.preferred_category(str(npc.get("id", "")), str(npc.get("profession", "")))
     var info := Label.new()
     info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -128,8 +144,11 @@ func show_gifts(npc: Dictionary, inventory: Dictionary) -> void:
         var data: Dictionary = ITEMS.get_item(key)
         var accepted := ITEMS.accepts_gift(str(npc.get("id", "")), str(npc.get("profession", "")), key)
         var button := Button.new()
+        button.icon = ICONS.icon_for(str(data.get("category", "")))
+        button.expand_icon = true
+        button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
         button.text = "%s\nx%d | %s" % [data["name"], amount, "ACEITO" if accepted else "RECUSADO"]
-        button.custom_minimum_size = Vector2(128, 76)
+        button.custom_minimum_size = Vector2(136, 104)
         button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
         button.disabled = not accepted
         UI.apply_button(button)
