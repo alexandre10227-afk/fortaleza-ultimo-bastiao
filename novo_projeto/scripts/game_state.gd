@@ -8,6 +8,7 @@ const NPC_REGISTRY = preload("res://scripts/npc_registry.gd")
 const CHARACTER = preload("res://scripts/character_profile.gd")
 const HERO_CLASSES = preload("res://scripts/hero_classes.gd")
 const PLAYER_CLASSES = preload("res://scripts/protagonist_progression.gd")
+const WORLD_RECORDS = preload("res://scripts/stage1_records.gd")
 
 const SAVE_PATH := "user://fortaleza_stage1_v1.json"
 const DIFFICULTIES := {
@@ -43,6 +44,8 @@ var region_reputation: Dictionary = {"Fortaleza": 0, "Porto Cinzento": 0}
 var wave_number := 0
 var dungeon_unlocked := false
 var discovered_bestiary: Dictionary = {}
+var expeditions: Array = []
+var memorial: Array = []
 var money := 60
 var inventory: Dictionary = {"pao": 2}
 var recruited: Array[String] = []
@@ -91,6 +94,8 @@ func new_game(hero_name: String, mode: String) -> void:
     inventory = {"pao": 2}
     recruited.clear()
     discovered_bestiary.clear()
+    expeditions.clear()
+    memorial.clear()
     quest_progress.clear()
     collected_nodes.clear()
     narrative_flags.clear()
@@ -275,6 +280,8 @@ func advance_days(days: int) -> void:
             if int(active_food_bonuses[stat].get("until_day", 0)) <= day:
                 active_food_bonuses.erase(stat)
         _advance_npc_lives(day)
+        for returned_id in WORLD_RECORDS.update_expeditions(expeditions, day):
+            record_event("expedition_return", current_region, [character_name], "Expedicao %s retornou sem combate" % returned_id)
         if (day - 1) % 5 == 0:
             wave_number += 1
             if wave_number == DUKE.DEADLINE_WAVE:
@@ -288,6 +295,43 @@ func advance_days(days: int) -> void:
                 dungeon_unlocked = true
                 record_event("dungeon_unlocked", "Lago Antigo", [], "Masmorra descoberta")
     save_game()
+
+func launch_reconnaissance(destination: String) -> bool:
+    if energy < WORLD_RECORDS.EXPEDITION_COST_ENERGY or money < WORLD_RECORDS.EXPEDITION_COST_MONEY:
+        return false
+    var expedition := WORLD_RECORDS.create_expedition(destination, day, expeditions.size() + 1)
+    if expedition.is_empty():
+        return false
+    # Uma expedicao ativa por destino: evita repeticao sem beneficio.
+    for existing in expeditions:
+        if existing is Dictionary and existing.get("destination", "") == destination and existing.get("status", "") == "active":
+            return false
+    energy -= WORLD_RECORDS.EXPEDITION_COST_ENERGY
+    money -= WORLD_RECORDS.EXPEDITION_COST_MONEY
+    expeditions.append(expedition)
+    record_event("expedition_started", current_region, [character_name], destination)
+    save_game()
+    return true
+
+func observe_creature(creature_id: String, location: String) -> bool:
+    if not WORLD_RECORDS.remember_creature(discovered_bestiary, creature_id, location, day):
+        return false
+    record_event("bestiary", current_region, [character_name], "Observou: %s" % creature_id)
+    save_game()
+    return true
+
+func remember_fallen(npc_id: String, name: String, cause: String) -> bool:
+    var entry := WORLD_RECORDS.memorial_entry(npc_id, name, day, cause)
+    if entry.is_empty():
+        return false
+    for other in memorial:
+        if other is Dictionary and other.get("id", "") == npc_id:
+            return false
+    memorial.append(entry)
+    recruited.erase(npc_id)
+    record_event("memorial", current_region, [npc_id], "Registrou perda de %s" % name)
+    save_game()
+    return true
 
 func set_region_position(position: Vector3) -> void:
     if current_region in ["Fortaleza", "Porto Cinzento"]:
@@ -550,7 +594,7 @@ func save_game() -> bool:
     var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if file == null:
         return false
-    var data := {"schema": 1, "name": character_name, "character_origin": character_origin, "character_stats": character_stats, "character_appearance": character_appearance, "region_positions": region_positions, "hero_build": hero_build, "protagonist_track": protagonist_track, "npc_hero_builds": npc_hero_builds, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "npc_lives": npc_lives, "npc_story_flags": npc_story_flags, "last_gift_day": last_gift_day, "food_bonuses": active_food_bonuses, "building_levels": building_levels, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "recruited": recruited, "bestiary": discovered_bestiary, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
+    var data := {"schema": 1, "name": character_name, "character_origin": character_origin, "character_stats": character_stats, "character_appearance": character_appearance, "region_positions": region_positions, "hero_build": hero_build, "protagonist_track": protagonist_track, "npc_hero_builds": npc_hero_builds, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "npc_lives": npc_lives, "npc_story_flags": npc_story_flags, "last_gift_day": last_gift_day, "food_bonuses": active_food_bonuses, "building_levels": building_levels, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "recruited": recruited, "bestiary": discovered_bestiary, "expeditions": expeditions, "memorial": memorial, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
     file.store_string(JSON.stringify(data))
     return true
 
@@ -614,6 +658,8 @@ func load_game() -> bool:
     for id in parsed.get("recruited", []):
         recruited.append(str(id))
     discovered_bestiary = parsed.get("bestiary", {})
+    expeditions = parsed.get("expeditions", [])
+    memorial = parsed.get("memorial", [])
     quest_progress = parsed.get("quests", {})
     collected_nodes = parsed.get("collected_nodes", {})
     narrative_flags = parsed.get("narrative_flags", {})
