@@ -22,6 +22,8 @@ var world_environment: WorldEnvironment
 var dialogue_ui: Control
 var _dialogue_npc: Dictionary = {}
 var resource_visuals: Dictionary = {}
+const DUKE = preload("res://scripts/duke_event.gd")
+var _duke_riddle_mode := false
 const HINT_REFRESH_SECONDS := 0.18
 var _hint_accumulator := 0.0
 var _cached_hint := ""
@@ -206,7 +208,13 @@ func _unhandled_key_input(event: InputEvent) -> void:
             _refresh_resource_visibility()
             _refresh_hud()
         KEY_Q:
-            _talk_to_nearest_npc()
+            if active_interior == "Mansao do Duque":
+                _talk_in_manor()
+            else:
+                _talk_to_nearest_npc()
+        KEY_R:
+            if active_interior == "Mansao do Duque":
+                _recruit_at_manor()
         KEY_G:
             _gather_nearby()
         KEY_T, KEY_M:
@@ -233,11 +241,11 @@ func _unhandled_key_input(event: InputEvent) -> void:
             town_panel.visible = not town_panel.visible
             town_panel.text = "INVENTARIO\n" + str(GameState.inventory) + "\nCompanheiros: " + str(GameState.recruited)
         KEY_1, KEY_2, KEY_3, KEY_4, KEY_5:
-            var visitors := preload("res://scripts/town_system.gd").tavern_visitors(GameState.current_region, GameState.day)
+            var visitors := _current_tavern_visitors()
             var selected: int = event.keycode - KEY_1
             if town_panel.visible and selected < visitors.size():
                 var npc: Dictionary = visitors[selected]
-                var success := GameState.recruit_visitor(npc)
+                var success := GameState.duke_daughter_recruit() if str(npc.get("id", "")) == DUKE.DAUGHTER_ID else GameState.recruit_visitor(npc)
                 last_message = ("Recrutado: " if success else "Recrutamento bloqueado: ") + str(npc["name"])
                 _refresh_tavern()
                 _refresh_hud()
@@ -255,10 +263,10 @@ func _refresh_tavern() -> void:
     if town_panel == null:
         return
     var lines: Array[String] = ["TAVERNA - visitantes do dia %d" % GameState.day]
-    var visitors := preload("res://scripts/town_system.gd").tavern_visitors(GameState.current_region, GameState.day)
+    var visitors := _current_tavern_visitors()
     for i in range(visitors.size()):
         var npc: Dictionary = visitors[i]
-        var can_join: bool = preload("res://scripts/town_system.gd").can_recruit(npc, GameState.oath)
+        var can_join: bool = true if str(npc.get("id", "")) == DUKE.DAUGHTER_ID else preload("res://scripts/town_system.gd").can_recruit(npc, GameState.oath)
         lines.append("[%d] %s (%s) / %s %s" % [i + 1, npc["name"], npc["rarity"], npc["profession"], "" if can_join else "[NAO RECRUTAVEL]"])
     lines.append("Teclas 1-5: tentar recrutar | V: fechar")
     lines.append("Pao: %d moedas | B: comprar" % preload("res://scripts/town_system.gd").price("pao", GameState.current_region, GameState.oath))
@@ -291,14 +299,17 @@ func _nearest_building() -> Dictionary:
             var distance := player.position.distance_to(entrance)
             if distance < best_dist:
                 best_dist = distance
-                best = {"room": ("Taverna" if i == 0 else "Ferraria" if i == 1 else "Quarto" if i == 2 else "Salao"), "entrance": entrance}
+                var building_name := "Mansao do Duque" if GameState.current_region == "Fortaleza" and i == 4 and side < 0 else ("Taverna" if i == 0 else "Ferraria" if i == 1 else "Quarto" if i == 2 else "Salao")
+                best = {"room": building_name, "entrance": entrance}
     return best
 
 func _update_hint() -> void:
     if interact_hint == null:
         return
     var next_hint := ""
-    if not active_interior.is_empty():
+    if active_interior == "Mansao do Duque":
+        next_hint = "Q: conversar / charada | R: recrutar Duque ou herdeira | E: sair"
+    elif not active_interior.is_empty():
         next_hint = "Interior: %s | E: sair" % active_interior
     else:
         var npc := _nearest_npc()
@@ -343,7 +354,10 @@ func _build_interior(room_name: String) -> void:
     _make_box(interior_node, Vector3(-6.6, 1.6, 0), Vector3(.6, 3.2, 12), Color("#6e503b"))
     _make_box(interior_node, Vector3(6.6, 1.6, 0), Vector3(.6, 3.2, 12), Color("#6e503b"))
     _make_box(interior_node, Vector3(0, 1.6, -5.7), Vector3(14, 3.2, .6), Color("#6e503b"))
-    if room_name == "Ferraria":
+    if room_name == "Mansao do Duque":
+        _make_box(interior_node, Vector3(0, .95, -3), Vector3(4.6, 1.9, 1.8), Color("#785c3c"))
+        _make_box(interior_node, Vector3(-3, .8, -2), Vector3(1.8, 1.6, 2), Color("#b09563"))
+    elif room_name == "Ferraria":
         _make_box(interior_node, Vector3(-2.0, .7, -2), Vector3(2.5, 1.4, 2), Color("#a94f28"))
         _make_box(interior_node, Vector3(2.5, .65, -2), Vector3(1.6, 1.3, 1.6), Color("#454545"))
     elif room_name == "Quarto":
@@ -509,6 +523,18 @@ func _create_dialogue_ui() -> void:
     dialogue_ui.choice_selected.connect(_on_dialogue_choice)
 
 func _on_dialogue_choice(index: int) -> void:
+    if _duke_riddle_mode:
+        _duke_riddle_mode = false
+        var result: Dictionary = GameState.duke_answer(index)
+        if bool(result.get("accepted", false)):
+            var response := "Correto. " if bool(result.get("correct", false)) else "A resposta nao me convence. "
+            response += "Nossa amizade agora vale %d pontos. Volte amanha para a proxima charada." % int(result.get("friendship", 0))
+            if GameState.DUKE.can_recruit_duke(GameState.duke_state, GameState.wave_number):
+                response += " Voce conquistou minha confianca. Use R nesta mansao para me recrutar."
+            dialogue_ui.show_dialogue("Duque", response)
+        else:
+            dialogue_ui.show_dialogue("Duque", "Ja conversamos hoje. O tempo nao volta para quem deseja mudar uma resposta.")
+        return
     if _dialogue_npc.is_empty():
         dialogue_ui.close_dialogue()
         return
@@ -574,4 +600,46 @@ func _gather_nearby() -> void:
                 _refresh_hud()
                 return
     last_message = "Nenhum recurso proximo para coletar."
+    _refresh_hud()
+
+func _current_tavern_visitors() -> Array[Dictionary]:
+    var visitors: Array[Dictionary] = preload("res://scripts/town_system.gd").tavern_visitors(GameState.current_region, GameState.day)
+    if GameState.duke_tavern_visitor() and not bool(GameState.duke_state.get("daughter_recruited", false)):
+        visitors.append({"id": DUKE.DAUGHTER_ID, "name": "Herdeira do Duque", "rarity": "S", "home": "Porto Cinzento", "profession": "Espadachim"})
+    return visitors
+
+func _talk_in_manor() -> void:
+    if dialogue_ui.visible:
+        return
+    _dialogue_npc.clear()
+    var state: Dictionary = GameState.duke_state
+    if GameState.DUKE.daughter_at_manor(state):
+        dialogue_ui.show_dialogue("Herdeira do Duque", "Meu pai escolheu ficar quando podia fugir. Se conhece essa historia, entendera por que guardo a memoria dele.")
+    elif not bool(state.get("duke_alive", true)):
+        dialogue_ui.show_dialogue("Mordomo", "O Duque partiu deste mundo antes que a decima onda terminasse. A mansao permanece silenciosa.")
+    elif GameState.DUKE.can_visit_for_question(state, GameState.day, GameState.wave_number):
+        var question: Dictionary = DUKE.QUESTIONS[int(state.get("question_index", 0))]
+        _duke_riddle_mode = true
+        dialogue_ui.show_dialogue("Duque", str(question["question"]), question["options"])
+    elif int(state.get("question_index", 0)) == DUKE.QUESTIONS.size():
+        dialogue_ui.show_dialogue("Duque", "Nao busco respostas perfeitas, mas constancia. Amizade: %d/75. Use R para tentar me recrutar antes da onda 10." % int(state.get("friendship", 0)))
+    else:
+        dialogue_ui.show_dialogue("Duque", "Cada decisao merece uma noite de reflexao. Volte no proximo dia.")
+
+func _recruit_at_manor() -> void:
+    if dialogue_ui.visible:
+        return
+    if GameState.DUKE.daughter_at_manor(GameState.duke_state):
+        if GameState.duke_daughter_recruit():
+            dialogue_ui.show_dialogue("Herdeira do Duque", "Aceito lutar ao seu lado. A armadura de meu pai ainda espera seu ultimo juramento.")
+        elif GameState.duke_daughter_quest():
+            dialogue_ui.show_dialogue("Herdeira do Duque", "A armadura voltou para casa. Agora buscarei forca na Masmorra Antiga do Lago.")
+        elif GameState.duke_daughter_evolve():
+            dialogue_ui.show_dialogue("Herdeira do Duque", "O legado do meu pai se tornou minha propria forca. Alcancei o rank SS.")
+        else:
+            dialogue_ui.show_dialogue("Herdeira do Duque", "Para evoluir preciso da missao da armadura e dos materiais do lago.")
+    elif GameState.duke_recruit():
+        dialogue_ui.show_dialogue("Duque", "Seis dias de perguntas revelaram seu carater. A partir de agora, minha espada o acompanha.")
+    else:
+        dialogue_ui.show_dialogue("Mordomo", "O Duque so acompanha amigos leais, com no minimo 75 pontos, antes da onda 10.")
     _refresh_hud()
