@@ -82,3 +82,15 @@ Controles temporários no mundo: `V` abre visitantes da taverna; teclas `1` a `5
 **Validação técnica local:** Godot 4.7.2 em modo headless: `test_state.gd`, `test_town.gd`, `test_exploration.gd`, `test_optimization.gd` e inicialização do projeto passaram. O teste novo verifica personagem físico, dez edifícios com corpos físicos, compartilhamento dos quatro sprites e limite de materiais de cena. Não foi efetuado teste de desempenho gráfico no Windows; FPS e consumo de VRAM seguem **não medidos**.
 
 **Próximos bloqueios para o ZIP:** cidades realmente diferenciadas, interiores próprios/colisão de móveis, animação 2D direcional, NPCs autônomos, missões/coleta, UI final e medição de desempenho real antes de empacotar.
+
+
+## Incremento: identidades das duas cidades e moradores interativos (03/11/2026)
+
+- `scripts/region_system.gd`: dados autorais de **Fortaleza** (fronteira militar, muralhas e torres) e **Porto Cinzento** (núcleo portuário, cais e água), paletas ambientais e residentes regionais.
+- `scripts/world.gd`: troca visual de cidade ao viajar; detalhes regionais são reconstruídos apenas durante mudança de região, e não por quadro.
+- Dois moradores por cidade recebem `Sprite3D` compartilhado, nome/ID, profissão e fala próprios. A tecla `Q` conversa com residente próximo; conversas são eventos registrados na memória persistente de NPCs. Posições seguem uma pequena rotina determinística por dia.
+- `tests/test_regions.gd`: cobre apresentação lógica das duas regiões, substituição de moradores, conversa, memória e persistência. `tests/test_optimization.gd` atualizado à nova quantidade de sprites visíveis.
+- **Resultados locais Godot 4.7.2 headless:** `test_state`, `test_town`, `test_exploration`, `test_optimization` e `test_regions` passaram na cópia local atualizada. Os testes são de lógica e estrutura; não verificam FPS real em Windows.
+- **Limitações:** cenário ainda usa blocos 3D; NPCs mudam de posição no calendário, mas ainda não caminham animados em tempo real; não há biomas finalizados nem cidades com plantas arquitetônicas próprias. Não tratar esta atualização como arte final.
+
+**Em seguida:** organizar mapas e interiores em cenas reutilizáveis, criar animação de movimento e rotina real de NPCs e integrar missões iniciais. Antes do ZIP haverá otimização e polimento artístico obrigatórios.
