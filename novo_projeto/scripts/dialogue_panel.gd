@@ -1,4 +1,5 @@
 extends Control
+const UI = preload("res://scripts/ui_theme.gd")
 ## Componente original, reutilizavel: 9-slice, nome, revelacao e escolhas.
 signal choice_selected(index: int)
 signal dialogue_closed
@@ -52,6 +53,7 @@ func _ready() -> void:
     content_box.add_child(choice_column)
     continue_button = Button.new()
     continue_button.text = "Continuar ▶"
+    UI.apply_button(continue_button)
     continue_button.pressed.connect(advance)
     content_box.add_child(continue_button)
 
@@ -156,6 +158,7 @@ func _finish_typing() -> void:
         var button := Button.new()
         button.text = _options[i]
         button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+        UI.apply_button(button)
         button.pressed.connect(_select_choice.bind(i))
         choice_column.add_child(button)
 
