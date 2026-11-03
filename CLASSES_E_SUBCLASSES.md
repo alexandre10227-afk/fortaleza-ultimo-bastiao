@@ -54,3 +54,19 @@ Os quatro **elementos básicos** são **Terra, Água, Fogo e Vento**.
 O novo `tests/test_hero_classes.gd` foi executado localmente no Godot 4.7.2 headless e passou, incluindo testes de escola exclusiva, afinidades únicas, quatro elementos, evolução e subclasse superior. A execução verificou o módulo e regras puras; **não equivale a validar o projeto inteiro publicado**.
 
 Próximos passos: requisitos de XP/material, árvore de habilidades, efeitos elementais no combate, resistências, interface de evolução e integração às profissões de NPC. Antes do ZIP: todos os testes do projeto, desempenho, otimização e polimento gráfico.
+
+
+## Correção de escopo aprovada — protagonista versus NPCs (03/11/2026)
+
+**Esta seção SUBSTITUI qualquer indicação anterior de que o protagonista use raridade de subclasse.**
+As seis classes e tabelas de Raro, Épico, Lendário e Mítico **aplicam-se apenas aos NPCs e heróis recrutáveis**. A força dos NPCs é condicionada à raridade da subclasse; seus ranks A, S e SS continuam distintos. Os magos NPCs continuam separados por Terra, Água, Fogo, Vento, Trovão e Verde, com a progressão já definida.
+
+O **protagonista escolhe somente uma das quatro classes básicas** — Guerreiro, Cavaleiro, Mago ou Sacerdote — inspiradas nas profissões iniciais mencionadas na obra de referência, porém com regras originais. Seu progresso é determinado por **especializações e habilidades aprendidas durante a campanha**, não por raridade.
+
+- **Mestre NPC:** interação contextual `E → Treinar com mestre`, mínimo de **60 pontos de amizade (Confidente)**, mestre presente e compatibilidade com classe; ensinamento é permanente.
+- **Livro de chefe:** obtido como recompensa de chefe (integração de drops na Etapa 2/3); consumido ao aprender uma habilidade/especialização compatível. O mesmo livro não pode conceder a mesma especialização duas vezes.
+- **Magia do protagonista:** escolas/elementos disponíveis por especialização, mas NÃO aplicam a fórmula automática de raridade de mago NPC.
+- **Criador:** apenas quatro opções iniciais, sem seleção direta de subclasse lendária nem afinidade extra por raridade.
+- **Separação de dados:** `scripts/protagonist_progression.gd` e `GameState.protagonist_track` para o jogador; `hero_classes.gd` e `npc_hero_builds` para NPCs. Campo `hero_build` permanece temporariamente no save como legado para compatibilidade, sem determinar a progressão do protagonista.
+
+Limites atuais: o consumo e desbloqueio lógico de livros já existem, mas as tabelas reais de drop, animações de treinamento, condições completas de missões e efeitos ativos das técnicas ainda dependem do sistema de combate. Teste `test_protagonist_progression.gd` criado; falta rodar o teste de integração com o código remoto sincronizado.
