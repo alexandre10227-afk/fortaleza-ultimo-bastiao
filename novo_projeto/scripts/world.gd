@@ -13,6 +13,14 @@ var interact_hint: Label
 var settlement: Node3D
 var camera: Camera3D
 const WALK_SPEED := 5.0
+const HINT_REFRESH_SECONDS := 0.18
+var _hint_accumulator := 0.0
+var _cached_hint := ""
+var _shared_materials: Dictionary = {}
+var _sprite_texture: Texture2D
+var _interior_return_position := Vector3(0, 0, 13)
+var _active_region_label: Label
+
 
 func _ready() -> void:
     _generate_world()
@@ -28,7 +36,12 @@ func _make_box(parent: Node3D, location: Vector3, dimensions: Vector3, tint: Col
     mesh.position = location
     var mat := StandardMaterial3D.new()
     mat.albedo_color = tint
-    mesh.material_override = mat
+    var key := tint.to_html()
+    if _shared_materials.has(key):
+        mesh.material_override = _shared_materials[key]
+    else:
+        _shared_materials[key] = mat
+        mesh.material_override = mat
     parent.add_child(mesh)
 
 func _generate_world() -> void:
@@ -58,9 +71,10 @@ func _generate_world() -> void:
         var z := -28.0 + i * 4.0
         _make_box(settlement, Vector3(-30, 1.0, z), Vector3(1.5, 2.0, 2), Color("#526a48"))
         _make_box(settlement, Vector3(30, 1.0, z), Vector3(1.5, 2.0, 2), Color("#526a48"))
+    _sprite_texture = _make_sprite_texture()
     for visitor in range(4):
         var npc := Sprite3D.new()
-        npc.texture = _make_sprite_texture()
+        npc.texture = _sprite_texture
         npc.pixel_size = 0.026
         npc.billboard = BaseMaterial3D.BILLBOARD_ENABLED
         npc.shaded = false
@@ -70,7 +84,7 @@ func _generate_world() -> void:
     player.position = Vector3(0, 0, 13)
     add_child(player)
     var character := Sprite3D.new()
-    character.texture = _make_sprite_texture()
+    character.texture = _sprite_texture
     character.pixel_size = 0.028
     character.position.y = 0.82
     character.billboard = BaseMaterial3D.BILLBOARD_ENABLED
@@ -137,6 +151,7 @@ func _generate_ui() -> void:
 func _process(delta: float) -> void:
     if map_open:
         return
+    _hint_accumulator += delta
     var direction := Vector3.ZERO
     if Input.is_key_pressed(KEY_W): direction.z -= 1.0
     if Input.is_key_pressed(KEY_S): direction.z += 1.0
@@ -152,7 +167,9 @@ func _process(delta: float) -> void:
         else:
             player.position = Vector3(clampf(target.x, -5.2, 5.2), 0, clampf(target.z, -4.5, 4.5))
         camera.position = player.position + Vector3(16, 19, 23)
-    _update_hint()
+    if _hint_accumulator >= HINT_REFRESH_SECONDS:
+        _hint_accumulator = 0.0
+        _update_hint()
 
 func _unhandled_key_input(event: InputEvent) -> void:
     if not event is InputEventKey or not event.pressed or event.echo:
@@ -249,11 +266,15 @@ func _nearest_building() -> Dictionary:
 func _update_hint() -> void:
     if interact_hint == null:
         return
+    var next_hint := ""
     if not active_interior.is_empty():
-        interact_hint.text = "Interior: %s | E: sair" % active_interior
+        next_hint = "Interior: %s | E: sair" % active_interior
     else:
         var nearby := _nearest_building()
-        interact_hint.text = "E: entrar em %s" % nearby["room"] if not nearby.is_empty() else "Explore a vila; aproxime-se das portas"
+        next_hint = "E: entrar em %s" % nearby["room"] if not nearby.is_empty() else "Explore a vila; aproxime-se das portas"
+    if next_hint != _cached_hint:
+        _cached_hint = next_hint
+        interact_hint.text = next_hint
 
 func _interact() -> void:
     if map_open:
@@ -262,7 +283,7 @@ func _interact() -> void:
         active_interior = ""
         settlement.visible = true
         interior_node.visible = false
-        player.position = Vector3(0, 0, 13)
+        player.position = _interior_return_position
         town_panel.visible = false
         last_message = "Voce voltou para a vila."
     else:
@@ -270,6 +291,7 @@ func _interact() -> void:
         if target.is_empty():
             last_message = "Nao ha entrada perto de voce."
         else:
+            _interior_return_position = player.position
             active_interior = str(target["room"])
             settlement.visible = false
             interior_node.visible = true
@@ -281,6 +303,7 @@ func _interact() -> void:
 
 func _build_interior(room_name: String) -> void:
     for obj in interior_node.get_children():
+        interior_node.remove_child(obj)
         obj.queue_free()
     _make_box(interior_node, Vector3(0, -0.35, 0), Vector3(14, .6, 12), Color("#b3946b"))
     _make_box(interior_node, Vector3(-6.6, 1.6, 0), Vector3(.6, 3.2, 12), Color("#6e503b"))
@@ -347,6 +370,7 @@ func _travel_to(destination: String) -> void:
         settlement.visible = true
         interior_node.visible = false
         player.position = Vector3(0, 0, 13)
+        _interior_return_position = player.position
         last_message = "Viagem concluida: -5 energia e XP de Agilidade."
     map_open = false
     map_dialog.visible = false
