@@ -159,3 +159,13 @@ Controles temporários no mundo: `V` abre visitantes da taverna; teclas `1` a `5
 **Validação local no Godot 4.7.2:** testes `test_state`, `test_town`, `test_exploration`, `test_optimization`, `test_regions`, `test_dialogue`, `test_quests` e `test_story` passaram; `test_ui_theme` também reportou PASS, porém mantém avisos de recursos ao fechar abruptamente no headless. A abertura da cena principal com `--quit-after 15` terminou sem erros. Não houve revisão gráfica em janela Windows.
 
 **Pendências:** História das cinco rotas e desenvolvimento dos NPCs são conteúdo futuro; as falas condicionais da Etapa 1 não equivalem a IA social completa. A Etapa 1 permanece incompleta e **nenhum ZIP de aceite foi gerado**.
+
+
+## Incremento: evento opcional do Duque — núcleo inicial (03/11/2026)
+
+- `scripts/duke_event.gd`: seis perguntas originais, no máximo uma por dia, amizade e requisito de 75 pontos, recrutamento antes da onda 10, bifurcação mortal, armadura exclusiva e filha S com evolução SS condicionada à missão e materiais da masmorra.
+- `scripts/game_state.gd`: estado persistente `duke_state`; virada da onda 10 escolhe entre **boss extra pendente** e **morte em casa**. Morte, armadura e herdeira não são ativadas pelo simples avanço do calendário no caminho especial: exigem vitória do boss e conclusão da cutscene, a implementar.
+- `scripts/world.gd`: a mansão pode ser acessada na Fortaleza (edifício lateral ao fim da fileira). Dentro: `Q` conversa/responde charada via caixa Wuxia, `R` tenta recrutar o Duque ou a filha. Após a onda 30, a filha tem 1% por renovação diária elegível de aparecer na taverna de Porto Cinzento.
+- `tests/test_duke_event.gd`: testes de requisitos, prazo, exclusividade da armadura, boss pendente, save/load e evolução condicional **adicionados ao repositório, porém ainda não executados nesta atualização**.
+- A integração de combate real do boss, o vídeo/cutscene de morte e os drops completos da masmorra dependem das Etapas 2–4. **Não relatar esses elementos como prontos.**
+- **Sem ZIP:** prevalecem otimização, polimento gráfico e verificação técnica real antes de entregar a etapa para aceite.
