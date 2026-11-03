@@ -167,7 +167,7 @@ func recruit_visitor(npc: Dictionary) -> bool:
     if recruited.has(str(npc.get("id", ""))) or not preload("res://scripts/town_system.gd").can_recruit(npc, oath):
         return false
     var id := str(npc.get("id", ""))
-    if id.is_empty():
+    if id.is_empty() or id == "duque" or id == DUKE.DAUGHTER_ID:
         return false
     if not FRIENDSHIP.can_recruit(friendship_points(id)):
         return false
