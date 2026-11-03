@@ -237,3 +237,21 @@ Controles temporários no mundo: `V` abre visitantes da taverna; teclas `1` a `5
 - `tests/test_npc_daily_routines.gd`: teste de profissões/locais, rotina/atividade, mapa e preferências. `test_regions.gd` e `test_optimization.gd` ajustados aos novos elementos/estados.
 - **Validação disponível nesta sessão:** o módulo `npc_daily_routines.gd` passou no Godot 4.7.2 headless em um teste de fumaça local; nove conjuntos de regressão da cópia local anterior também produziram PASS, mas **essa cópia ainda não corresponde ao HEAD completo publicado no GitHub**. Portanto, os testes da integração nova **não podem ser declarados aprovados até executar a versão sincronizada integral**. O teste antigo de UI também emite avisos de recursos ao sair.
 - **Pendente:** patrulha/rotinas animadas com navegação física, horários intradiários, estações de trabalho mais detalhadas e revisão de FPS real. Cenários ainda usam geometria provisória; a Etapa 1 continua incompleta. **Sem ZIP antes de otimização, polimento e validação.**
+
+
+## Incremento: referencia visual enviada pelo usuario — criacao, ficha, presentes e escolhas (03/11/2026)
+
+Analise das 5 imagens e do video de ~48m54s documentada em [REFERENCIAS_VISUAIS.md](../REFERENCIAS_VISUAIS.md); pagina Nexus Mods analisada corresponde a **Achievement Save Files**, nao a um pacote de UI ou texturas. Nenhuma arte proprietaria do jogo de referencia foi copiada ou incluida.
+
+- `character_profile.gd`: atributos Forca, Constituicao, Destreza, Inteligencia e Sorte; distribuicao de **10 pontos iniciais**, limites e quatro origens com bonus proprios.
+- `start.gd`: escolha de nome, origem, aparencia inicial (quatro variantes), pontos +/− e dificuldade, antes da audiencia com Rei Aldric. Dificuldades e rotas existentes preservadas.
+- `game_state.gd`: salva/carrega `character_origin`, `character_stats` e `character_appearance`, com valores-padrao para saves anteriores.
+- `attribute_radar.gd`: radar vetorial de cinco eixos, gerado em Godot sem textura de terceiros, redesenhado somente quando os atributos mudam. Usado na criacao e na ficha.
+- `character_sheet.gd`: abas **Personagem, Inventario, Relacoes, Diario e Habilidades**. Os dados mostrados sao os que a campanha realmente possui; artes marciais e equipamentos completos permanecem na Etapa 2.
+- `world.gd`: botao de ficha no HUD e tecla `I` abre Inventario, com movimento bloqueado enquanto o painel estiver aberto. Visual inicial altera a paleta de cores procedural do sprite do heroi, sem deixar de compartilhar as texturas existentes entre NPCs.
+- `npc_interaction_menu.gd`: presentes em painel de duas colunas, ficha social e grade de itens por clique; categorias rejeitadas ficam desabilitadas. Retrato temporario por inicial, arte definitiva pendente.
+- `dialogue_panel.gd`: painel 9-slice existente preservado, agora com moldura de retrato original para o falante.
+- `story_content.gd`, `game_state.gd`, `world.gd`: dilemas iniciais originais de Doran e Elira com escolhas irreversiveis; alteram reputacao regional, amizade e cronicas, sem copiar os textos do jogo de referencia.
+- `tests/test_character_profile.gd` novo e `tests/test_story.gd`/`tests/test_npc_interaction.gd` atualizados. **A integracao publicada ainda nao passou por uma bateria completa de testes no Godot/Windows**. Modelos locais separados de atributos e radar foram executados no Godot 4.7.2 headless com PASS; isso nao deve ser apresentado como validacao do projeto completo.
+
+**Pendente:** retratos e animacoes originais definitivos, telas de atributos responsivas, equipamentos/slots, artes marciais completas, ficha de NPC mais ilustrada, controles de interface e otimizacao de desempenho. **Sem ZIP** ate cumprir o criterio de polimento/otimizacao e testes da Etapa 1.
