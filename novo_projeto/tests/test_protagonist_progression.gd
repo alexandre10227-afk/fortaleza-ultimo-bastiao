@@ -1,0 +1,41 @@
+extends SceneTree
+const PROGRESSION = preload("res://scripts/protagonist_progression.gd")
+func _initialize() -> void:
+    call_deferred("run")
+func run() -> void:
+    assert(PROGRESSION.BASE_CLASSES.size() == 4)
+    for kind in PROGRESSION.BASE_CLASSES:
+        assert(PROGRESSION.valid_track(PROGRESSION.starting_track(kind)))
+    var mage: Dictionary = PROGRESSION.starting_track("Mago")
+    assert(not PROGRESSION.can_learn(mage, "Samurai"))
+    assert(PROGRESSION.can_learn(mage, "Mago de Fogo"))
+    assert(PROGRESSION.learn(mage, "Mago de Fogo", "livro:boss")["skills"].has("Chama Crescente"))
+    assert(PROGRESSION.learn(mage, "Mago de Fogo", "") == {})
+    assert(PROGRESSION.teacher_can_teach("doran", 60, "Espada e Escudo"))
+    assert(not PROGRESSION.teacher_can_teach("doran", 59, "Espada e Escudo"))
+    assert(PROGRESSION.specialization_from_book("livro_relampago") == "Mago do Trovao")
+    var g = root.get_node("GameState")
+    g.new_game("Teste", "Normal")
+    assert(g.choose_starting_class("Mago"))
+    assert(not g.choose_starting_class("Assassino"))
+    assert(g.protagonist_track["base_class"] == "Mago")
+    assert(not g.learn_from_boss_book("livro_relampago"))
+    g.inventory["livro_relampago"] = 1
+    assert(g.learn_from_boss_book("livro_relampago"))
+    assert(g.inventory["livro_relampago"] == 0)
+    assert(g.protagonist_track["specializations"].has("Mago do Trovao"))
+    assert(not g.learn_from_boss_book("livro_relampago"))
+    assert(g.save_game())
+    g.new_game("Reset", "Facil")
+    assert(g.load_game())
+    assert(g.protagonist_track["base_class"] == "Mago")
+    assert(g.protagonist_track["specializations"].has("Mago do Trovao"))
+    g.new_game("Guerreiro", "Normal")
+    assert(g.choose_starting_class("Guerreiro"))
+    g.npc_friendship["doran"] = 60
+    assert(g.learn_from_master("doran", "Espada e Escudo"))
+    assert(not g.learn_from_master("doran", "Espada e Escudo"))
+    assert(g.protagonist_track["learned_sources"]["Espada e Escudo"] == "mestre:doran")
+    assert(g.hero_build["rarity"] == "Raro") # Campo legado/NPC nao influencia a trilha do protagonista.
+    print("TEST_PROTAGONIST_PROGRESSION_PASS")
+    quit(0)
