@@ -266,3 +266,13 @@ Analise das 5 imagens e do video de ~48m54s documentada em [REFERENCIAS_VISUAIS.
 - `scripts/character_sheet.gd` e `scripts/npc_interaction_menu.gd`: exibem classe, subclasse e raridade de combate; a ficha do mago inclui afinidades.
 - `tests/test_hero_classes.gd` executado localmente no Godot 4.7.2 headless: **PASS** para tabela, elementos exclusivos, progressao e subclasses superiores. Ainda nao e validacao integrada do HEAD remoto.
 - Balanceamento, efeitos reais, missões de promoção, materiais e combate completo pertencem a Etapa 2. **Sem ZIP antes de concluir a Etapa 1, polir, otimizar e validar.**
+
+
+## Correção de balanceamento: protagonista separado das raridades dos NPCs (03/11/2026)
+
+- A tabela `hero_classes.gd` com raridades de subclasses **é exclusiva de NPCs**, inclusive Duque, herdeira e Vaelor; os ranks especiais A/S/SS não se misturam com ela.
+- Novo `scripts/protagonist_progression.gd`: **Guerreiro, Cavaleiro, Mago e Sacerdote** são as quatro classes básicas do jogador. Não existe raridade de classe do protagonista.
+- `scripts/start.gd` permite selecionar somente essas quatro classes. Especializações superiores, incluindo magias e técnicas, são aprendidas durante a campanha.
+- `GameState.protagonist_track` salva classe, especializações, habilidades e fonte de aprendizado. Um mestre presente com amizade **Confidente (60+)** pode ensinar uma especialização compatível; `GameState.learn_from_boss_book` consome um livro de chefe compatível, se houver no inventário.
+- No menu contextual `E` de um mestre cadastrado aparece **Treinar com mestre**; a seleção mostra as técnicas e bloqueia requisitos não atendidos. A ficha do protagonista mostra especializações aprendidas, sem raridade de NPC.
+- `tests/test_protagonist_progression.gd` acrescentado, mas a versão remota atual ainda requer testes de integração com o Godot. Livros de boss ainda não possuem drops automáticos e habilidades aprendidas ainda não executam golpes reais, que pertencem à etapa de combate.
