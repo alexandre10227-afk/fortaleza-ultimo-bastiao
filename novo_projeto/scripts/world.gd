@@ -182,15 +182,24 @@ func _generate_ui() -> void:
     frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
     layer.add_child(frame)
+    var hud_frame := PanelContainer.new()
+    hud_frame.position = Vector2(8, 8)
+    hud_frame.custom_minimum_size = Vector2(565, 0)
+    UI.apply_panel(hud_frame)
+    frame.add_child(hud_frame)
     var column := VBoxContainer.new()
-    column.position = Vector2(15, 12)
-    column.custom_minimum_size = Vector2(530, 0)
-    frame.add_child(column)
+    column.custom_minimum_size = Vector2(525, 0)
+    column.add_theme_constant_override("separation", 7)
+    hud_frame.add_child(column)
     hud = Label.new()
-    hud.add_theme_font_size_override("font_size", 19)
+    hud.add_theme_font_size_override("font_size", 18)
+    hud.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    UI.apply_text(hud)
     column.add_child(hud)
     var help := Label.new()
-    help.add_theme_font_size_override("font_size", 15)
+    help.add_theme_font_size_override("font_size", 14)
+    help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    UI.apply_text(help)
     help.text = "WASD: explorar | N: avancar dia | T: viajar | C: cronicas | F5: salvar"
     column.add_child(help)
     var sheet_button := Button.new()
@@ -214,16 +223,20 @@ func _generate_ui() -> void:
         control.pressed.connect(_on_quick_action.bind(str(option["action"])))
         quick_row.add_child(control)
     interact_hint = Label.new()
+    UI.apply_text(interact_hint)
+    interact_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     column.add_child(interact_hint)
     news = RichTextLabel.new()
-    news.position = Vector2(15, 100)
-    news.size = Vector2(490, 230)
+    news.position = Vector2(15, 270)
+    news.size = Vector2(530, 260)
+    news.add_theme_stylebox_override("normal", UI.panel_style())
     news.visible = false
     news.mouse_filter = Control.MOUSE_FILTER_IGNORE
     frame.add_child(news)
     town_panel = RichTextLabel.new()
     town_panel.position = Vector2(665, 90)
     town_panel.size = Vector2(500, 350)
+    town_panel.add_theme_stylebox_override("normal", UI.panel_style())
     town_panel.visible = false
     town_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
     frame.add_child(town_panel)
