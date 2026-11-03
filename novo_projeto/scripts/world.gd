@@ -5,6 +5,7 @@ const ITEMS = preload("res://scripts/item_catalog.gd")
 const RECIPES = preload("res://scripts/economy_system.gd")
 const NPCS = preload("res://scripts/npc_registry.gd")
 const ROUTINES = preload("res://scripts/npc_daily_routines.gd")
+const ACTOR_ANIM = preload("res://scripts/actor_animation.gd")
 
 var player: Node3D
 var hud: Label
@@ -53,6 +54,11 @@ var _hint_accumulator := 0.0
 var _cached_hint := ""
 var _shared_materials: Dictionary = {}
 var _sprite_texture: Texture2D
+var _player_sprite: Sprite3D
+var _player_walk_frames: Dictionary = {}
+var _player_animation_time := 0.0
+var _player_animation_step := 0
+var _player_facing := "down"
 var _interior_return_position := Vector3(0, 0, 13)
 var _active_region_label: Label
 
@@ -134,7 +140,9 @@ func _generate_world() -> void:
     player.position = GameState.get_region_position()
     add_child(player)
     var character := Sprite3D.new()
-    character.texture = _make_sprite_texture(GameState.character_appearance + 1)
+    _player_sprite = character
+    _player_walk_frames = ACTOR_ANIM.make_frames(GameState.character_appearance)
+    character.texture = _player_walk_frames["down:0"]
     character.pixel_size = 0.028
     character.position.y = 0.82
     character.billboard = BaseMaterial3D.BILLBOARD_ENABLED
@@ -242,6 +250,7 @@ func _physics_process(delta: float) -> void:
         if Input.is_key_pressed(KEY_A): direction.x -= 1.0
         if Input.is_key_pressed(KEY_D): direction.x += 1.0
     direction = direction.normalized()
+    _animate_player(delta, direction)
     var target := player.position + direction * WALK_SPEED * delta
     if active_interior.is_empty() and direction != Vector3.ZERO and (absf(target.x) >= 26.0 or absf(target.z) >= 29.0):
         map_open = true
@@ -269,6 +278,23 @@ func _physics_process(delta: float) -> void:
     else:
         player.velocity = Vector3.ZERO
     camera.position = player.position + Vector3(16, 19, 23)
+
+func _animate_player(delta: float, direction: Vector3) -> void:
+    if _player_sprite == null or _player_walk_frames.is_empty():
+        return
+    _player_facing = ACTOR_ANIM.direction_from_vector(direction, _player_facing)
+    if direction == Vector3.ZERO:
+        _player_animation_step = 0
+        _player_animation_time = 0.0
+    else:
+        _player_animation_time += delta
+        if _player_animation_time >= 0.14:
+            _player_animation_time = 0.0
+            _player_animation_step = (_player_animation_step + 1) % 3
+    var key := "%s:%d" % [_player_facing, _player_animation_step]
+    var image: Texture2D = _player_walk_frames[key]
+    if _player_sprite.texture != image:
+        _player_sprite.texture = image
 
 func _unhandled_key_input(event: InputEvent) -> void:
     if not event is InputEventKey or not event.pressed or event.echo:
