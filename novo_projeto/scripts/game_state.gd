@@ -105,6 +105,22 @@ func record_narrative_choice(key: String, value: String) -> bool:
     save_game()
     return true
 
+func resolve_town_dilemma(npc_id: String, answer: int) -> bool:
+    var region := "Fortaleza" if npc_id == "doran" else "Porto Cinzento" if npc_id == "elira" else ""
+    if region.is_empty() or current_region != region or answer < 0 or answer > 1:
+        return false
+    var flag := "dilema_" + npc_id
+    if narrative_flags.has(flag):
+        return false
+    narrative_flags[flag] = "civis" if answer == 0 else "defesa_ou_trabalho"
+    var reputation_gain := 5 if answer == 0 else 2
+    region_reputation[region] = int(region_reputation.get(region, 0)) + reputation_gain
+    gain_friendship(npc_id, 8 if answer == 0 else 4, "dilema")
+    remember(npc_id, "dilema_" + str(answer))
+    record_event("town_dilemma", region, [npc_id], flag + ": " + str(narrative_flags[flag]))
+    save_game()
+    return true
+
 func choose_oath(protect: bool) -> void:
     if not oath.is_empty():
         return
