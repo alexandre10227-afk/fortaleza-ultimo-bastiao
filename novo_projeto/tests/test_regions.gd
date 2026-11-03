@@ -23,7 +23,7 @@ func run_tests() -> void:
     assert(state.save_game())
     state.npc_memory.clear()
     assert(state.load_game())
-    assert(state.npc_memory.has("doran"))
+    assert(state.npc_memory.has("iris_feirante"))
     scene._travel_to("Porto Cinzento")
     assert(scene.npc_visuals.has("lia_moradora"))
     assert(not scene.npc_visuals.has("elira")) # Esta na taverna, nao na rua.
