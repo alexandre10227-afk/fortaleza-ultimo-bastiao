@@ -3,7 +3,7 @@ extends Control
 signal closed
 const UI = preload("res://scripts/ui_theme.gd")
 const ITEMS = preload("res://scripts/item_catalog.gd")
-const TABS := ["Personagem", "Inventario", "Relacoes", "Diario", "Habilidades"]
+const TABS := ["Personagem", "Inventario", "Relacoes", "Diario", "Habilidades", "Mundo"]
 var page: String = "Personagem"
 var body: VBoxContainer
 var _tab_row: HBoxContainer
@@ -115,6 +115,25 @@ func show_page(page_name: String) -> void:
             for index in range(maxi(0, GameState.events.size() - 12), GameState.events.size()):
                 var event: Dictionary = GameState.events[index]
                 _line("Dia %d | %s" % [int(event.get("day", 0)), str(event.get("description", ""))])
+        "Mundo":
+            _line("BESTIARIO", true)
+            if GameState.discovered_bestiary.is_empty():
+                _line("Nenhum monstro identificado ate o momento.")
+            for creature_id in GameState.discovered_bestiary:
+                var info: Dictionary = GameState.discovered_bestiary[creature_id]
+                _line("%s | %s | Avistamentos: %d" % [str(creature_id), str(info.get("location", "")), int(info.get("sightings", 1))])
+            _line("EXPEDICOES", true)
+            if GameState.expeditions.is_empty():
+                _line("Ainda nao houve expedicoes de reconhecimento.")
+            for expedition in GameState.expeditions:
+                if expedition is Dictionary:
+                    _line("%s | %s | Retorno dia %d" % [str(expedition.get("destination", "")), str(expedition.get("status", "")), int(expedition.get("return_day", 0))])
+            _line("MEMORIAL DOS CAIDOS", true)
+            if GameState.memorial.is_empty():
+                _line("Nenhum companheiro registrado no memorial.")
+            for fallen in GameState.memorial:
+                if fallen is Dictionary:
+                    _line("%s | Dia %d | %s" % [str(fallen.get("name", "")), int(fallen.get("day", 0)), str(fallen.get("cause", ""))])
         "Habilidades":
             _line("Atributos iniciais e progressao", true)
             _line("Experiencia em agilidade por viagem: %d" % GameState.agility_xp)
