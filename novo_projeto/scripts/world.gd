@@ -19,6 +19,7 @@ var npc_visuals: Dictionary = {}
 var world_environment: WorldEnvironment
 var dialogue_ui: Control
 var _dialogue_npc: Dictionary = {}
+var resource_visuals: Dictionary = {}
 const HINT_REFRESH_SECONDS := 0.18
 var _hint_accumulator := 0.0
 var _cached_hint := ""
@@ -150,7 +151,7 @@ func _generate_ui() -> void:
     help.add_theme_font_size_override("font_size", 15)
     help.text = "WASD: explorar | N: avancar dia | T: viajar | C: cronicas | F5: salvar"
     column.add_child(help)
-    help.text = "WASD mover | E entrar/sair | Q conversar | M mapa | N dia | V taverna | B comprar | I itens"
+    help.text = "WASD mover | E entrar/sair | Q conversar | M mapa | N dia | V taverna | G coletar | B comprar | I itens"
     interact_hint = Label.new()
     column.add_child(interact_hint)
     news = RichTextLabel.new()
@@ -199,9 +200,12 @@ func _unhandled_key_input(event: InputEvent) -> void:
         KEY_N:
             GameState.advance_days(1)
             _refresh_resident_positions()
+            _refresh_resource_visibility()
             _refresh_hud()
         KEY_Q:
             _talk_to_nearest_npc()
+        KEY_G:
+            _gather_nearby()
         KEY_T, KEY_M:
             _toggle_map()
         KEY_E:
@@ -432,6 +436,7 @@ func _apply_region_theme() -> void:
         for index in range(3):
             _make_box(regional_details, Vector3(-24 + index * 24, 3, -33), Vector3(5, 6, 5), Color("#8e9188"))
     _spawn_residents()
+    _spawn_resources()
 
 func _spawn_residents() -> void:
     for visual in npc_visuals.values():
@@ -480,7 +485,11 @@ func _talk_to_nearest_npc() -> void:
         GameState.remember(id, "primeiro_encontro" if first_meeting else "conversa")
         GameState.save_game()
         _dialogue_npc = npc
-        dialogue_ui.show_dialogue(str(npc["name"]), str(npc["dialogue"]), ["Conte-me sobre seu trabalho.", "Ate logo."])
+        var options := ["Conte-me sobre seu trabalho."]
+        if GameState.OPENING_QUESTS.has(id):
+            options.append("Precisa de ajuda? / Entregar materiais")
+        options.append("Ate logo.")
+        dialogue_ui.show_dialogue(str(npc["name"]), str(npc["dialogue"]), options)
     _refresh_hud()
 
 func _create_dialogue_ui() -> void:
@@ -493,9 +502,66 @@ func _on_dialogue_choice(index: int) -> void:
     if _dialogue_npc.is_empty():
         dialogue_ui.close_dialogue()
         return
+    var id := str(_dialogue_npc.get("id", ""))
+    var name_value := str(_dialogue_npc.get("name", "Morador"))
     if index == 0:
         var profession := str(_dialogue_npc.get("profession", "viajante"))
-        var name_value := str(_dialogue_npc.get("name", "Morador"))
-        dialogue_ui.show_dialogue(name_value, "Meu oficio e %s. Esta cidade muda a cada dia; precisamos cuidar uns dos outros." % profession)
+        dialogue_ui.show_dialogue(name_value, "Meu oficio e %s. Esta cidade muda a cada dia." % profession)
+    elif index == 1 and GameState.OPENING_QUESTS.has(id):
+        var quest: Dictionary = GameState.OPENING_QUESTS[id]
+        var status := str(GameState.quest_progress.get(id, ""))
+        if status == "complete":
+            dialogue_ui.show_dialogue(name_value, "Voce ja me ajudou. Sua bondade nao sera esquecida.")
+        elif status == "active" and GameState.complete_quest(id):
+            dialogue_ui.show_dialogue(name_value, "Excelente! Aqui estao suas %d moedas. Obrigado!" % int(quest["reward"]))
+        elif status == "active":
+            dialogue_ui.show_dialogue(name_value, "Ainda preciso de %d unidades de %s. Explore os arredores e use G para coletar." % [int(quest["amount"]), str(quest["item"])])
+        else:
+            GameState.start_quest(id)
+            dialogue_ui.show_dialogue(name_value, "Missao iniciada: %s. Traga %d unidades de %s para receber %d moedas." % [str(quest["title"]), int(quest["amount"]), str(quest["item"]), int(quest["reward"])])
+        _refresh_hud()
     else:
         dialogue_ui.close_dialogue()
+
+func _spawn_resources() -> void:
+    for obj in resource_visuals.values():
+        if is_instance_valid(obj):
+            obj.queue_free()
+    resource_visuals.clear()
+    var item_id := "ferro" if GameState.current_region == "Fortaleza" else "ervas"
+    for index in range(5):
+        var node_id := "%s_%s_%d" % [GameState.current_region, item_id, index]
+        var resource := MeshInstance3D.new()
+        var mesh := SphereMesh.new()
+        mesh.radius = 0.43
+        mesh.height = 0.7
+        resource.mesh = mesh
+        resource.position = Vector3(-3 + float(index % 3) * 3.0, 0.35, 5 + float(index / 3) * 3.0)
+        var mat := StandardMaterial3D.new()
+        mat.albedo_color = Color("#779e63") if item_id == "ervas" else Color("#69747e")
+        resource.material_override = mat
+        settlement.add_child(resource)
+        resource_visuals[node_id] = resource
+    _refresh_resource_visibility()
+
+func _refresh_resource_visibility() -> void:
+    for node_id in resource_visuals.keys():
+        if is_instance_valid(resource_visuals[node_id]):
+            resource_visuals[node_id].visible = int(GameState.collected_nodes.get(node_id, -1)) != GameState.day
+
+func _gather_nearby() -> void:
+    if not active_interior.is_empty() or map_open or dialogue_ui.visible:
+        return
+    for node_id in resource_visuals.keys():
+        var obj: MeshInstance3D = resource_visuals[node_id]
+        if not is_instance_valid(obj) or not obj.visible:
+            continue
+        if Vector2(player.position.x, player.position.z).distance_to(Vector2(obj.position.x, obj.position.z)) < 2.0:
+            var item_id := "ferro" if GameState.current_region == "Fortaleza" else "ervas"
+            if GameState.collect_resource(str(node_id), item_id):
+                last_message = "Coletou 1 %s. Veja seu inventario com I." % item_id
+                _refresh_resource_visibility()
+                _refresh_hud()
+                return
+    last_message = "Nenhum recurso proximo para coletar."
+    _refresh_hud()
