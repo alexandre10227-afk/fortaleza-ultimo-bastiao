@@ -38,3 +38,8 @@ Se você não tem o ZIP completo nem a pasta original no computador, **esse proc
 - Pipeline de validação, ZIP automático e releases: **configurado**
 
 **Observação:** a campanha principal é isométrica 2D; a vila 3D continua experimental. Não foi realizada conversão integral para 3D.
+
+
+## Novo recomeço — Etapa 1
+
+O desenvolvimento da nova versão foi iniciado em **[novo_projeto/](./novo_projeto/)**, separado do protótipo de diagnóstico na raiz. A implementação inicial inclui criação de personagem, audiência do rei, escolha Guardião/Exilado, dados persistentes, cenário 3D experimental e teste de lógica. **Ainda não há versão final da Etapa 1.** Consulte [estado detalhado](./novo_projeto/README.md) e [planejamento atualizado](./PLANEJAMENTO_NOVO_PROJETO.md).
