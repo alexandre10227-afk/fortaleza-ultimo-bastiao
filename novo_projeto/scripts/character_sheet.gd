@@ -73,6 +73,9 @@ func show_page(page_name: String) -> void:
             _line("Dificuldade: %s  |  Juramento: %s" % [GameState.difficulty, GameState.oath])
             _line("Dia: %d  |  Onda: %d  |  Energia: %d" % [GameState.day, GameState.wave_number, GameState.energy])
             _line("Atributos de criacao", true)
+            var radar := preload("res://scripts/attribute_radar.gd").new()
+            body.add_child(radar)
+            radar.set_stats(GameState.character_stats)
             for stat in GameState.character_stats:
                 _line("%s: %d" % [stat, int(GameState.character_stats[stat])])
             _line("Equipamento e habilidades de batalha serao integrados na Etapa 2.")
