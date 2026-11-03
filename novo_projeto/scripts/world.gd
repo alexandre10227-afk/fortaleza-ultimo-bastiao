@@ -46,6 +46,7 @@ var _market_travelling := false
 var _market_ids: Array[String] = []
 var _market_vendor_id := ""
 var equipment_market: Control
+var forge_panel: Control
 var npc_menu: Control
 var character_sheet: Control
 var _door_cooldown := 0.0
@@ -78,6 +79,7 @@ func _ready() -> void:
     _create_dialogue_ui()
     _create_npc_menu()
     _create_equipment_market()
+    _create_forge_panel()
     _create_character_sheet()
     _create_scene_fade()
     _refresh_hud()
@@ -388,6 +390,8 @@ func _close_top_window() -> void:
     elif equipment_market != null and equipment_market.visible:
         equipment_market.hide_store()
         _market_mode = false
+    elif forge_panel != null and forge_panel.visible:
+        forge_panel.hide_forge()
     elif character_sheet != null and character_sheet.visible:
         character_sheet.hide_sheet()
     elif map_open:
@@ -408,7 +412,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
         _close_top_window()
         get_viewport().set_input_as_handled()
         return
-    if (dialogue_ui != null and dialogue_ui.visible) or (npc_menu != null and npc_menu.is_open()) or (character_sheet != null and character_sheet.visible) or (equipment_market != null and equipment_market.visible):
+    if (dialogue_ui != null and dialogue_ui.visible) or (npc_menu != null and npc_menu.is_open()) or (character_sheet != null and character_sheet.visible) or (equipment_market != null and equipment_market.visible) or (forge_panel != null and forge_panel.visible):
         return
     match event.keycode:
         KEY_N:
@@ -1260,22 +1264,20 @@ func _open_food_menu() -> void:
     choices.append("Cancelar")
     dialogue_ui.show_dialogue("Suprimentos", "Escolha uma refeicao para receber bonus temporarios.", choices)
 
+func _create_forge_panel() -> void:
+    forge_panel = preload("res://scripts/forge_panel.gd").new()
+    forge_panel.name = "ForgePanel"
+    get_node("CanvasLayer").add_child(forge_panel)
+    forge_panel.craft_requested.connect(_forge_craft_requested)
+
+func _forge_craft_requested(item_id: String) -> void:
+    var crafted := GameState.craft_item(item_id)
+    last_message = "Item fabricado: " + item_id if crafted else "Material, moedas ou nivel de ferraria insuficientes."
+    forge_panel.refresh_forge(GameState.inventory, GameState.money, GameState.building_levels)
+    _refresh_hud()
+
 func _open_craft_menu() -> void:
-    _craft_ids.clear()
-    var choices: Array[String] = []
-    for id in RECIPES.RECIPES.keys():
-        var item_id := str(id)
-        var formula: Dictionary = RECIPES.RECIPES[item_id]
-        if str(formula["building"]) != "Ferraria":
-            continue
-        _craft_ids.append(item_id)
-        choices.append("%s | %d moedas | nivel %d" % [ITEMS.get_item(item_id).get("name", item_id), int(formula["money"]), int(formula["level"])])
-    if choices.is_empty():
-        dialogue_ui.show_dialogue("Ferraria", "Nao existem receitas aqui.")
-        return
-    _craft_mode = true
-    choices.append("Cancelar")
-    dialogue_ui.show_dialogue("Ferraria", "Escolha uma receita. Ela exige moedas, materiais e nivel suficiente.", choices)
+    forge_panel.open_forge(GameState.inventory, GameState.money, GameState.building_levels, str(GameState.protagonist_track.get("base_class","Guerreiro")))
 
 func _create_character_sheet() -> void:
     character_sheet = preload("res://scripts/character_sheet.gd").new()
