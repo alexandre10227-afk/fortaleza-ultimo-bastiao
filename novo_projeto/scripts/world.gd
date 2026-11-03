@@ -101,6 +101,12 @@ func _generate_ui() -> void:
     news.visible = false
     news.mouse_filter = Control.MOUSE_FILTER_IGNORE
     frame.add_child(news)
+    town_panel = RichTextLabel.new()
+    town_panel.position = Vector2(665, 90)
+    town_panel.size = Vector2(500, 350)
+    town_panel.visible = false
+    town_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    frame.add_child(town_panel)
 
 func _process(delta: float) -> void:
     var direction := Vector3.ZERO
@@ -129,13 +135,46 @@ func _unhandled_key_input(event: InputEvent) -> void:
         KEY_C:
             news.visible = not news.visible
             _refresh_news()
+        KEY_V:
+            town_panel.visible = not town_panel.visible
+            _refresh_tavern()
+        KEY_B:
+            last_message = "Compra de pao concluida" if GameState.buy_item("pao") else "Moedas insuficientes"
+            _refresh_hud()
+        KEY_I:
+            town_panel.visible = not town_panel.visible
+            town_panel.text = "INVENTARIO\n" + str(GameState.inventory) + "\nCompanheiros: " + str(GameState.recruited)
+        KEY_1, KEY_2, KEY_3, KEY_4, KEY_5:
+            var visitors := preload("res://scripts/town_system.gd").tavern_visitors(GameState.current_region, GameState.day)
+            var selected: int = event.keycode - KEY_1
+            if town_panel.visible and selected < visitors.size():
+                var npc: Dictionary = visitors[selected]
+                var success := GameState.recruit_visitor(npc)
+                last_message = ("Recrutado: " if success else "Recrutamento bloqueado: ") + str(npc["name"])
+                _refresh_tavern()
+                _refresh_hud()
         KEY_F5:
             GameState.save_game()
             _refresh_hud()
 
 func _refresh_hud() -> void:
-    hud.text = "%s | %s | %s | Dia %d | Energia %d | Onda %d" % [GameState.character_name, GameState.difficulty, GameState.current_region, GameState.day, GameState.energy, GameState.wave_number]
+    hud.text = "%s | %s | %s | Dia %d | Energia %d | Onda %d | Moedas %d" % [GameState.character_name, GameState.difficulty, GameState.current_region, GameState.day, GameState.energy, GameState.wave_number, GameState.money]
     _refresh_news()
+    if not last_message.is_empty():
+        hud.text += "\n" + last_message
+
+func _refresh_tavern() -> void:
+    if town_panel == null:
+        return
+    var lines: Array[String] = ["TAVERNA - visitantes do dia %d" % GameState.day]
+    var visitors := preload("res://scripts/town_system.gd").tavern_visitors(GameState.current_region, GameState.day)
+    for i in range(visitors.size()):
+        var npc: Dictionary = visitors[i]
+        var can_join: bool = preload("res://scripts/town_system.gd").can_recruit(npc, GameState.oath)
+        lines.append("[%d] %s (%s) / %s %s" % [i + 1, npc["name"], npc["rarity"], npc["profession"], "" if can_join else "[NAO RECRUTAVEL]"])
+    lines.append("Teclas 1-5: tentar recrutar | V: fechar")
+    lines.append("Pao: %d moedas | B: comprar" % preload("res://scripts/town_system.gd").price("pao", GameState.current_region, GameState.oath))
+    town_panel.text = "\n".join(lines)
 
 func _refresh_news() -> void:
     var lines: Array[String] = ["CRONICAS DO MUNDO (eventos salvos):"]
