@@ -47,3 +47,25 @@ static func npc_line(npc_id: String, oath: String, quest_status: String, memory_
             return "Estive nas torres ao amanhecer. As criaturas estao aprendendo nossos caminhos. Precisamos aprender os delas."
         _:
             return "Cada viajante carrega uma historia, e nenhuma delas termina ao sair desta cidade."
+
+## Dilemas originais, independentes das obras usadas como referencia visual.
+const TOWN_DILEMMAS := {
+    "doran": {
+        "question": "As ferramentas da forja servem para reforcar o portao, mas tambem para reparar as casas queimadas. O ferro e pouco. Para onde enviaremos o primeiro lote?",
+        "choices": ["Primeiro as casas. Os moradores precisam de abrigo.", "Primeiro a muralha. Sem defesa, todos perderao suas casas."],
+        "answers": [
+            "Doran respira fundo. 'Minha filha dormira sob um teto melhor. Nao esquecerei esta decisao.'",
+            "Doran assente. 'Tomara que a muralha resista. Vou lembrar quem assumiu essa responsabilidade.'"
+        ],
+        "region": "Fortaleza"
+    },
+    "elira": {
+        "question": "Uma barcaca de refugiados chegou sem moedas. Os capitães querem expulsá-los, e os mercadores temem perder os suprimentos. Qual e sua ordem?",
+        "choices": ["Permitir o desembarque e organizar abrigo provisório.", "Exigir que trabalhem antes de receber suprimentos."],
+        "answers": [
+            "Elira observa a praia. 'Talvez voce ainda possa provar que poder significa responsabilidade.'",
+            "Elira franze o cenho. 'Trabalho em troca de comida. Espero que saiba o peso desta escolha.'"
+        ],
+        "region": "Porto Cinzento"
+    }
+}
