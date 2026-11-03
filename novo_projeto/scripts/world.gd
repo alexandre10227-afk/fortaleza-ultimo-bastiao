@@ -44,6 +44,9 @@ var _market_travelling := false
 var _market_ids: Array[String] = []
 var npc_menu: Control
 var character_sheet: Control
+var _door_cooldown := 0.0
+var _door_armed := true
+var _scene_fade: ColorRect
 var _market_page := 0
 var _food_mode := false
 var _food_ids: Array[String] = []
@@ -71,6 +74,7 @@ func _ready() -> void:
     _create_dialogue_ui()
     _create_npc_menu()
     _create_character_sheet()
+    _create_scene_fade()
     _refresh_hud()
 
 func _make_box(parent: Node3D, location: Vector3, dimensions: Vector3, tint: Color, solid: bool = false) -> void:
@@ -296,6 +300,16 @@ func _physics_process(delta: float) -> void:
         if Input.is_key_pressed(KEY_A): direction.x -= 1.0
         if Input.is_key_pressed(KEY_D): direction.x += 1.0
     direction = direction.normalized()
+    if _door_cooldown > 0.0:
+        _door_cooldown = maxf(0.0, _door_cooldown - delta)
+    if active_interior.is_empty() and not _controls_blocked():
+        var doorway := _nearest_building()
+        if doorway.is_empty():
+            _door_armed = true
+        elif _door_armed and _door_cooldown <= 0.0 and player.position.distance_to(doorway["entrance"]) < 2.15:
+            _door_armed = false
+            _interact()
+            direction = Vector3.ZERO
     _animate_player(delta, direction)
     var target := player.position + direction * WALK_SPEED * delta
     if active_interior.is_empty() and direction != Vector3.ZERO and (absf(target.x) >= 26.0 or absf(target.z) >= 29.0):
@@ -342,8 +356,50 @@ func _animate_player(delta: float, direction: Vector3) -> void:
     if _player_sprite.texture != image:
         _player_sprite.texture = image
 
+func _create_scene_fade() -> void:
+    _scene_fade = ColorRect.new()
+    _scene_fade.color = Color(0.08, 0.06, 0.05, 0.0)
+    _scene_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    _scene_fade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    get_node("CanvasLayer").add_child(_scene_fade)
+
+func _play_scene_transition() -> void:
+    if _scene_fade == null:
+        return
+    # Cheap visual dissolve; actual scene switch is immediate for reliable saves.
+    if _scene_fade.has_meta("active_tween"):
+        var previous: Tween = _scene_fade.get_meta("active_tween")
+        if previous != null and previous.is_running():
+            previous.kill()
+    _scene_fade.color.a = 0.62
+    var fade := create_tween()
+    fade.tween_property(_scene_fade, "color:a", 0.0, 0.38).set_trans(Tween.TRANS_CUBIC)
+    _scene_fade.set_meta("active_tween", fade)
+
+func _close_top_window() -> void:
+    if dialogue_ui != null and dialogue_ui.visible:
+        dialogue_ui.close_dialogue()
+    elif npc_menu != null and npc_menu.is_open():
+        npc_menu.hide_menu()
+    elif character_sheet != null and character_sheet.visible:
+        character_sheet.hide_sheet()
+    elif map_open:
+        map_open = false
+        map_dialog.visible = false
+    elif town_panel != null and town_panel.visible:
+        town_panel.visible = false
+        _market_mode = false
+    elif news != null and news.visible:
+        news.visible = false
+    elif not active_interior.is_empty():
+        _interact()
+
 func _unhandled_key_input(event: InputEvent) -> void:
     if not event is InputEventKey or not event.pressed or event.echo:
+        return
+    if event.keycode == KEY_ESCAPE:
+        _close_top_window()
+        get_viewport().set_input_as_handled()
         return
     if (dialogue_ui != null and dialogue_ui.visible) or (npc_menu != null and npc_menu.is_open()) or (character_sheet != null and character_sheet.visible):
         return
@@ -522,7 +578,7 @@ func _update_hint() -> void:
         var nearby := _nearest_building()
         if npc.is_empty():
             if not nearby.is_empty():
-                next_hint = "E: entrar em %s" % nearby["room"]
+                next_hint = "Aproxime-se da porta para entrar em %s" % nearby["room"]
             elif not _nearest_resource().is_empty():
                 next_hint = "E: coletar recurso"
             else:
@@ -539,7 +595,10 @@ func _interact() -> void:
         settlement.visible = true
         interior_node.visible = false
         _set_interior_collision(false)
-        player.position = _interior_return_position
+        player.position = _interior_return_position + Vector3(-1.1 if _interior_return_position.x < 0.0 else 1.1, 0, 0)
+        _door_cooldown = 1.3
+        _door_armed = false
+        _play_scene_transition()
         town_panel.visible = false
         last_message = "Voce voltou para a vila."
     else:
@@ -555,6 +614,8 @@ func _interact() -> void:
             _build_interior(active_interior)
             _set_interior_collision(true)
             player.position = Vector3(0, 0, 3)
+            _door_cooldown = 0.8
+            _play_scene_transition()
             last_message = "Voce entrou em %s." % active_interior
     camera.position = player.position + Vector3(16, 19, 23)
     _refresh_hud()
