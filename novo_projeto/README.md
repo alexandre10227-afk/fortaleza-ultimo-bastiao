@@ -180,3 +180,16 @@ Controles temporários no mundo: `V` abre visitantes da taverna; teclas `1` a `5
 - A herdeira especial do Duque obedece a mesma permanencia de quatro dias quando sua aparicao rara de 1% ocorre.
 - `scripts/world.gd`: a taverna mostra o nivel de amizade e os dias restantes. NPCs que ficam na cidade podem participar da lista de moradores visiveis.
 - Novos testes em `tests/test_tavern_life.gd`; `test_town.gd` e `test_duke_event.gd` atualizados conforme as regras. **Esses testes ainda necessitam uma rodada completa de execucao na versao publicada**. Nenhum ZIP de aceite gerado.
+
+
+## Incremento: presentes exclusivos por categoria e economia de itens (03/11/2026)
+
+**Regra fixa:** cada NPC **aceita presentes de uma unica categoria**; qualquer presente de outra categoria e recusado sem consumo nem ganho de amizade. Categorias atribuidas: Doran=Minerios, Elira=Armas, Mira=Comestiveis, Kael=Armas, Selene=Estudos, Duque=Arte, herdeira=Arte. As excecoes de recrutamento e missao do Duque permanecem.
+
+- `scripts/item_catalog.gd`: catalogo autoral das cinco categorias com as raridades Comum, Raro, Epico e Lendario, precos de compra/venda e pontos de amizade por raridade **somente em presentes aceitos**.
+- `scripts/unique_weapons.gd`: Espada do Heroi e Armadura do Duque separadas de todos os mercados e presentes comuns.
+- `scripts/economy_system.gd`: custos de receitas e niveis de construcoes ate 5; consumo seguro de materiais e dinheiro.
+- `scripts/game_state.gd`: metodos `give_gift`, `market_buy`, `market_sell`, `eat_food`, `craft_item` e `upgrade_building`; limites de presentes por dia e persistencia no save. Personagem especial falecido/indisponivel nao recebe presente.
+- `scripts/world.gd`: `P` abre a selecao de presentes do inventario para o NPC proximo, personagem na mansao ou visitante selecionado na taverna. Dialogos incluem opcao de oferecer presente. `O` abre mercado na taverna/ferraria ou quando ha caravana; `Z` alterna comprar/vender, `L` passa de pagina, teclas 1–5 negociam. A caravana possui janela inicial de quatro dias e adicional de preco.
+- `tests/test_item_economy.gd` criado com checagens de recusas, raridade, mercado, comida, receitas, construcoes e salvamento. **Este novo teste ainda nao foi executado no motor nesta rodada**; nao declarar a atualizacao aprovada por Godot sem os resultados.
+- **Pendente:** menus definitivos de forja/obras, alvos de comida para todos os companheiros, variacao de estoque, visuais definitivos, balanceamento e testes reais de FPS antes do ZIP.
