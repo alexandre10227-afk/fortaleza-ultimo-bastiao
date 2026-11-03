@@ -21,6 +21,8 @@ func run() -> void:
     await process_frame
     assert(start.origin_input.item_count == 4)
     assert(start.appearance_input.item_count == 4)
+    assert(start.class_input.item_count == 4)
+    start.class_input.select(2) # Mago
     start.name_input.text = "Protagonista"
     start.appearance_input.select(2)
     start._stats = stats.duplicate(true)
@@ -30,6 +32,7 @@ func run() -> void:
     assert(state.character_stats["Forca"] == 5)
     assert(state.character_origin in profile.ORIGINS.keys())
     assert(state.character_appearance == 2)
+    assert(state.protagonist_track["base_class"] == "Mago")
     assert(state.save_game())
     state.new_game("Reset", "Facil")
     assert(state.load_game())
