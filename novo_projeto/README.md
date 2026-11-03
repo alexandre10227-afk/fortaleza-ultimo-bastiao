@@ -255,3 +255,14 @@ Analise das 5 imagens e do video de ~48m54s documentada em [REFERENCIAS_VISUAIS.
 - `tests/test_character_profile.gd` novo e `tests/test_story.gd`/`tests/test_npc_interaction.gd` atualizados. **A integracao publicada ainda nao passou por uma bateria completa de testes no Godot/Windows**. Modelos locais separados de atributos e radar foram executados no Godot 4.7.2 headless com PASS; isso nao deve ser apresentado como validacao do projeto completo.
 
 **Pendente:** retratos e animacoes originais definitivos, telas de atributos responsivas, equipamentos/slots, artes marciais completas, ficha de NPC mais ilustrada, controles de interface e otimizacao de desempenho. **Sem ZIP** ate cumprir o criterio de polimento/otimizacao e testes da Etapa 1.
+
+
+## Incremento: classes e subclasses, com magos por elementos (03/11/2026)
+
+- `scripts/hero_classes.gd`: seis classes (Guerreiro, Arqueiro, Assassino, Defensor, Curandeiro, Mago), com subclasses Raro/Epico e superiores Lendario/Mitico; progressao estrutural e parametros iniciais de potencial.
+- Magia: **Terra, Agua, Fogo e Vento** como elementos basicos. Uma afinidade = Raro, duas = Epico, tres = Lendario, quatro = Elementalista Lendario com potencial de ascensao Mitico. **Trovao** e **Mago Verde** (plantas) sao escolas Epicas independentes, mesmo com uma afinidade.
+- `scripts/start.gd`: classe inicial selecionavel e campo de afinidade elemental exibido apenas para magos. Subclasses superiores nao sao escolhidas na criacao.
+- `scripts/game_state.gd`: save/load de `hero_build` e `npc_hero_builds`, incluindo valores de compatibilidade para saves antigos; ranks A/S/SS permanecem independentes.
+- `scripts/character_sheet.gd` e `scripts/npc_interaction_menu.gd`: exibem classe, subclasse e raridade de combate; a ficha do mago inclui afinidades.
+- `tests/test_hero_classes.gd` executado localmente no Godot 4.7.2 headless: **PASS** para tabela, elementos exclusivos, progressao e subclasses superiores. Ainda nao e validacao integrada do HEAD remoto.
+- Balanceamento, efeitos reais, missões de promoção, materiais e combate completo pertencem a Etapa 2. **Sem ZIP antes de concluir a Etapa 1, polir, otimizar e validar.**
