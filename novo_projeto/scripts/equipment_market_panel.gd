@@ -1,6 +1,8 @@
 extends Control
 ## Painel original de comércio: catalogo clicavel, icones em cache e preços claros.
 signal purchase_requested(item_id: String)
+signal next_page_requested
+signal toggle_trade_requested
 signal closed
 const UI = preload("res://scripts/ui_theme.gd")
 const ICONS = preload("res://scripts/item_icon_factory.gd")
@@ -40,6 +42,19 @@ func _ready() -> void:
     list.custom_minimum_size.x = 672
     list.add_theme_constant_override("separation", 7)
     scroller.add_child(list)
+    var controls := HBoxContainer.new()
+    controls.add_theme_constant_override("separation", 14)
+    root_col.add_child(controls)
+    var next_button := Button.new()
+    next_button.text = "Proxima pagina"
+    UI.apply_button(next_button)
+    next_button.pressed.connect(func(): next_page_requested.emit())
+    controls.add_child(next_button)
+    var trade_button := Button.new()
+    trade_button.text = "Alternar compra / venda"
+    UI.apply_button(trade_button)
+    trade_button.pressed.connect(func(): toggle_trade_requested.emit())
+    controls.add_child(trade_button)
     var close_button := Button.new()
     close_button.text = "Fechar mercado (Esc)"
     UI.apply_button(close_button)
