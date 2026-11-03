@@ -132,7 +132,7 @@ func _generate_world() -> void:
     player.position = Vector3(0, 0, 13)
     add_child(player)
     var character := Sprite3D.new()
-    character.texture = _sprite_texture
+    character.texture = _make_sprite_texture(GameState.character_appearance + 1)
     character.pixel_size = 0.028
     character.position.y = 0.82
     character.billboard = BaseMaterial3D.BILLBOARD_ENABLED
@@ -146,18 +146,21 @@ func _generate_world() -> void:
     camera.current = true
     add_child(camera)
 
-func _make_sprite_texture() -> Texture2D:
+func _make_sprite_texture(style_index: int = 0) -> Texture2D:
     var picture := Image.create(24, 40, false, Image.FORMAT_RGBA8)
     picture.fill(Color.TRANSPARENT)
+    var coats := [Color("#395679"), Color("#735044"), Color("#647948"), Color("#475c6e"), Color("#78647e")]
+    var hair_colors := [Color("#352c2a"), Color("#45301e"), Color("#5d3a28"), Color("#242e38"), Color("#533d33")]
+    var look := clampi(style_index, 0, coats.size() - 1)
     for x in range(7, 17):
         for y in range(12, 35):
-            picture.set_pixel(x, y, Color("#395679"))
+            picture.set_pixel(x, y, coats[look])
     for x in range(8, 16):
         for y in range(3, 13):
             picture.set_pixel(x, y, Color("#e9b58e"))
     for x in range(7, 17):
         for y in range(1, 6):
-            picture.set_pixel(x, y, Color("#352c2a"))
+            picture.set_pixel(x, y, hair_colors[look])
     return ImageTexture.create_from_image(picture)
 
 func _generate_ui() -> void:
