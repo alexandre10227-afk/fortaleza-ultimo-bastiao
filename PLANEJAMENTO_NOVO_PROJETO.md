@@ -200,3 +200,22 @@ O nível do prédio não substitui a habilidade do ferreiro: a produção requer
 - Construções não ultrapassam o nível 5; custos e efeitos são aplicados exatamente uma vez.
 - **Regra de entrega permanece:** gerar ZIP da etapa somente após implementação integral, revisão de código e testes técnicos passarem; resta apenas a aceitação do usuário em Windows.
 
+
+
+## Adendo 1.2 — Bestiário, expedições e Memorial dos Caídos (03/11/2026)
+
+**Bestiário e enciclopédia:** registro persistente por perfil/campanha de criaturas vistas, chefes, fraquezas efetivamente descobertas, regiões, receitas e NPCs. Entradas ocultas até descoberta; informações não são automaticamente reveladas. Fundação do índice e interface básica na **Etapa 1**; descobertas de combate e profissões na **Etapa 2**; informações da masmorra e invasões na **Etapa 3**; catálogo completo na **Etapa 4**.
+
+**Expedições de companheiros:** na **Etapa 2**, preparar dados de equipe, duração, objetivo, provisões e risco. Na **Etapa 3**, executar expedições autônomas em avanço do calendário para coleta, pesquisa de ruínas ou resgate de refugiados, com eventos narrativos, ferimentos, desaparecimentos e morte permanente quando habilitada. Impedir duplicação de recompensas após carregamento; não permitir enviar NPC morto/ausente.
+
+**Memorial dos Caídos:** salvar fatos de cada morte permanente (ID, nome, profissão, feitos, data, local, circunstância e relação). Construção/visitação com interações e reações dos NPCs na **Etapa 3**, completando epílogos e histórico na **Etapa 4**. Na **Etapa 1**, somente estrutura de registro de mortes (sem marcar a funcionalidade completa como concluída).
+
+### Distribuição e regra de entrega
+- **Etapa 1:** índice de Bestiário, dados de expedição e histórico de falecimentos persistentes; protótipos funcionais apenas dos módulos pertencentes ao escopo da etapa.
+- **Etapa 2:** integração do Bestiário com combate, receitas e profissões; preparação de expedições.
+- **Etapa 3:** expedições completas, memorial como propriedade, mortes e migrações persistentes.
+- **Etapa 4:** enciclopédia, histórias cruzadas, conquistas e epílogos integrados.
+- **Obrigatório:** gerar ZIP da Etapa 1 somente quando todos os requisitos dessa etapa estiverem implementados e tecnicamente testados; depois disso faltará apenas o teste de aceitação do usuário.
+
+## Registro do início da Etapa 1
+O desenvolvimento recomeça em uma **pasta independente `novo_projeto/`**, sem depender do antigo protótipo da raiz. Componentes devem ser adicionados incrementalmente, e a primeira publicação de código não constitui aprovação nem entrega da Etapa 1. Os arquivos novos precisam passar por carregamento e testes Godot antes do ZIP final.
