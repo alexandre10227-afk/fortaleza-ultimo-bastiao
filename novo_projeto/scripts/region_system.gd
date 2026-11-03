@@ -17,11 +17,14 @@ const REGIONS := {
 const RESIDENTS := {
     "Fortaleza": [
         {"id": "doran", "name": "Doran", "profession": "Ferreiro", "home": "Fortaleza", "dialogue": "A muralha so resiste se a forja continuar acesa."},
-        {"id": "kael", "name": "Kael", "profession": "Explorador", "home": "Fortaleza", "dialogue": "Vigio as estradas antes que as ondas cheguem."}
+        {"id": "kael", "name": "Kael", "profession": "Explorador", "home": "Fortaleza", "dialogue": "Vigio as estradas antes que as ondas cheguem."},
+        {"id": "iris_feirante", "name": "Iris", "profession": "Feirante", "home": "Fortaleza", "dialogue": "Um mercado honesto precisa de alimentos e confianca."},
+        {"id": "bento_agricultor", "name": "Bento", "profession": "Agricultor", "home": "Fortaleza", "dialogue": "As sementes nao esperam que a guerra termine."}
     ],
     "Porto Cinzento": [
         {"id": "elira", "name": "Elira", "profession": "Mercenaria", "home": "Porto Cinzento", "dialogue": "O porto sempre revela novidades a quem sabe ouvir."},
-        {"id": "mira", "name": "Mira", "profession": "Curandeira", "home": "Porto Cinzento", "dialogue": "Nem toda ferida foi causada por uma espada."}
+        {"id": "mira", "name": "Mira", "profession": "Curandeira", "home": "Porto Cinzento", "dialogue": "Nem toda ferida foi causada por uma espada."},
+        {"id": "lia_moradora", "name": "Lia", "profession": "Moradora", "home": "Porto Cinzento", "dialogue": "Eu so quero que os navios e meus filhos voltem para casa."}
     ]
 }
 
