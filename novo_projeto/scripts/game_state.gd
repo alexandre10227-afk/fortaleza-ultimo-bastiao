@@ -60,7 +60,7 @@ func new_game(hero_name: String, mode: String) -> void:
     character_stats = CHARACTER.default_stats()
     character_appearance = 0
     hero_build = HERO_CLASSES.starter("Guerreiro")
-    npc_hero_builds.clear()
+    npc_hero_builds = HERO_CLASSES.default_npc_builds()
     if character_name.is_empty():
         character_name = "Viajante"
     difficulty = mode if DIFFICULTIES.has(mode) else "Normal"
@@ -524,7 +524,7 @@ func load_game() -> bool:
     hero_build = parsed.get("hero_build", HERO_CLASSES.starter("Guerreiro"))
     if not HERO_CLASSES.valid(hero_build):
         hero_build = HERO_CLASSES.starter("Guerreiro")
-    npc_hero_builds = {}
+    npc_hero_builds = HERO_CLASSES.default_npc_builds()
     var loaded_builds: Dictionary = parsed.get("npc_hero_builds", {})
     for npc_id in loaded_builds:
         if HERO_CLASSES.valid(loaded_builds[npc_id]):
