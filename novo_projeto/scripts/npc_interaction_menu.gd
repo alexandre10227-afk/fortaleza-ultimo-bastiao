@@ -32,8 +32,7 @@ func _ready() -> void:
     UI.apply_panel(card)
     center.add_child(card)
     var scroll := ScrollContainer.new()
-    scroll.custom_minimum_size = Vector2(520, 230)
-    scroll.custom_minimum_size.y = 0
+    scroll.custom_minimum_size = Vector2(520, 390)
     scroll.size_flags_vertical = Control.SIZE_SHRINK_CENTER
     card.add_child(scroll)
     content = VBoxContainer.new()
