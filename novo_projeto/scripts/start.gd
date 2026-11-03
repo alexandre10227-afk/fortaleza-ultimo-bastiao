@@ -3,6 +3,7 @@ const UI = preload("res://scripts/ui_theme.gd")
 const STORY = preload("res://scripts/story_content.gd")
 const CHARACTER = preload("res://scripts/character_profile.gd")
 const PLAYER_CLASSES = preload("res://scripts/protagonist_progression.gd")
+const OPTIONS = preload("res://scripts/game_settings.gd")
 
 var panel: VBoxContainer
 var name_input: LineEdit
@@ -36,7 +37,7 @@ func _ready() -> void:
     panel.custom_minimum_size.x = 685
     panel.add_theme_constant_override("separation", 10)
     scroll.add_child(panel)
-    _show_creation()
+    _show_main_menu()
 
 func _clear() -> void:
     for child in panel.get_children():
@@ -60,6 +61,46 @@ func _button(value: String, action: Callable) -> void:
     b.pressed.connect(action)
     UI.apply_button(b)
     panel.add_child(b)
+
+func _show_main_menu() -> void:
+    _clear()
+    _label("FORTALEZA: ULTIMO BASTIAO", 35)
+    _label("O Vale das Cinzas aguarda suas escolhas.", 19)
+    _label("Uma campanha original de estrategia, exploracao e consequencias.", 16)
+    _button("Novo jogo", _show_creation)
+    if FileAccess.file_exists(GameState.SAVE_PATH):
+        _button("Continuar campanha", _continue)
+    _button("Configuracoes", _show_settings)
+    _button("Sair do jogo", _quit_game)
+
+func _show_settings() -> void:
+    _clear()
+    _label("CONFIGURACOES", 29)
+    var options: Dictionary = OPTIONS.read()
+    _label("Resolucao da janela")
+    var resolution := OptionButton.new()
+    for size in OPTIONS.RESOLUTIONS:
+        resolution.add_item(str(size))
+    resolution.select(maxi(0, OPTIONS.RESOLUTIONS.find(str(options["resolution"]))))
+    panel.add_child(resolution)
+    var fullscreen := CheckBox.new()
+    fullscreen.text = "Tela cheia"
+    fullscreen.button_pressed = bool(options["fullscreen"])
+    panel.add_child(fullscreen)
+    var mute := CheckBox.new()
+    mute.text = "Silenciar audio"
+    mute.button_pressed = bool(options["muted"])
+    panel.add_child(mute)
+    _button("Aplicar e salvar", func():
+        var choice := {"resolution":resolution.get_item_text(resolution.selected),"fullscreen":fullscreen.button_pressed,"muted":mute.button_pressed}
+        if OPTIONS.write(choice):
+            OPTIONS.apply(choice)
+            _show_main_menu()
+    )
+    _button("Voltar", _show_main_menu)
+
+func _quit_game() -> void:
+    get_tree().quit()
 
 func _show_creation() -> void:
     _clear()
@@ -134,6 +175,7 @@ func _show_creation() -> void:
     panel.add_child(difficulty_input)
     _label("Impossivel concede 3x XP, mas torna a sobrevivencia mais dificil.", 15)
     _button("Comecar: audiencia com o rei", _create_character)
+    _button("Voltar ao menu principal", _show_main_menu)
     if FileAccess.file_exists(GameState.SAVE_PATH):
         _button("Continuar campanha salva", _continue)
 
