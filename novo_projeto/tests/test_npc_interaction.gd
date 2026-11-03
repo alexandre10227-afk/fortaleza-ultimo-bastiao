@@ -32,7 +32,7 @@ func run() -> void:
     ui.show_gifts(doran, gifts)
     var allowed := 0
     var rejected := 0
-    for child in ui.content.get_children():
+    for child in ui.content.find_children("*", "Button", true, false):
         if child is Button:
             if child.text.begins_with("Minerio de ferro"):
                 assert(not child.disabled)
