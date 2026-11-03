@@ -296,3 +296,21 @@ Analise das 5 imagens e do video de ~48m54s documentada em [REFERENCIAS_VISUAIS.
 - ZIP de código-fonte com `LEIA-ME_TESTE_WINDOWS.md` e `RELATORIO_QA_ETAPA1.md` preparado para avaliação direta do usuário. Este pacote **não inclui executável**, exigindo Godot 4.7.2. Nunca interpretar como aceite automático da Etapa 2.
 
 **Pendente do aceite:** verificação de FPS real no Windows, animações/câmera em diferentes máquinas e opinião visual final do usuário.
+
+
+## Etapa 2 iniciada com aceite condicional da Etapa 1 (03/11/2026)
+
+O usuário conferiu a Etapa 1 no Windows, relatou jogo fluido sem lag e **autorizou iniciar a Etapa 2**, mantendo pendentes ajustes de arte e usabilidade.
+
+Primeira entrega de implementação:
+- Fluxo inicial separado em `Menu principal → escolha de dificuldade → criação do protagonista → audiência de Aldric`.
+- `Esc` fecha a janela superior e os diálogos/abas. Entrada de casas por aproximação de porta, sem apertar E, com fade curto e cooldown de saída.
+- `equipment_catalog.gd`: 24 peças entre armas/armaduras de quatro classes e categorias Comum/Raro/Épico; slots `weapon/head/chest/feet`. Apenas 16 itens Comuns entram em receitas da ferraria. Itens Raros/Épicos são restritos a comerciantes de arquetipo.
+- `forge_panel.gd` e `equipment_market_panel.gd`: menus próprios de fabricação e mercado, com classes, ícones, botões clicáveis, materiais necessários e preços, em vez de lista de texto no diálogo.
+- NPCs vendedores adicionados: mercador marcial na Fortaleza; arcanista e devoto em Porto Cinzento; Doran especializa-se em equipamentos de Guerreiro.
+- `GameState.equipped`: quatro slots persistidos em save e inventário, checagem de classe, bônus de Ataque/Defesa. Vender a última unidade equipada é proibido. O mercado comum não pode contornar as restrições de equipamento.
+- Texturas leves originais geradas e reutilizadas via `world_texture_factory.gd`: pedra, madeira, grama e estrada. Objetos usam cache de materiais e UVs repetidos.
+- Itens de enredo Espada do Herói e Armadura do Duque continuam **exclusivos**.
+- Testes `test_phase2_equipment.gd` e `test_phase2_ui_flow.gd` cobrem novas regras, telas e entrada automática.
+- Validação local Godot 4.7.2: **26 testes anteriores PASS** com teste de moradores atualizado, e **teste adicional de fluxo de UI PASS** (27 suites). Revisão CI GitHub em curso; FPS real da nova versão no Windows não foi medido.
+- **Ainda não é combate completo**: técnicas, inimigos, atributos vivos, danos, IA e batalhas serão implementados em continuidade da Etapa 2; a arte definitiva também segue em revisão.
