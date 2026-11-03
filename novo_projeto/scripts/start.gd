@@ -12,6 +12,7 @@ var appearance_input: OptionButton
 var _stats: Dictionary = CHARACTER.default_stats()
 var _stat_labels: Dictionary = {}
 var _points_label: Label
+var _radar: Control
 var _prologue_step := 0
 
 func _ready() -> void:
@@ -83,6 +84,8 @@ func _show_creation() -> void:
     panel.add_child(appearance_input)
     _label("Distribua 10 pontos iniciais", 18)
     _stats = CHARACTER.default_stats()
+    _radar = preload("res://scripts/attribute_radar.gd").new()
+    panel.add_child(_radar)
     _stat_labels.clear()
     _points_label = Label.new()
     UI.apply_text(_points_label)
@@ -148,6 +151,8 @@ func _refresh_stats() -> void:
         var label: Label = _stat_labels[key]
         label.text = str(_stats[key])
     _points_label.text = "Pontos restantes: %d" % CHARACTER.points_remaining(_stats)
+    if _radar != null:
+        _radar.set_stats(_stats)
 
 func _show_audience() -> void:
     _clear()
