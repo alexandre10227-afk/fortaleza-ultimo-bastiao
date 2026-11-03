@@ -95,3 +95,15 @@ static func promote_specialist(build: Dictionary, next_subclass: String) -> Dict
     if not CLASSES[archetype_name][next_subclass].has("Lendario"):
         return {}
     return make(archetype_name,next_subclass,[],"Lendario",true)
+
+static func default_npc_builds() -> Dictionary:
+    # Rank A/S/SS permanece independente da raridade de subclasse.
+    return {
+        "doran": make("Guerreiro", "Espada e Escudo", [], "Raro"),
+        "elira": make("Guerreiro", "Samurai", [], "Raro"),
+        "kael": make("Arqueiro", "Cacador", [], "Raro"),
+        "mira": make("Curandeiro", "Herbalista", [], "Raro"),
+        "duque": make("Guerreiro", "Espada e Escudo", [], "Epico"),
+        "herdeira_duque": make("Guerreiro", "Mestre Espadachim", [], "Lendario"),
+        "general_vaelor": make("Defensor", "Bastiao Vivo", [], "Lendario")
+    }
