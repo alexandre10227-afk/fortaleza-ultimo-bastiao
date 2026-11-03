@@ -1,35 +1,34 @@
 # Fortaleza: Último Bastião
 
-## Teste de entrega via GitHub
+## Atenção: conteúdo reduzido no repositório
 
-Este repositório contém **um projeto Godot leve, executável e independente de recursos externos** para verificar se o download pelo GitHub funciona no Windows.
+Este repositório foi criado para diagnosticar problemas de download. **Os arquivos `main.gd`, `main.tscn` e `project.godot` disponíveis aqui pertencem a um protótipo simplificado e NÃO são o jogo completo.**
 
-> **Importante:** esta é uma versão de diagnóstico reduzida, **não é o projeto completo da Beta 0.5.1**. O pacote completo, de aproximadamente 68 MB, permanece na Biblioteca do ChatGPT; não foi possível transferir seus arquivos binários pelo conector GitHub.
+**Não utilize este protótipo como base para continuar o desenvolvimento.**
 
-### Como testar
-1. No GitHub, escolha **Code → Download ZIP**.
-2. Extraia o ZIP.
-3. Abra **Godot 4.x → Import** e selecione `project.godot`.
-4. Pressione **F6** na cena ou **F5** para executar o projeto.
+## Versão verdadeira do jogo
 
-### Controles
-- **WASD / setas:** mover o personagem
-- **M:** abrir/fechar mapa mundial
-- **E:** entrar em um cômodo / sair do cômodo
-- **Clique:** selecionar região no mapa
-- **R:** recuperar energia (somente teste)
+A versão completa é **Fortaleza Beta 0.5.2 Restaurada**, derivada da Beta 0.5.1, que contém centenas de arquivos, todos os sprites e texturas originais, campanha isométrica, exploração, combate, NPCs, inventário, atlas e uma cena 3D experimental.
 
-### Mecânicas de diagnóstico
-- Mundo desenhado diretamente no Godot (não é uma ilha flutuante)
-- Salão principal, quarto e ferraria separados
-- Mapa mundial com regiões selecionáveis
-- Viagem custa 5 de energia e concede experiência de Agilidade proporcional à distância, limitada a 15
-- Obstáculos com colisão simples
-- Retorno a interiores pela tecla E
+A restauração corrigiu:
+- Botão para acessar a vila 3D na tela inicial;
+- Texturização 3D com grama, terra e pedra de atlas preexistente;
+- Base de terreno 3D ampliada;
+- Aberturas nas muralhas laterais para circulação;
+- Texto desatualizado da versão Beta 0.3 no menu inicial.
 
-O propósito deste pacote é **desbloquear a distribuição e testar a abertura no Godot**. A migração da Beta 0.5.1 integral, com todos os sprites, mapas, cenas e sistemas, continua pendente.
+**A campanha principal continua isométrica (2D); a vila 3D é separada e experimental.** Não foi feita a conversão completa para 3D.
 
-### Estado do projeto
-- **Teste de entrega via GitHub:** disponível
-- **Beta 0.5.1 completa no GitHub:** pendente
-- **Teste visual no Windows:** pendente
+O pacote integral tem ~69 MB e não foi transferido para este repositório: a conexão GitHub usada neste chat só permite gravação de arquivos de texto e blobs fornecidos diretamente, sem acesso aos arquivos binários do ambiente de desenvolvimento. Publicá-lo como completo seria incorreto.
+
+## Situação
+
+| Item | Estado |
+| --- | --- |
+| Beta 0.5.2 completa restaurada no ambiente de trabalho | Gerada |
+| Verificação de integridade do ZIP | Passou |
+| Nove cenas executadas sem erros no Godot 4.7.2 headless | Passaram |
+| Publicação dos assets integrais no GitHub | **Pendente** |
+| Testes visuais no Windows | **Pendentes** |
+
+O diretório atual representa só o teste inicial de distribuição.
