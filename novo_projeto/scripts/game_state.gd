@@ -6,6 +6,7 @@ const ITEMS = preload("res://scripts/item_catalog.gd")
 const ECONOMY = preload("res://scripts/economy_system.gd")
 const NPC_REGISTRY = preload("res://scripts/npc_registry.gd")
 const CHARACTER = preload("res://scripts/character_profile.gd")
+const HERO_CLASSES = preload("res://scripts/hero_classes.gd")
 
 const SAVE_PATH := "user://fortaleza_stage1_v1.json"
 const DIFFICULTIES := {
@@ -18,6 +19,8 @@ var character_name := ""
 var character_origin := "Andarilho"
 var character_stats: Dictionary = CHARACTER.default_stats()
 var character_appearance := 0
+var hero_build: Dictionary = HERO_CLASSES.starter("Guerreiro")
+var npc_hero_builds: Dictionary = {}
 var difficulty := "Normal"
 var oath := ""
 var current_region := ""
@@ -56,6 +59,8 @@ func new_game(hero_name: String, mode: String) -> void:
     character_origin = "Andarilho"
     character_stats = CHARACTER.default_stats()
     character_appearance = 0
+    hero_build = HERO_CLASSES.starter("Guerreiro")
+    npc_hero_builds.clear()
     if character_name.is_empty():
         character_name = "Viajante"
     difficulty = mode if DIFFICULTIES.has(mode) else "Normal"
@@ -94,6 +99,40 @@ func configure_character(origin: String, stats: Dictionary, appearance: int = 0)
     character_stats = CHARACTER.final_stats(stats, origin)
     character_appearance = appearance
     record_event("character_profile", "Palacio", [character_name], origin)
+    save_game()
+    return true
+
+func choose_starting_class(archetype: String, element: String = "Terra") -> bool:
+    if not oath.is_empty():
+        return false
+    var build := HERO_CLASSES.starter(archetype)
+    if build.is_empty():
+        return false
+    if archetype == "Mago":
+        build = HERO_CLASSES.make("Mago", "Mago Elemental", [element])
+    if not HERO_CLASSES.valid(build):
+        return false
+    hero_build = build
+    record_event("hero_class", "Palacio", [character_name], str(build["subclass"]))
+    save_game()
+    return true
+
+func set_npc_hero_class(npc_id: String, build: Dictionary) -> bool:
+    # Registra a subclasse separada do rank de recrutamento A/S/SS.
+    if not NPC_REGISTRY.PROFILES.has(npc_id) or not HERO_CLASSES.valid(build):
+        return false
+    npc_hero_builds[npc_id] = build.duplicate(true)
+    save_game()
+    return true
+
+func evolve_npc_subclass(npc_id: String, next_rarity: String) -> bool:
+    if not npc_hero_builds.has(npc_id):
+        return false
+    var upgrade := HERO_CLASSES.evolve(npc_hero_builds[npc_id], next_rarity)
+    if upgrade.is_empty():
+        return false
+    npc_hero_builds[npc_id] = upgrade
+    record_event("subclass_evolution", current_region, [npc_id], next_rarity)
     save_game()
     return true
 
@@ -465,7 +504,7 @@ func save_game() -> bool:
     var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if file == null:
         return false
-    var data := {"schema": 1, "name": character_name, "character_origin": character_origin, "character_stats": character_stats, "character_appearance": character_appearance, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "npc_lives": npc_lives, "npc_story_flags": npc_story_flags, "last_gift_day": last_gift_day, "food_bonuses": active_food_bonuses, "building_levels": building_levels, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "recruited": recruited, "bestiary": discovered_bestiary, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
+    var data := {"schema": 1, "name": character_name, "character_origin": character_origin, "character_stats": character_stats, "character_appearance": character_appearance, "hero_build": hero_build, "npc_hero_builds": npc_hero_builds, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "npc_lives": npc_lives, "npc_story_flags": npc_story_flags, "last_gift_day": last_gift_day, "food_bonuses": active_food_bonuses, "building_levels": building_levels, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "recruited": recruited, "bestiary": discovered_bestiary, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
     file.store_string(JSON.stringify(data))
     return true
 
@@ -482,6 +521,14 @@ func load_game() -> bool:
     character_origin = str(parsed.get("character_origin", "Andarilho"))
     character_stats = parsed.get("character_stats", CHARACTER.default_stats())
     character_appearance = int(parsed.get("character_appearance", 0))
+    hero_build = parsed.get("hero_build", HERO_CLASSES.starter("Guerreiro"))
+    if not HERO_CLASSES.valid(hero_build):
+        hero_build = HERO_CLASSES.starter("Guerreiro")
+    npc_hero_builds = {}
+    var loaded_builds: Dictionary = parsed.get("npc_hero_builds", {})
+    for npc_id in loaded_builds:
+        if HERO_CLASSES.valid(loaded_builds[npc_id]):
+            npc_hero_builds[npc_id] = loaded_builds[npc_id]
     difficulty = str(parsed.get("difficulty", "Normal"))
     oath = str(parsed.get("oath", ""))
     current_region = str(parsed.get("region", ""))
