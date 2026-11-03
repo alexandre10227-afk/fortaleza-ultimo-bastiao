@@ -28,7 +28,7 @@ func _ready() -> void:
     _generate_map_dialog()
     _refresh_hud()
 
-func _make_box(parent: Node3D, location: Vector3, dimensions: Vector3, tint: Color) -> void:
+func _make_box(parent: Node3D, location: Vector3, dimensions: Vector3, tint: Color, solid: bool = false) -> void:
     var mesh := MeshInstance3D.new()
     var box := BoxMesh.new()
     box.size = dimensions
@@ -43,6 +43,15 @@ func _make_box(parent: Node3D, location: Vector3, dimensions: Vector3, tint: Col
         _shared_materials[key] = mat
         mesh.material_override = mat
     parent.add_child(mesh)
+    if solid:
+        var body := StaticBody3D.new()
+        body.position = location
+        var collision := CollisionShape3D.new()
+        var shape := BoxShape3D.new()
+        shape.size = dimensions
+        collision.shape = shape
+        body.add_child(collision)
+        parent.add_child(body)
 
 func _generate_world() -> void:
     var light := DirectionalLight3D.new()
@@ -63,8 +72,8 @@ func _generate_world() -> void:
     _make_box(settlement, Vector3(0, -0.07, 0), Vector3(4, .08, 48), Color("#a99a7b"))
     for i in range(5):
         var z := -17.0 + i * 8.0
-        _make_box(settlement, Vector3(-9, 1.4, z), Vector3(6, 2.8, 5), Color("#8b7259"))
-        _make_box(settlement, Vector3(9, 1.4, z), Vector3(6, 2.8, 5), Color("#88735a"))
+        _make_box(settlement, Vector3(-9, 1.4, z), Vector3(6, 2.8, 5), Color("#8b7259"), true)
+        _make_box(settlement, Vector3(9, 1.4, z), Vector3(6, 2.8, 5), Color("#88735a"), true)
         _make_box(settlement, Vector3(-9, 3.2, z), Vector3(7, .9, 6), Color("#655044"))
         _make_box(settlement, Vector3(9, 3.2, z), Vector3(7, .9, 6), Color("#655044"))
     for i in range(16):
@@ -80,7 +89,14 @@ func _generate_world() -> void:
         npc.shaded = false
         npc.position = Vector3(4.7 + float(visitor % 2) * 2.0, 1.0, -13.0 + float(visitor / 2) * 6.0)
         settlement.add_child(npc)
-    player = Node3D.new()
+    player = CharacterBody3D.new()
+    var physical_shape := CollisionShape3D.new()
+    var capsule := CapsuleShape3D.new()
+    capsule.radius = 0.35
+    capsule.height = 1.55
+    physical_shape.shape = capsule
+    physical_shape.position.y = 0.78
+    player.add_child(physical_shape)
     player.position = Vector3(0, 0, 13)
     add_child(player)
     var character := Sprite3D.new()
@@ -163,7 +179,8 @@ func _process(delta: float) -> void:
         target.z = clampf(target.z, -29, 29)
         if active_interior.is_empty():
             if not _is_blocked(target):
-                player.position = target
+                player.velocity = direction.normalized() * WALK_SPEED
+                player.move_and_slide()
         else:
             player.position = Vector3(clampf(target.x, -5.2, 5.2), 0, clampf(target.z, -4.5, 4.5))
         camera.position = player.position + Vector3(16, 19, 23)
