@@ -59,7 +59,9 @@ func run_tests() -> void:
     assert(not duke.tavern_roll(g.duke_state, g.day, 30, 0))
     assert(duke.tavern_roll(g.duke_state, g.day, 31, 0))
     assert(duke.tavern_roll(g.duke_state, g.day, 31, 99))
-    assert(not duke.tavern_roll(g.duke_state, g.day + 1, 31, 99))
+    assert(duke.tavern_roll(g.duke_state, g.day + 1, 31, 99))
+    assert(duke.tavern_roll(g.duke_state, g.day + 3, 31, 99))
+    assert(not duke.tavern_roll(g.duke_state, g.day + 4, 31, 99))
     # A herdeira rank S da taverna nao pode evoluir sem armadura
     assert(g.duke_daughter_recruit())
     g.inventory["cristal_do_lago"] = 3
