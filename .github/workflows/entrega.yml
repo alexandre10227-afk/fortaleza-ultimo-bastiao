@@ -1,0 +1,98 @@
+name: Validar e empacotar o jogo completo
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      publicar_release:
+        description: "Publicar ZIP permanente na aba Releases"
+        required: true
+        type: boolean
+        default: false
+      versao:
+        description: "Versão para Release, ex. 0.5.3"
+        required: false
+        type: string
+        default: "0.5.3"
+
+permissions:
+  contents: write
+
+jobs:
+  empacotar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar codigo do repositorio
+        uses: actions/checkout@v4
+
+      - name: Validar projeto Godot real
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path(".")
+          mandatory = ["project.godot"]
+          missing = [p for p in mandatory if not (root / p).is_file()]
+          scripts = list(root.rglob("*.gd"))
+          scenes = list(root.rglob("*.tscn"))
+          images = list(root.rglob("*.png"))
+          meaningful = [p for p in scripts + scenes + images if ".godot" not in p.parts]
+          print(f"Scripts: {len(scripts)} | Cenas: {len(scenes)} | Texturas: {len(images)}")
+          if missing or len(scripts) < 30 or len(scenes) < 8 or len(images) < 50:
+              raise SystemExit(
+                  "ERRO: repositorio ainda nao contem a Beta completa. "
+                  f"Arquivos ausentes: {missing}. "
+                  "O pacote de diagnostico nao pode ser publicado como jogo final."
+              )
+          if len(meaningful) < 90:
+              raise SystemExit("ERRO: arquivos do jogo insuficientes.")
+          print("Projeto completo detectado: autorizado a gerar pacote.")
+          PY
+
+      - name: Criar ZIP portavel
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import zipfile, hashlib
+          name = "Fortaleza_Ultimo_Bastiao_Godot.zip"
+          ignored = {".git", ".godot", "__pycache__"}
+          with zipfile.ZipFile(name, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as output:
+              for path in sorted(Path(".").rglob("*")):
+                  if not path.is_file() or path.name == name:
+                      continue
+                  if any(part in ignored for part in path.parts):
+                      continue
+                  if path.name.endswith(".tmp") or path.name.endswith(".log"):
+                      continue
+                  output.write(path, f"Fortaleza_Ultimo_Bastiao/{path.as_posix()}")
+          with zipfile.ZipFile(name) as z:
+              if z.testzip() is not None or "Fortaleza_Ultimo_Bastiao/project.godot" not in z.namelist():
+                  raise SystemExit("Falha na integridade do pacote.")
+          digest = hashlib.sha256(Path(name).read_bytes()).hexdigest()
+          Path("SHA256.txt").write_text(f"{digest}  {name}\n")
+          print(f"Arquivo: {name} | SHA256: {digest}")
+          PY
+
+      - name: Disponibilizar pacote do build
+        uses: actions/upload-artifact@v4
+        with:
+          name: Fortaleza-Godot-projeto-completo
+          path: |
+            Fortaleza_Ultimo_Bastiao_Godot.zip
+            SHA256.txt
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Publicar arquivo permanente em Releases
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publicar_release }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSAO: ${{ inputs.versao }}
+        shell: bash
+        run: |
+          TAG="v${VERSAO}"
+          gh release create "$TAG" Fortaleza_Ultimo_Bastiao_Godot.zip SHA256.txt \
+            --title "Fortaleza - ${TAG}" \
+            --notes "Projeto Godot completo. Arquivos verificados pelo workflow. Importar project.godot no Godot."
