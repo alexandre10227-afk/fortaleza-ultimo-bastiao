@@ -32,9 +32,12 @@ jobs:
           failed=0
           for test in novo_projeto/tests/test_*.gd; do
             echo "::group::$(basename "$test")"
-            timeout 75s godot --headless --path novo_projeto --script "res://tests/$(basename "$test")" || failed=1
+            timeout --signal=TERM --kill-after=3s 25s godot --headless --path novo_projeto --script "res://tests/$(basename "$test")" || failed=1
             echo "::endgroup::"
           done
+          if [[ "$failed" -ne 0 ]]; then
+            echo "::error::One or more Godot regression tests failed or exceeded 25 seconds"
+          fi
           exit "$failed"
       - name: Short scene smoke test
         run: timeout 45s godot --headless --path novo_projeto --quit-after 5
