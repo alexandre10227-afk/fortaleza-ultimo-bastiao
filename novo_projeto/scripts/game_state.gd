@@ -115,11 +115,17 @@ func remember(npc_id: String, event_kind: String) -> void:
     record_event("npc_memory", current_region, [npc_id], event_kind)
 
 func friendship_points(npc_id: String) -> int:
+    if npc_id == "duque":
+        return int(duke_state.get("friendship", 0))
+    if npc_id == DUKE.DAUGHTER_ID:
+        return int(duke_state.get("daughter_friendship", 0))
     return int(npc_friendship.get(npc_id, 0))
 
 func friendship_level(npc_id: String) -> String:
     if npc_id == "duque":
         return FRIENDSHIP.level_name(int(duke_state.get("friendship", 0)))
+    if npc_id == DUKE.DAUGHTER_ID:
+        return FRIENDSHIP.level_name(int(duke_state.get("daughter_friendship", 0)))
     return FRIENDSHIP.level_name(friendship_points(npc_id))
 
 func gain_friendship(npc_id: String, points: int, source: String, once_per_day: bool = false) -> bool:
@@ -225,7 +231,9 @@ func give_gift(npc_id: String, profession: String, item_id: String) -> bool:
     last_gift_day[npc_id] = day
     if npc_id == "duque":
         duke_state["friendship"] = mini(100, int(duke_state.get("friendship", 0)) + affinity)
-    elif npc_id != DUKE.DAUGHTER_ID:
+    elif npc_id == DUKE.DAUGHTER_ID:
+        duke_state["daughter_friendship"] = mini(100, int(duke_state.get("daughter_friendship", 0)) + affinity)
+    else:
         gain_friendship(npc_id, affinity, "presente")
     remember(npc_id, "presente_" + item_id)
     record_event("gift", current_region, [npc_id], "Presente aceito: %s (+%d amizade)" % [item_id, affinity])
