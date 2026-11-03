@@ -544,59 +544,49 @@ func _apply_region_theme() -> void:
     _spawn_residents()
     _spawn_resources()
 
+func _active_city_residents() -> Array:
+    var residents: Array = []
+    var seen: Dictionary = {}
+    var base_residents: Array = REGION_SYSTEM.residents(GameState.current_region)
+    for resident in base_residents:
+        var id := str(resident["id"])
+        if GameState.recruited.has(id):
+            continue
+        if GameState.npc_lives.has(id):
+            var life: Dictionary = GameState.npc_lives[id]
+            if life.get("status", "") != "village" or life.get("region", "") != GameState.current_region:
+                continue
+        residents.append(resident.duplicate(true))
+        seen[id] = true
+    for visitor in preload("res://scripts/town_system.gd").town_residents(GameState.current_region, GameState.npc_lives):
+        var id := str(visitor["id"])
+        if not seen.has(id) and not GameState.recruited.has(id):
+            residents.append(visitor)
+            seen[id] = true
+    return residents
+
 func _spawn_residents() -> void:
     for visual in npc_visuals.values():
         if is_instance_valid(visual):
             visual.queue_free()
     npc_visuals.clear()
-    var residents: Array = REGION_SYSTEM.residents(GameState.current_region).duplicate(true)
-    for resident in preload("res://scripts/town_system.gd").town_residents(GameState.current_region, GameState.npc_lives):
-        var exists := false
-        for existing in residents:
-            if existing.get("id", "") == resident.get("id", ""):
-                exists = true
-                break
-        if not exists:
-            residents.append(resident)
-    for index in range(residents.size()):
-        var data: Dictionary = residents[index]
+    for data in _active_city_residents():
+        var id := str(data["id"])
         var npc := Sprite3D.new()
-        npc.name = "NPC_" + str(data["id"])
+        npc.name = "NPC_" + id
         npc.texture = _sprite_texture
         npc.pixel_size = 0.026
         npc.billboard = BaseMaterial3D.BILLBOARD_ENABLED
         npc.shaded = false
-        npc.position = ROUTINES.position_for(str(residents[index]["id"]), GameState.day) + Vector3(0, 1, 0)
+        npc.position = ROUTINES.position_for(id, GameState.day) + Vector3(0, 1, 0)
         settlement.add_child(npc)
-        npc_visuals[str(data["id"])] = npc
+        npc_visuals[id] = npc
 
 func _refresh_resident_positions() -> void:
     _spawn_residents()
-    var residents: Array = REGION_SYSTEM.residents(GameState.current_region).duplicate(true)
-    for resident in preload("res://scripts/town_system.gd").town_residents(GameState.current_region, GameState.npc_lives):
-        var exists := false
-        for existing in residents:
-            if existing.get("id", "") == resident.get("id", ""):
-                exists = true
-                break
-        if not exists:
-            residents.append(resident)
-    for index in range(residents.size()):
-        var id := str(residents[index]["id"])
-        if npc_visuals.has(id) and is_instance_valid(npc_visuals[id]):
-            npc_visuals[id].position = ROUTINES.position_for(str(residents[index]["id"]), GameState.day) + Vector3(0, 1, 0)
 
 func _nearest_npc() -> Dictionary:
-    var residents: Array = REGION_SYSTEM.residents(GameState.current_region).duplicate(true)
-    for resident in preload("res://scripts/town_system.gd").town_residents(GameState.current_region, GameState.npc_lives):
-        var exists := false
-        for existing in residents:
-            if existing.get("id", "") == resident.get("id", ""):
-                exists = true
-                break
-        if not exists:
-            residents.append(resident)
-    for data in residents:
+    for data in _active_city_residents():
         var id := str(data["id"])
         if npc_visuals.has(id) and is_instance_valid(npc_visuals[id]):
             var npc: Sprite3D = npc_visuals[id]
