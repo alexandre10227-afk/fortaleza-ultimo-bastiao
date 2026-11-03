@@ -19,7 +19,7 @@ func run_tests() -> void:
     assert(catalog.accepts_gift("doran", "Ferreiro", "meteorito"))
     assert(not catalog.accepts_gift("doran", "Ferreiro", "maca"))
     assert(catalog.gift_affection("doran", "Ferreiro", "maca") == 0)
-    assert(catalog.gift_affection("doran", "Ferreiro", "meteorito") > catalog.gift_affection("doran", "Ferreiro", "minerio_ferro"))
+    assert(catalog.gift_affection("doran", "Ferreiro", "meteorito") > catalog.gift_affection("doran", "Ferreiro", "ferro"))
     assert(unique.is_unique("espada_heroi"))
     assert(unique.is_unique("armadura_duque"))
     assert(not catalog.is_tradeable("espada_heroi"))
