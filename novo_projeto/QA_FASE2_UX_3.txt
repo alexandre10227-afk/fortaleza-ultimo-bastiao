@@ -1,0 +1,1 @@
+Nova bateria de regressao: ferraria clicavel por classe, equipamentos, comerciantes, ESC e transicao de portas.
