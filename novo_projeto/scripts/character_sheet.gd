@@ -93,6 +93,14 @@ func show_page(page_name: String) -> void:
                 var label := str(data.get("name", str(item_id).replace("_", " ").capitalize()))
                 var rarity := str(data.get("rarity", "Material/Especial"))
                 _line("%s  x%d  |  %s" % [label, quantity, rarity])
+                if GameState.PLAYER_CLASSES.BOSS_BOOKS.has(str(item_id)):
+                    var book_button := Button.new()
+                    var specialization := GameState.PLAYER_CLASSES.specialization_from_book(str(item_id))
+                    book_button.text = "Estudar livro: " + specialization
+                    book_button.disabled = not GameState.PLAYER_CLASSES.can_learn(GameState.protagonist_track, specialization)
+                    UI.apply_button(book_button)
+                    book_button.pressed.connect(_read_boss_book.bind(str(item_id)))
+                    body.add_child(book_button)
             if not found:
                 _line("Seu inventario esta vazio.")
         "Relacoes":
@@ -126,3 +134,9 @@ func _line(message: String, title: bool = false) -> void:
     else:
         UI.apply_text(label)
     body.add_child(label)
+
+func _read_boss_book(book_id: String) -> void:
+    if GameState.learn_from_boss_book(book_id):
+        show_page("Habilidades")
+    else:
+        show_page("Inventario")
