@@ -38,6 +38,7 @@ var _market_selling := false
 var _market_travelling := false
 var _market_ids: Array[String] = []
 var npc_menu: Control
+var character_sheet: Control
 var _market_page := 0
 var _food_mode := false
 var _food_ids: Array[String] = []
@@ -59,6 +60,7 @@ func _ready() -> void:
     _generate_map_dialog()
     _create_dialogue_ui()
     _create_npc_menu()
+    _create_character_sheet()
     _refresh_hud()
 
 func _make_box(parent: Node3D, location: Vector3, dimensions: Vector3, tint: Color, solid: bool = false) -> void:
@@ -175,6 +177,11 @@ func _generate_ui() -> void:
     help.add_theme_font_size_override("font_size", 15)
     help.text = "WASD: explorar | N: avancar dia | T: viajar | C: cronicas | F5: salvar"
     column.add_child(help)
+    var sheet_button := Button.new()
+    sheet_button.text = "Personagem / Inventario"
+    UI.apply_button(sheet_button)
+    sheet_button.pressed.connect(_open_character_sheet.bind("Personagem"))
+    column.add_child(sheet_button)
     help.text = "WASD mover | E entrar/sair | Q conversar | M mapa | N dia | V taverna | G coletar | B comprar | I itens"
     interact_hint = Label.new()
     column.add_child(interact_hint)
@@ -193,7 +200,7 @@ func _generate_ui() -> void:
     town_panel.add_theme_color_override("default_color", UI.LIGHT_TEXT)
 
 func _process(delta: float) -> void:
-    if map_open or (dialogue_ui != null and dialogue_ui.visible) or (npc_menu != null and npc_menu.is_open()):
+    if map_open or (dialogue_ui != null and dialogue_ui.visible) or (npc_menu != null and npc_menu.is_open()) or (character_sheet != null and character_sheet.visible):
         return
     _hint_accumulator += delta
     var direction := Vector3.ZERO
@@ -219,7 +226,7 @@ func _process(delta: float) -> void:
 func _unhandled_key_input(event: InputEvent) -> void:
     if not event is InputEventKey or not event.pressed or event.echo:
         return
-    if (dialogue_ui != null and dialogue_ui.visible) or (npc_menu != null and npc_menu.is_open()):
+    if (dialogue_ui != null and dialogue_ui.visible) or (npc_menu != null and npc_menu.is_open()) or (character_sheet != null and character_sheet.visible):
         return
     match event.keycode:
         KEY_N:
@@ -295,9 +302,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
                 _market_page += 1
                 _refresh_market()
         KEY_I:
-            _market_mode = false
-            town_panel.visible = not town_panel.visible
-            town_panel.text = "INVENTARIO\n" + str(GameState.inventory) + "\nCompanheiros: " + str(GameState.recruited)
+            _open_character_sheet("Inventario")
         KEY_1, KEY_2, KEY_3, KEY_4, KEY_5:
             if _market_mode:
                 _market_transaction(event.keycode - KEY_1)
@@ -902,6 +907,18 @@ func _open_craft_menu() -> void:
     _craft_mode = true
     choices.append("Cancelar")
     dialogue_ui.show_dialogue("Ferraria", "Escolha uma receita. Ela exige moedas, materiais e nivel suficiente.", choices)
+
+func _create_character_sheet() -> void:
+    character_sheet = preload("res://scripts/character_sheet.gd").new()
+    character_sheet.name = "CharacterSheet"
+    get_node("CanvasLayer").add_child(character_sheet)
+
+func _open_character_sheet(tab: String = "Personagem") -> void:
+    if npc_menu != null and npc_menu.is_open():
+        npc_menu.hide_menu()
+    if dialogue_ui != null and dialogue_ui.visible:
+        return
+    character_sheet.open_sheet(tab)
 
 func _create_npc_menu() -> void:
     npc_menu = preload("res://scripts/npc_interaction_menu.gd").new()
