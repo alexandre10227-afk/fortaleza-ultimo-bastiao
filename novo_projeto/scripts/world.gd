@@ -894,3 +894,130 @@ func _open_craft_menu() -> void:
     _craft_mode = true
     choices.append("Cancelar")
     dialogue_ui.show_dialogue("Ferraria", "Escolha uma receita. Ela exige moedas, materiais e nivel suficiente.", choices)
+
+func _create_npc_menu() -> void:
+    npc_menu = preload("res://scripts/npc_interaction_menu.gd").new()
+    npc_menu.name = "NpcInteractionMenu"
+    get_node("CanvasLayer").add_child(npc_menu)
+    npc_menu.action_selected.connect(_npc_action)
+    npc_menu.gift_selected.connect(_npc_gift)
+    npc_menu.visitor_selected.connect(_show_npc_menu)
+
+func _contextual_interact() -> void:
+    if map_open:
+        return
+    if active_interior == "Mansao do Duque":
+        var special_id := "herdeira_duque" if GameState.DUKE.daughter_at_manor(GameState.duke_state) else "duque"
+        _show_npc_menu({"id": special_id, "name": "Herdeira do Duque" if special_id == "herdeira_duque" else "Duque", "profession": "Nobre", "rarity": "S" if special_id == "herdeira_duque" else "A"})
+        return
+    if active_interior == "Taverna":
+        npc_menu.show_visitors(_current_tavern_visitors())
+        return
+    if not active_interior.is_empty():
+        _interact()
+        return
+    var npc := _nearest_npc()
+    if not npc.is_empty():
+        _show_npc_menu(npc)
+        return
+    if preload("res://scripts/town_system.gd").travelling_merchant_present(GameState.current_region, GameState.day) and player.position.distance_to(Vector3(0, 0, 13)) <= 3.0:
+        _show_npc_menu({"id": "mercador_viajante", "name": "Mercador Viajante", "profession": "Mercador", "rarity": "Comum"})
+        return
+    _interact()
+
+func _npc_is_recruitable(npc: Dictionary) -> bool:
+    var id := str(npc.get("id", ""))
+    if GameState.recruited.has(id):
+        return false
+    if id == "duque":
+        return GameState.current_region == "Fortaleza" and GameState.oath != "exile" and GameState.DUKE.can_recruit_duke(GameState.duke_state, GameState.wave_number)
+    if id == GameState.DUKE.DAUGHTER_ID:
+        return bool(GameState.duke_state.get("daughter_unlocked", false)) and not bool(GameState.duke_state.get("daughter_recruited", false)) and (GameState.oath != "exile" or not GameState.DUKE.daughter_at_manor(GameState.duke_state))
+    if not preload("res://scripts/town_system.gd").can_recruit(npc, GameState.oath):
+        return false
+    var life: Dictionary = GameState.npc_lives.get(id, {})
+    return life.get("status", "") == "tavern" and life.get("region", "") == GameState.current_region and GameState.friendship_points(id) >= 80
+
+func _show_npc_menu(npc: Dictionary) -> void:
+    if npc.is_empty():
+        return
+    _tavern_selected = npc.duplicate(true)
+    var id := str(npc.get("id", ""))
+    var profession := str(npc.get("profession", ""))
+    var merchant := profession in ["Ferreiro", "Mercador", "Vendedor", "Comerciante"]
+    npc_menu.show_npc(npc, GameState.friendship_points(id), GameState.friendship_level(id), ITEMS.preferred_category(id, profession), _npc_is_recruitable(npc), merchant, not active_interior.is_empty())
+
+func _npc_action(action: String, npc: Dictionary) -> void:
+    match action:
+        "talk":
+            npc_menu.hide_menu()
+            if active_interior == "Mansao do Duque":
+                _talk_in_manor()
+            elif active_interior == "Taverna":
+                _dialogue_npc = npc.duplicate(true)
+                var id := str(npc.get("id", ""))
+                GameState.remember(id, "conversa_taverna")
+                GameState.gain_friendship(id, 8, "dialogo", true)
+                GameState.save_game()
+                dialogue_ui.show_dialogue(str(npc.get("name", "Aventureiro")), STORY.npc_line(id, GameState.oath, str(GameState.quest_progress.get(id, "")), 1))
+            else:
+                _talk_to_nearest_npc()
+        "shop":
+            npc_menu.hide_menu()
+            _market_mode = true
+            _market_page = 0
+            _market_selling = false
+            _market_travelling = str(npc.get("id", "")) == "mercador_viajante"
+            _refresh_market()
+        "gifts":
+            npc_menu.show_gifts(npc, GameState.inventory)
+        "back":
+            _show_npc_menu(npc)
+        "recruit":
+            var id := str(npc.get("id", ""))
+            var success := false
+            if _npc_is_recruitable(npc):
+                if id == "duque":
+                    success = GameState.duke_recruit()
+                elif id == GameState.DUKE.DAUGHTER_ID:
+                    success = GameState.duke_daughter_recruit()
+                else:
+                    success = GameState.recruit_visitor(npc)
+            npc_menu.hide_menu()
+            last_message = "Recrutado: %s" % str(npc.get("name", "NPC")) if success else "Recrutamento indisponivel."
+            _refresh_hud()
+        "step_aside":
+            _npc_step_aside(npc)
+            npc_menu.hide_menu()
+            _refresh_hud()
+        "exit":
+            npc_menu.hide_menu()
+            if not active_interior.is_empty():
+                _interact()
+
+func _npc_gift(npc: Dictionary, item_id: String) -> void:
+    var id := str(npc.get("id", ""))
+    var result := GameState.give_gift(id, str(npc.get("profession", "")), item_id)
+    npc_menu.hide_menu()
+    last_message = ("Presente aceito por %s: %d/100 (%s)." % [npc.get("name", "NPC"), GameState.friendship_points(id), GameState.friendship_level(id)]) if result else "Presente recusado ou limite diario. Nenhum item foi consumido."
+    _refresh_hud()
+
+func _npc_step_aside(npc: Dictionary) -> void:
+    var id := str(npc.get("id", ""))
+    var visual: Node3D = npc_visuals.get(id)
+    if visual == null or not is_instance_valid(visual) or not active_interior.is_empty():
+        last_message = "O personagem abre passagem, sem afetar a amizade."
+        return
+    var start_position := visual.position
+    var candidates := [
+        start_position + Vector3(1.7, 0, 0),
+        start_position + Vector3(-1.7, 0, 0),
+        start_position + Vector3(0, 0, 1.7),
+        start_position + Vector3(0, 0, -1.7)
+    ]
+    for target in candidates:
+        if not _is_blocked(target) and target.distance_to(player.position) > start_position.distance_to(player.position):
+            visual.position = target
+            last_message = "%s se afastou para liberar a passagem, sem penalidade." % str(npc.get("name", "NPC"))
+            return
+    last_message = "Nao ha espaco seguro para o personagem se afastar agora."
