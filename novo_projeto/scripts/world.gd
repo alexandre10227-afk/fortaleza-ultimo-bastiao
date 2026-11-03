@@ -858,3 +858,36 @@ func _market_transaction(index: int) -> void:
     last_message = ("Negociado: " if success else "Nao foi possivel negociar: ") + item_id
     _refresh_market()
     _refresh_hud()
+
+func _open_food_menu() -> void:
+    _food_ids.clear()
+    var choices: Array[String] = []
+    for id in GameState.inventory.keys():
+        var item_id := str(id)
+        if ITEMS.can_eat(item_id) and int(GameState.inventory[id]) > 0:
+            var data: Dictionary = ITEMS.get_item(item_id)
+            _food_ids.append(item_id)
+            choices.append("%s (%s)" % [data["name"], data["rarity"]])
+    if choices.is_empty():
+        dialogue_ui.show_dialogue("Suprimentos", "Nao possui alimentos para consumir.")
+        return
+    _food_mode = true
+    choices.append("Cancelar")
+    dialogue_ui.show_dialogue("Suprimentos", "Escolha uma refeicao para receber bonus temporarios.", choices)
+
+func _open_craft_menu() -> void:
+    _craft_ids.clear()
+    var choices: Array[String] = []
+    for id in RECIPES.RECIPES.keys():
+        var item_id := str(id)
+        var formula: Dictionary = RECIPES.RECIPES[item_id]
+        if str(formula["building"]) != "Ferraria":
+            continue
+        _craft_ids.append(item_id)
+        choices.append("%s | %d moedas | nivel %d" % [ITEMS.get_item(item_id).get("name", item_id), int(formula["money"]), int(formula["level"])])
+    if choices.is_empty():
+        dialogue_ui.show_dialogue("Ferraria", "Nao existem receitas aqui.")
+        return
+    _craft_mode = true
+    choices.append("Cancelar")
+    dialogue_ui.show_dialogue("Ferraria", "Escolha uma receita. Ela exige moedas, materiais e nivel suficiente.", choices)
