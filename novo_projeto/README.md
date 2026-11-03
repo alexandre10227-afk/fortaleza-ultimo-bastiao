@@ -37,3 +37,16 @@ godot --headless --path novo_projeto --script res://tests/test_state.gd
 **Regra de entrega:** o ZIP `Fortaleza_Etapa_01_Godot.zip` será gerado somente após todas as funções previstas para a Etapa 1 estarem implementadas e tecnicamente testadas, restando apenas a avaliação do usuário no Windows.
 
 A atualização de planejamento está em [PLANEJAMENTO_NOVO_PROJETO.md](../PLANEJAMENTO_NOVO_PROJETO.md).
+
+
+## Incremento seguinte da Etapa 1 — taverna, economia e inventário (03/11/2026)
+
+Novos arquivos: `scripts/town_system.gd`, `tests/test_town.gd`. `game_state.gd` e `world.gd` receberam integração.
+
+**Funcionando em nível inicial:** visitantes da taverna com IDs e raridades estáveis, rotação determinística por região e dia, compra de pão com desconto automático de moedas, inventário com quantidade, recrutamento sem duplicação, bloqueio de residentes da fortaleza para Exilado, preço regional triplicado, save/load de inventário, moedas e companheiros.
+
+Controles temporários no mundo: `V` abre visitantes da taverna; teclas `1` a `5` tentam recrutar; `B` compra pão; `I` exibe inventário; `C` abre crônicas; `N` avança um dia. Esses controles são atalhos de debug e serão substituídos por interações físicas com NPCs, balcões e menus definitivos.
+
+**Testes locais Godot 4.7.2:** editor abriu sem erro; `tests/test_state.gd` e `tests/test_town.gd` passaram, além da inicialização headless de `world.tscn`. Testes de aceitação e revisão visual permanecem pendentes.
+
+**Limitações conhecidas:** a rotação de visitantes ainda é uma lista pequena de personagens definidos no código, não um gerador completo de raridades ponderadas; os estabelecimentos ainda não são interiores funcionais; movimentação não usa colisão de física; faltam trabalho/coleta, missões, inventário visual e mapa mundial selecionável. A etapa continua em andamento: **não gerar ZIP final**.
