@@ -22,6 +22,23 @@ static func make_frames(style_index: int = 0) -> Dictionary:
             var swing := -2 if step == 1 else 2 if step == 2 else 0
             _rectangle(img, 5 + swing, 16 + bounce, 8 + swing, 26 + bounce, SKIN)
             _rectangle(img, 16 - swing, 16 + bounce, 19 - swing, 26 + bounce, SKIN)
+            # Original pixel-art fabric: collar, shoulders, sash, boots and glints.
+            # Generated for 24 cached frames, never inside animation _process.
+            var bright := coat.lightened(.24)
+            var shadow := coat.darkened(.25)
+            _rectangle(img, 8, 13 + bounce, 16, 16 + bounce, shadow)
+            _rectangle(img, 9, 16 + bounce, 10, 27 + bounce, bright)
+            _rectangle(img, 14, 16 + bounce, 15, 27 + bounce, shadow)
+            _rectangle(img, 8, 24 + bounce, 16, 26 + bounce, Color("#a88b57"))
+            _rectangle(img, 11, 24 + bounce, 13, 26 + bounce, Color("#d7bc7a"))
+            _rectangle(img, 7, 14 + bounce, 9, 18 + bounce, Color("#757b7d"))
+            _rectangle(img, 15, 14 + bounce, 17, 18 + bounce, Color("#757b7d"))
+            _rectangle(img, 8, 34 + bounce, 11, 36 + bounce, BOOTS.lightened(.15))
+            _rectangle(img, 13, 34 + bounce, 16, 36 + bounce, BOOTS.lightened(.15))
+            if style_index == 2:
+                _rectangle(img, 10, 17 + bounce, 14, 22 + bounce, Color("#8f754c"))
+            elif style_index == 3:
+                _rectangle(img, 9, 19 + bounce, 16, 20 + bounce, Color("#a7bcc2"))
             if direction == "up":
                 _rectangle(img, 8, 7 + bounce, 16, 14 + bounce, HAIR)
             elif direction == "down":
