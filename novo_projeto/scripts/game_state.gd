@@ -62,6 +62,7 @@ var hero_hp := 0
 var hero_mp := 0
 var active_battle: Dictionary = {}
 var defeated_field_enemies: Dictionary = {}
+var equipment_reward_claims: Dictionary = {}
 var recruited: Array[String] = []
 var discovered_regions: Array[String] = ["Fortaleza", "Porto Cinzento"]
 var quest_progress: Dictionary = {}
@@ -117,6 +118,7 @@ func new_game(hero_name: String, mode: String) -> void:
     hero_mp = COMBAT.hero_max_mp(character_stats, hero_level)
     active_battle.clear()
     defeated_field_enemies.clear()
+    equipment_reward_claims.clear()
     recruited.clear()
     discovered_bestiary.clear()
     expeditions.clear()
@@ -579,6 +581,40 @@ func close_battle_result() -> bool:
     return true
 
 
+func _deliver_equipment_reward(item_id: String, claim_key: String) -> bool:
+    if item_id.is_empty() or not GEAR.is_special(item_id) or equipment_reward_claims.has(claim_key):
+        return false
+    equipment_reward_claims[claim_key] = true
+    inventory[item_id] = int(inventory.get(item_id,0)) + 1
+    record_event("rare_equipment_reward", current_region, [character_name], item_id)
+    save_game()
+    return true
+
+func claim_dungeon_equipment(chamber_id: String) -> bool:
+    # A masmorra abre apenas apos a onda 20.
+    if not dungeon_unlocked or not active_battle.is_empty():
+        return false
+    var item_id := GEAR.reward_for("dungeon",chamber_id)
+    return _deliver_equipment_reward(item_id,"dungeon:" + chamber_id)
+
+func claim_quest_equipment(quest_id: String) -> bool:
+    # Requer conclusao real da missao; nunca aceita so o nome do item.
+    if str(quest_progress.get(quest_id,"")) != "completed":
+        return false
+    if quest_id == "evento_duque":
+        return false # Exclusivamente pela funcao original do evento.
+    var item_id := GEAR.reward_for("quest",quest_id)
+    return _deliver_equipment_reward(item_id,"quest:" + quest_id)
+
+func claim_boss_equipment(boss_id: String) -> bool:
+    if str(active_battle.get("state","")) != "won":
+        return false
+    var enemy: Dictionary = active_battle.get("enemy",{})
+    if str(enemy.get("id","")) != boss_id:
+        return false
+    var item_id := GEAR.reward_for("boss",boss_id)
+    return _deliver_equipment_reward(item_id,"boss:" + boss_id)
+
 func equip_item(item_id: String) -> bool:
     if not GEAR.can_equip(item_id, str(protagonist_track.get("base_class", ""))):
         return false
@@ -742,7 +778,7 @@ func save_game() -> bool:
     var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if file == null:
         return false
-    var data := {"schema": 1, "name": character_name, "character_origin": character_origin, "character_stats": character_stats, "character_appearance": character_appearance, "region_positions": region_positions, "hero_build": hero_build, "protagonist_track": protagonist_track, "npc_hero_builds": npc_hero_builds, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "npc_lives": npc_lives, "npc_story_flags": npc_story_flags, "last_gift_day": last_gift_day, "food_bonuses": active_food_bonuses, "building_levels": building_levels, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "equipped": equipped, "hero_level": hero_level, "hero_xp": hero_xp, "hero_hp": hero_hp, "hero_mp": hero_mp, "active_battle": active_battle, "defeated_field_enemies": defeated_field_enemies, "recruited": recruited, "bestiary": discovered_bestiary, "expeditions": expeditions, "memorial": memorial, "military_intel": military_intel, "legacy_records": legacy_records, "nemesis_records": nemesis_records, "migration_history": migration_history, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
+    var data := {"schema": 1, "name": character_name, "character_origin": character_origin, "character_stats": character_stats, "character_appearance": character_appearance, "region_positions": region_positions, "hero_build": hero_build, "protagonist_track": protagonist_track, "npc_hero_builds": npc_hero_builds, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "npc_lives": npc_lives, "npc_story_flags": npc_story_flags, "last_gift_day": last_gift_day, "food_bonuses": active_food_bonuses, "building_levels": building_levels, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "equipped": equipped, "hero_level": hero_level, "hero_xp": hero_xp, "hero_hp": hero_hp, "hero_mp": hero_mp, "active_battle": active_battle, "defeated_field_enemies": defeated_field_enemies, "equipment_reward_claims": equipment_reward_claims, "recruited": recruited, "bestiary": discovered_bestiary, "expeditions": expeditions, "memorial": memorial, "military_intel": military_intel, "legacy_records": legacy_records, "nemesis_records": nemesis_records, "migration_history": migration_history, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
     file.store_string(JSON.stringify(data))
     return true
 
@@ -817,6 +853,7 @@ func load_game() -> bool:
     if not active_battle is Dictionary or (not active_battle.is_empty() and not ["active","won","lost"].has(str(active_battle.get("state","")))):
         active_battle = {}
     defeated_field_enemies = parsed.get("defeated_field_enemies", {})
+    equipment_reward_claims = parsed.get("equipment_reward_claims", {})
     inventory = parsed.get("inventory", {"pao": 2})
     equipped = GEAR.equip_slots()
     var saved_equipment: Dictionary = parsed.get("equipped", {})
