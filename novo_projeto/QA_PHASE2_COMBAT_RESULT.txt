@@ -1,0 +1,1 @@
+Regression of combat and UI input blocking against current Godot 4.7.2 source.
