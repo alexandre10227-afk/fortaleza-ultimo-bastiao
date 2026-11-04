@@ -1,0 +1,1 @@
+Teste Godot 4.7.2 do Tesouro Nacional: tributos de NPCs, oficina, madeira, pedra, minério, consignação, aliança territorial e companheiros.
