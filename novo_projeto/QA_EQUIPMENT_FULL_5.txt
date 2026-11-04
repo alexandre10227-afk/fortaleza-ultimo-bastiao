@@ -1,0 +1,1 @@
+Testar em Godot 4.7.2 as 134 entradas, raridades da forja, rearmamento, mercados e interface de classe.
