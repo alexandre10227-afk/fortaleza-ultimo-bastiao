@@ -426,6 +426,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
     if (dialogue_ui != null and dialogue_ui.visible) or (npc_menu != null and npc_menu.is_open()) or (character_sheet != null and character_sheet.visible) or (equipment_market != null and equipment_market.visible) or (forge_panel != null and forge_panel.visible) or (battle_panel != null and battle_panel.visible):
         return
     match event.keycode:
+        KEY_K:
+            _open_character_sheet("Mundo")
         KEY_N:
             GameState.advance_days(1)
             _refresh_resident_positions()
