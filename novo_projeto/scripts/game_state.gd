@@ -12,6 +12,7 @@ const WORLD_RECORDS = preload("res://scripts/stage1_records.gd")
 const SIM = preload("res://scripts/simulation_foundations.gd")
 const GEAR = preload("res://scripts/equipment_catalog.gd")
 const COMBAT = preload("res://scripts/combat_core.gd")
+const PARTY = preload("res://scripts/party_combat.gd")
 const ARMORY = preload("res://scripts/city_armory_economy.gd")
 
 const SAVE_PATH := "user://fortaleza_stage1_v1.json"
@@ -530,14 +531,14 @@ func craft_item(item_id: String) -> bool:
     return true
 
 func hero_combat_stats() -> Dictionary:
-    return {"level":hero_level,"xp":hero_xp,"next_xp":COMBAT.xp_for_next_level(hero_level),"hp":hero_hp,"max_hp":COMBAT.hero_max_hp(character_stats,hero_level),"mp":hero_mp,"max_mp":COMBAT.hero_max_mp(character_stats,hero_level),"attack":COMBAT.hero_attack(character_stats,equipment_stats()),"defense":COMBAT.hero_defense(character_stats,equipment_stats())}
+    return {"level":hero_level,"xp":hero_xp,"next_xp":COMBAT.xp_for_next_level(hero_level),"hp":hero_hp,"max_hp":COMBAT.hero_max_hp(character_stats,hero_level,equipment_stats()),"mp":hero_mp,"max_mp":COMBAT.hero_max_mp(character_stats,hero_level,equipment_stats()),"attack":COMBAT.hero_attack(character_stats,equipment_stats()),"defense":COMBAT.hero_defense(character_stats,equipment_stats())}
 
 func begin_field_battle(enemy_id: String, encounter_id: String) -> bool:
     if not active_battle.is_empty() or encounter_id.is_empty() or COMBAT.ENEMIES.get(enemy_id, {}).is_empty():
         return false
     if int(defeated_field_enemies.get(encounter_id,-1)) == day or hero_hp <= 0:
         return false
-    var candidate := COMBAT.start(character_stats,equipment_stats(),str(protagonist_track.get("base_class","Guerreiro")),hero_level,hero_hp,hero_mp,enemy_id,difficulty)
+    var candidate := COMBAT.start(character_stats,equipment_stats(),str(protagonist_track.get("base_class","Guerreiro")),hero_level,hero_hp,hero_mp,enemy_id,difficulty,PARTY.form_party(recruited))
     if candidate.is_empty():
         return false
     candidate["encounter_id"] = encounter_id
@@ -570,16 +571,16 @@ func play_battle_turn(action: String) -> bool:
         while hero_xp >= COMBAT.xp_for_next_level(hero_level):
             hero_xp -= COMBAT.xp_for_next_level(hero_level)
             hero_level += 1
-            hero_hp = mini(COMBAT.hero_max_hp(character_stats,hero_level),hero_hp + 15)
-            hero_mp = mini(COMBAT.hero_max_mp(character_stats,hero_level),hero_mp + 8)
+            hero_hp = mini(COMBAT.hero_max_hp(character_stats,hero_level,equipment_stats()),hero_hp + 15)
+            hero_mp = mini(COMBAT.hero_max_mp(character_stats,hero_level,equipment_stats()),hero_mp + 8)
         defeated_field_enemies[str(active_battle.get("encounter_id",""))] = day
         observe_creature(str(enemy["id"]),current_region)
         record_event("battle_victory",current_region,[character_name],"%s +%d XP" % [enemy["name"],earned_xp])
     elif active_battle["state"] == "lost":
         # Prototipo de combate: retorno seguro, sem apagar o save do jogador.
         # Morte permanente sera introduzida junto com as regras de sucessao.
-        hero_hp = maxi(1,floori(float(COMBAT.hero_max_hp(character_stats,hero_level))/3.0))
-        hero_mp = maxi(0,floori(float(COMBAT.hero_max_mp(character_stats,hero_level))/3.0))
+        hero_hp = maxi(1,floori(float(COMBAT.hero_max_hp(character_stats,hero_level,equipment_stats()))/3.0))
+        hero_mp = maxi(0,floori(float(COMBAT.hero_max_mp(character_stats,hero_level,equipment_stats()))/3.0))
         money = maxi(0,money - 12)
         record_event("battle_defeat",current_region,[character_name],"Derrotado; recuperacao na cidade")
     save_game()
@@ -635,7 +636,13 @@ func equip_item(item_id: String) -> bool:
     var slot := GEAR.slot_for(item_id)
     if not GEAR.SLOTS.has(slot):
         return false
+    var old_max_hp := COMBAT.hero_max_hp(character_stats,hero_level,equipment_stats())
+    var old_max_mp := COMBAT.hero_max_mp(character_stats,hero_level,equipment_stats())
     equipped[slot] = item_id
+    var new_max_hp := COMBAT.hero_max_hp(character_stats,hero_level,equipment_stats())
+    var new_max_mp := COMBAT.hero_max_mp(character_stats,hero_level,equipment_stats())
+    hero_hp = clampi(hero_hp + maxi(0,new_max_hp-old_max_hp),1,new_max_hp)
+    hero_mp = clampi(hero_mp + maxi(0,new_max_mp-old_max_mp),0,new_max_mp)
     record_event("equip", current_region, [character_name], item_id)
     save_game()
     return true
@@ -874,6 +881,8 @@ func load_game() -> bool:
         var item_id := str(saved_equipment.get(slot, ""))
         if GEAR.can_equip(item_id, str(protagonist_track.get("base_class", ""))) and int(inventory.get(item_id, 0)) > 0 and GEAR.slot_for(item_id) == slot:
             equipped[slot] = item_id
+    hero_hp = clampi(hero_hp,1,COMBAT.hero_max_hp(character_stats,hero_level,equipment_stats()))
+    hero_mp = clampi(hero_mp,0,COMBAT.hero_max_mp(character_stats,hero_level,equipment_stats()))
     recruited.clear()
     for id in parsed.get("recruited", []):
         recruited.append(str(id))
