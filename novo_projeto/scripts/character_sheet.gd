@@ -155,6 +155,15 @@ func show_page(page_name: String) -> void:
             for expedition in GameState.expeditions:
                 if expedition is Dictionary:
                     _line("%s | %s | Retorno dia %d" % [str(expedition.get("destination", "")), str(expedition.get("status", "")), int(expedition.get("return_day", 0))])
+            _line("ECONOMIA DA FERRARIA E SOLDADOS", true)
+            var city_economy: Dictionary = GameState.city_armory
+            _line("Ferraria nivel %d | Raridade maxima: %s" % [int(GameState.building_levels.get("Ferraria",1)),GameState.ARMORY.allowed_rarity(int(GameState.building_levels.get("Ferraria",1)))])
+            _line("Tesouro municipal: %d | Receita da ferraria: %d | Fornecedores: %d" % [int(city_economy.get("treasury",0)),int(city_economy.get("forge_income",0)),int(city_economy.get("supplier_income",0))])
+            _line("Material disponivel: " + str(city_economy.get("stock",{})))
+            var orders: Array = city_economy.get("battle_orders",[])
+            if not orders.is_empty():
+                var last_order: Dictionary = orders[orders.size()-1]
+                _line("Ultima defesa: %s | Novos itens: %d | Reparos: %d | Pedidos pendentes: %d" % [last_order.get("battle",""),int(last_order.get("replacements",0)),int(last_order.get("repairs",0)),int(last_order.get("unmet",0))])
             _line("INTELIGENCIA MILITAR", true)
             var garrisons: Dictionary = GameState.military_intel.get("garrison", {})
             for region_name in garrisons:
