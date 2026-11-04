@@ -1,0 +1,1 @@
+Godot QA: equipment catalog, forge tiers, city soldiers economy and save compatibility.
