@@ -1,0 +1,1 @@
+Validate battle, character sheet, save/reload and all Godot 4.7.2 regressions.
