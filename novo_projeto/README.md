@@ -344,3 +344,15 @@ Primeira entrega de implementação:
 - O evento de defesa ainda e simulado por cronica; combate militar completo sera desenvolvido na Fase 3. Existe API `settle_city_defense(battle_id)` para registrar **uma unica vez** a economia apos cada batalha de cidade real quando a batalha estiver implementada.
 - Relatorio visivel em Ficha → Mundo. Novo teste `tests/test_city_armory.gd` cobre nivel da forja, consumo de estoque, pagamento, pedidos sem material e save.
 - Catalogo: [CATALOGO_EQUIPAMENTOS_FASE2.md](../CATALOGO_EQUIPAMENTOS_FASE2.md), incluindo as linhas legadas e recompensas exclusivas de missoes, chefes e masmorra.
+
+
+## Tesouro Nacional, mercado de consignacao e batalha em grupo (03/11/2026)
+
+- Nova simulacao territorial em `scripts/territory_economy.gd`, separada da carteira do jogador e da tesouraria militar. Tributos de trabalhadores, producao de madeira/pedra/ferro, estoque publico e compras das cidades.
+- Vendas por consignacao no mercado: **88% para o jogador, 12% ao Tesouro Nacional**; compradores gastam liquidez propria, sem duplicar itens. Anuncios podem ser retirados.
+- Melhorias publicas com ouro do tesouro e madeira/pedra/ferro, pedras incomuns e cristais nos niveis superiores. Os requisitos crescem por nivel ate 5.
+- Comercio diplomatico de materiais Fortaleza → Porto Cinzento; transferencia bilateral de recursos e ouro, confiança e alianca a partir de 60 pontos.
+- Na ficha **Mundo**, ou pela tecla **K**, consultar orcamentos e acionar vendas, obras ou negocios. Pedras podem ser coletadas na exploracao.
+- `scripts/party_combat.gd`: dois aliados recrutados podem participar do combate com papeis distintos, sem perda permanente nessa primeira integracao. Bônus de equipamento passam a influenciar PV, PM, cura e critico.
+- Novo teste `test_national_treasury.gd`, `test_party_combat.gd`. **31/31 suites aprovadas** em Godot 4.7.2, incluindo cenas e importacao: [Workflow 41752854984](https://github.com/alexandre10227-afk/fortaleza-ultimo-bastiao/actions/runs/41752854984).
+- [Documentacao da economia territorial](../ECONOMIA_TERRITORIAL_FASE2.md). Ainda pendentes animacao de combate dos companheiros, NPCs trabalhadores nomeados e economia politica completa. **Fase 2 em andamento**.
