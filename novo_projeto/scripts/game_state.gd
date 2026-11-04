@@ -132,6 +132,8 @@ func configure_character(origin: String, stats: Dictionary, appearance: int = 0)
         return false
     character_origin = origin
     character_stats = CHARACTER.final_stats(stats, origin)
+    hero_hp = COMBAT.hero_max_hp(character_stats, hero_level)
+    hero_mp = COMBAT.hero_max_mp(character_stats, hero_level)
     character_appearance = appearance
     record_event("character_profile", "Palacio", [character_name], origin)
     save_game()
@@ -562,8 +564,8 @@ func play_battle_turn(action: String) -> bool:
     elif active_battle["state"] == "lost":
         # Prototipo de combate: retorno seguro, sem apagar o save do jogador.
         # Morte permanente sera introduzida junto com as regras de sucessao.
-        hero_hp = maxi(1,COMBAT.hero_max_hp(character_stats,hero_level)/3)
-        hero_mp = maxi(0,COMBAT.hero_max_mp(character_stats,hero_level)/3)
+        hero_hp = maxi(1,floori(float(COMBAT.hero_max_hp(character_stats,hero_level))/3.0))
+        hero_mp = maxi(0,floori(float(COMBAT.hero_max_mp(character_stats,hero_level))/3.0))
         money = maxi(0,money - 12)
         record_event("battle_defeat",current_region,[character_name],"Derrotado; recuperacao na cidade")
     save_game()
