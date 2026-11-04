@@ -134,7 +134,11 @@ func show_page(page_name: String) -> void:
             _line("Amizades e companheiros", true)
             for id in GameState.npc_friendship:
                 _line("%s: %d/100 (%s)" % [str(id).capitalize(), GameState.friendship_points(str(id)), GameState.friendship_level(str(id))])
-            _line("Grupo: " + str(GameState.recruited))
+            _line("Grupo recrutado: " + str(GameState.recruited))
+            var companions: Array = preload("res://scripts/party_combat.gd").form_party(GameState.recruited)
+            _line("Ate 2 companheiros ajudam nos combates de estrada.")
+            for ally in companions:
+                _line("%s | %s | PV %d | ATQ %d | DEF %d" % [ally.get("name",""),ally.get("role",""),int(ally.get("max_hp",0)),int(ally.get("attack",0)),int(ally.get("defense",0))])
             _line("Reputacao regional: " + str(GameState.region_reputation))
         "Diario":
             _line("Escolhas permanentes: " + str(GameState.narrative_flags), true)
