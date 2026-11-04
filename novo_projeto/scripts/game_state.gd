@@ -599,7 +599,7 @@ func claim_dungeon_equipment(chamber_id: String) -> bool:
 
 func claim_quest_equipment(quest_id: String) -> bool:
     # Requer conclusao real da missao; nunca aceita so o nome do item.
-    if str(quest_progress.get(quest_id,"")) != "completed":
+    if str(quest_progress.get(quest_id,"")) != "complete":
         return false
     if quest_id == "evento_duque":
         return false # Exclusivamente pela funcao original do evento.
