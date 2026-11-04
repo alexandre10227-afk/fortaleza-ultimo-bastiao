@@ -1070,6 +1070,19 @@ func _spawn_resources() -> void:
         log_mesh.material_override = bark
         settlement.add_child(log_mesh)
         resource_visuals[wood_id] = log_mesh
+    for index in range(3):
+        var stone_id := "%s_pedra_%d" % [GameState.current_region,index]
+        var stone_mesh := MeshInstance3D.new()
+        var boulder := SphereMesh.new()
+        boulder.radius = 0.48
+        boulder.height = 0.67
+        stone_mesh.mesh = boulder
+        stone_mesh.position = Vector3(-8.0 + float(index)*3.0,0.32,18.0)
+        var stone_mat := StandardMaterial3D.new()
+        stone_mat.albedo_color = Color("#898f8c")
+        stone_mesh.material_override = stone_mat
+        settlement.add_child(stone_mesh)
+        resource_visuals[stone_id] = stone_mesh
     _refresh_resource_visibility()
 
 func _refresh_resource_visibility() -> void:
@@ -1181,7 +1194,7 @@ func _gather_nearby() -> void:
         if not is_instance_valid(obj) or not obj.visible:
             continue
         if Vector2(player.position.x, player.position.z).distance_to(Vector2(obj.position.x, obj.position.z)) < 2.0:
-            var item_id := "madeira" if str(node_id).contains("_madeira_") else ("ferro" if GameState.current_region == "Fortaleza" else "ervas")
+            var item_id := "madeira" if str(node_id).contains("_madeira_") else "pedra" if str(node_id).contains("_pedra_") else ("ferro" if GameState.current_region == "Fortaleza" else "ervas")
             if GameState.collect_resource(str(node_id), item_id):
                 last_message = "Coletou 1 %s. Veja seu inventario com I." % item_id
                 _refresh_resource_visibility()
