@@ -27,7 +27,7 @@ func run() -> void:
     scene._market_mode = true
     scene._refresh_market()
     assert(scene.equipment_market.visible)
-    assert(scene._market_ids.size() == 2)
+    assert(scene._market_ids.size() == 5)
     scene._close_top_window()
     assert(not scene.equipment_market.visible)
     var entrance: Dictionary = scene._nearest_building()
