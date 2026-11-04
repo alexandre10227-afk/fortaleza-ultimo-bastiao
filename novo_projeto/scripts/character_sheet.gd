@@ -4,11 +4,14 @@ signal closed
 const UI = preload("res://scripts/ui_theme.gd")
 const ITEMS = preload("res://scripts/item_catalog.gd")
 const GEAR = preload("res://scripts/equipment_catalog.gd")
-const TABS := ["Personagem", "Inventario", "Relacoes", "Diario", "Habilidades", "Mundo"]
+const TABS := ["Personagem", "Inventario", "Relacoes", "Diario", "Habilidades", "Mundo", "Catalogo"]
 var page: String = "Personagem"
 var body: VBoxContainer
 var _tab_row: HBoxContainer
 var _top_label: Label
+var _catalog_class := "Guerreiro"
+var _catalog_rarity := "Raro"
+var _catalog_page := 0
 
 func _ready() -> void:
     set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -82,6 +85,7 @@ func show_page(page_name: String) -> void:
                 _line("%s: %s" % [slot.capitalize(), equipped_label])
             var totals: Dictionary = GameState.equipment_stats()
             _line("Bonus de ataque: +%d | Defesa: +%d" % [int(totals["attack"]), int(totals["defense"])])
+            _line("Vida +%d | Mana +%d | Agilidade +%d | Cura +%d | Critico +%d" % [int(totals["life"]),int(totals["mana"]),int(totals["agility"]),int(totals["healing"]),int(totals["critical"])])
             _line("Combate e progressao", true)
             var battle_stats: Dictionary = GameState.hero_combat_stats()
             _line("Nivel %d | Experiencia %d/%d" % [int(battle_stats["level"]),int(battle_stats["xp"]),int(battle_stats["next_xp"])])
@@ -103,8 +107,9 @@ func show_page(page_name: String) -> void:
                     continue
                 found = true
                 var data: Dictionary = ITEMS.get_item(str(item_id))
-                var label := str(data.get("name", str(item_id).replace("_", " ").capitalize()))
-                var rarity := str(data.get("rarity", "Material/Especial"))
+                var rare_gear: Dictionary = GEAR.GEAR.get(str(item_id), {})
+                var label := str(data.get("name", rare_gear.get("name", str(item_id).replace("_", " ").capitalize())))
+                var rarity := str(data.get("rarity", rare_gear.get("rarity", "Material/Especial")))
                 _line("%s  x%d  |  %s" % [label, quantity, rarity])
                 if GEAR.is_equipment(str(item_id)):
                     var gear: Dictionary = GEAR.GEAR[str(item_id)]
@@ -167,6 +172,8 @@ func show_page(page_name: String) -> void:
             for fallen in GameState.memorial:
                 if fallen is Dictionary:
                     _line("%s | Dia %d | %s" % [str(fallen.get("name", "")), int(fallen.get("day", 0)), str(fallen.get("cause", ""))])
+        "Catalogo":
+            _show_catalog()
         "Habilidades":
             _line("Atributos iniciais e progressao", true)
             _line("Experiencia em agilidade por viagem: %d" % GameState.agility_xp)
