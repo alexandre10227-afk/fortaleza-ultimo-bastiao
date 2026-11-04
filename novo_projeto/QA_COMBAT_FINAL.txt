@@ -1,0 +1,1 @@
+Verificacao de combate, todas as regressoes, novo controle de interface e salvamentos.
