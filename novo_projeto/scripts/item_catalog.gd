@@ -25,6 +25,7 @@ const ITEMS := {
     "compendio_perdido": {"name":"Compendio perdido", "category":"Estudos", "rarity":"Lendario", "price":1350},
     # Materiais: presentes, fabricacao e melhorias de construcoes.
     "ferro": {"name":"Minerio de ferro", "category":"Minerios", "rarity":"Comum", "price":20},
+    "pedra": {"name":"Pedra de pedreira", "category":"Minerios", "rarity":"Comum", "price":15},
     "pedra_incomum": {"name":"Pedra incomum", "category":"Minerios", "rarity":"Raro", "price":90},
     "cristal_azul": {"name":"Cristal azul", "category":"Minerios", "rarity":"Epico", "price":320},
     "meteorito": {"name":"Fragmento de meteorito", "category":"Minerios", "rarity":"Lendario", "price":1600},
