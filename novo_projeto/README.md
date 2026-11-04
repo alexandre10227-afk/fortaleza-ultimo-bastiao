@@ -335,3 +335,12 @@ Primeira entrega de implementação:
 - HUD e ficha exibem atributos de combate. Interface impede o protagonista de continuar andando durante batalha.
 - `tests/test_phase2_combat.gd` acrescentado. **Workflow de importação, regressões e abertura da cena no Godot 4.7.2 passou:** <https://github.com/alexandre10227-afk/fortaleza-ultimo-bastiao/actions/runs/41746044679>.
 - Documento completo: [FASE_2_COMBATE.md](../FASE_2_COMBATE.md). Habilidades de mestres e livros ainda precisam de efeitos reais, assim como IA tática, companheiros, arenas e chefes. **A Fase 2 não está concluída.**
+
+
+## Adendo de economia — Ferraria e guarnicao (03/11/2026)
+
+- Ferraria nivel **1**: armas e equipamentos comuns. Nivel **2**: armas raras iniciais. Nivel **3**: raras avancadas e armaduras raras. Nivel **4**: epicamos e armaduras epicas. Nivel **5**: modelos epicos superiores. **Nao fabrica lendarios, miticos ou itens exclusivos**.
+- Depois de cada onda de defesa da Fortaleza, a guarnicao procura substituir/recuperar arma, elmo, peitoral e botas na ferraria. A compra usa tesouro municipal e materiais reais de um estoque separado, credita receita para a ferraria e fornecedores e registra falta de recursos.
+- O evento de defesa ainda e simulado por cronica; combate militar completo sera desenvolvido na Fase 3. Existe API `settle_city_defense(battle_id)` para registrar **uma unica vez** a economia apos cada batalha de cidade real quando a batalha estiver implementada.
+- Relatorio visivel em Ficha → Mundo. Novo teste `tests/test_city_armory.gd` cobre nivel da forja, consumo de estoque, pagamento, pedidos sem material e save.
+- Catalogo: [CATALOGO_EQUIPAMENTOS_FASE2.md](../CATALOGO_EQUIPAMENTOS_FASE2.md), incluindo as linhas legadas e recompensas exclusivas de missoes, chefes e masmorra.
