@@ -1,0 +1,1 @@
+QA do combate Fase 2: encontros de estrada, UI, atributos, XP, PV, PM, classe, save e recompensas.
