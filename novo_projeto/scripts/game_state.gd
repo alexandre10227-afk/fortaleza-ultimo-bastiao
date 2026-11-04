@@ -12,6 +12,7 @@ const WORLD_RECORDS = preload("res://scripts/stage1_records.gd")
 const SIM = preload("res://scripts/simulation_foundations.gd")
 const GEAR = preload("res://scripts/equipment_catalog.gd")
 const COMBAT = preload("res://scripts/combat_core.gd")
+const ARMORY = preload("res://scripts/city_armory_economy.gd")
 
 const SAVE_PATH := "user://fortaleza_stage1_v1.json"
 const DIFFICULTIES := {
@@ -63,6 +64,7 @@ var hero_mp := 0
 var active_battle: Dictionary = {}
 var defeated_field_enemies: Dictionary = {}
 var equipment_reward_claims: Dictionary = {}
+var city_armory: Dictionary = ARMORY.initial_state()
 var recruited: Array[String] = []
 var discovered_regions: Array[String] = ["Fortaleza", "Porto Cinzento"]
 var quest_progress: Dictionary = {}
@@ -119,6 +121,7 @@ func new_game(hero_name: String, mode: String) -> void:
     active_battle.clear()
     defeated_field_enemies.clear()
     equipment_reward_claims.clear()
+    city_armory = ARMORY.initial_state()
     recruited.clear()
     discovered_bestiary.clear()
     expeditions.clear()
@@ -325,10 +328,19 @@ func advance_days(days: int) -> void:
                 elif duke_outcome == "died_at_home":
                     record_event("duke_death", "Mansao do Duque", ["duque"], "O Duque morreu em casa; a armadura nao foi obtida")
             record_event("wave", "Fortaleza", ["General Vaelor" if oath == "exile" else character_name], "Onda %d" % wave_number)
+            # Ciclo economico simplificado de pos-defesa. Batalhas taticas das
+            # ondas serao simuladas integralmente na fase de estrategia.
+            settle_city_defense("onda_%d" % wave_number)
             if wave_number == 20:
                 dungeon_unlocked = true
                 record_event("dungeon_unlocked", "Lago Antigo", [], "Masmorra descoberta")
     save_game()
+
+func settle_city_defense(battle_id: String) -> Dictionary:
+    var receipt := ARMORY.settle_defense(city_armory,battle_id,int(building_levels.get("Ferraria",1)),day)
+    if not receipt.is_empty():
+        record_event("city_armory", "Fortaleza", ["soldados","ferraria"], "Ouro %d; trocas %d; reparos %d; faltas %d" % [int(receipt["paid_to_forge"]),int(receipt["replacements"]),int(receipt["repairs"]),int(receipt["unmet"])])
+    return receipt
 
 func register_apprenticeship(master_id: String, apprentice_id: String) -> bool:
     if not SIM.register_apprentice(legacy_records, master_id, apprentice_id):
@@ -778,7 +790,7 @@ func save_game() -> bool:
     var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if file == null:
         return false
-    var data := {"schema": 1, "name": character_name, "character_origin": character_origin, "character_stats": character_stats, "character_appearance": character_appearance, "region_positions": region_positions, "hero_build": hero_build, "protagonist_track": protagonist_track, "npc_hero_builds": npc_hero_builds, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "npc_lives": npc_lives, "npc_story_flags": npc_story_flags, "last_gift_day": last_gift_day, "food_bonuses": active_food_bonuses, "building_levels": building_levels, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "equipped": equipped, "hero_level": hero_level, "hero_xp": hero_xp, "hero_hp": hero_hp, "hero_mp": hero_mp, "active_battle": active_battle, "defeated_field_enemies": defeated_field_enemies, "equipment_reward_claims": equipment_reward_claims, "recruited": recruited, "bestiary": discovered_bestiary, "expeditions": expeditions, "memorial": memorial, "military_intel": military_intel, "legacy_records": legacy_records, "nemesis_records": nemesis_records, "migration_history": migration_history, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
+    var data := {"schema": 1, "name": character_name, "character_origin": character_origin, "character_stats": character_stats, "character_appearance": character_appearance, "region_positions": region_positions, "hero_build": hero_build, "protagonist_track": protagonist_track, "npc_hero_builds": npc_hero_builds, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "npc_lives": npc_lives, "npc_story_flags": npc_story_flags, "last_gift_day": last_gift_day, "food_bonuses": active_food_bonuses, "building_levels": building_levels, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "equipped": equipped, "hero_level": hero_level, "hero_xp": hero_xp, "hero_hp": hero_hp, "hero_mp": hero_mp, "active_battle": active_battle, "defeated_field_enemies": defeated_field_enemies, "equipment_reward_claims": equipment_reward_claims, "city_armory": city_armory, "recruited": recruited, "bestiary": discovered_bestiary, "expeditions": expeditions, "memorial": memorial, "military_intel": military_intel, "legacy_records": legacy_records, "nemesis_records": nemesis_records, "migration_history": migration_history, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
     file.store_string(JSON.stringify(data))
     return true
 
@@ -854,6 +866,7 @@ func load_game() -> bool:
         active_battle = {}
     defeated_field_enemies = parsed.get("defeated_field_enemies", {})
     equipment_reward_claims = parsed.get("equipment_reward_claims", {})
+    city_armory = parsed.get("city_armory", ARMORY.initial_state())
     inventory = parsed.get("inventory", {"pao": 2})
     equipped = GEAR.equip_slots()
     var saved_equipment: Dictionary = parsed.get("equipped", {})
