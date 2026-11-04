@@ -324,3 +324,14 @@ Primeira entrega de implementação:
 - `equipment_market_panel.gd` e `forge_panel.gd`: mercado e forja clicáveis com abas de classe, slots, materiais, moedas e paginação.
 - **Validação remota:** workflow <https://github.com/alexandre10227-afk/fortaleza-ultimo-bastiao/actions/runs/41743624248> concluído com sucesso: importação/compilação, regressões automatizadas e smoke test das cenas no Godot 4.7.2. **27 testes locais** também aprovados, incluindo `test_phase2_ui_flow.gd`.
 - Arte final, teste de FPS dessa versão no Windows e combate ativo continuam pendentes. Nenhuma alegação de Fase 2 finalizada; o usuário já autorizou o seu início.
+
+
+## Fase 2 — primeiro combate jogável (03/11/2026)
+
+- Criados `scripts/combat_core.gd` e `scripts/battle_panel.gd` com combate por turnos, ataque, defesa, habilidades iniciais por classe e poções.
+- Criaturas de campo aparecem na Fortaleza e em Porto Cinzento e podem ser enfrentadas ao chegar perto e usar `E`. As criaturas derrotadas retornam somente no dia seguinte.
+- Os equipamentos por classe que já existiam alteram ataque e defesa; PV/PM e XP/nível são persistidos no save, com compatibilidade para saves da Etapa 1.
+- Vitória concede XP/moedas; derrota no protótipo causa recuperação em segurança e pequena perda financeira. Morte permanente ainda não foi introduzida.
+- HUD e ficha exibem atributos de combate. Interface impede o protagonista de continuar andando durante batalha.
+- `tests/test_phase2_combat.gd` acrescentado. **Workflow de importação, regressões e abertura da cena no Godot 4.7.2 passou:** <https://github.com/alexandre10227-afk/fortaleza-ultimo-bastiao/actions/runs/41746044679>.
+- Documento completo: [FASE_2_COMBATE.md](../FASE_2_COMBATE.md). Habilidades de mestres e livros ainda precisam de efeitos reais, assim como IA tática, companheiros, arenas e chefes. **A Fase 2 não está concluída.**
