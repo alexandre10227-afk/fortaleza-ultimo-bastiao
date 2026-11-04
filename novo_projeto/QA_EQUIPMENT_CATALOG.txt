@@ -1,0 +1,1 @@
+Execute complete Godot 4.7.2 regression for 134 equipment entries, 5 rarities, 3 armor sets/class, boss quest dungeon gates and inventory browsing.
