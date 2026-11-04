@@ -68,7 +68,7 @@ static func enemy_target(battle: Dictionary, incoming: int) -> bool:
             alive.append(member)
     if alive.is_empty():
         return false
-    var target: Dictionary = alive[(turn / 3 - 1) % alive.size()]
+    var target: Dictionary = alive[(int(turn / 3) - 1) % alive.size()]
     var reduced := maxi(1,incoming - floori(float(target.get("defense",0))*.45))
     if bool(target.get("guard",false)):
         reduced = maxi(1,ceili(float(reduced)*.55))
