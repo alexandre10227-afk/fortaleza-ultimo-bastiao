@@ -35,7 +35,7 @@ func _ready() -> void:
     UI.apply_title(_headline)
     content.add_child(_headline)
     var hint := Label.new()
-    hint.text = "RECEITAS COMUNS — Armas, capacetes, peitorais e botas. Itens de evento nao podem ser fabricados."
+    hint.text = "Ferraria I: Comum | II-III: Raro | IV-V: Epico. Lendarios, miticos e itens de evento nao podem ser fabricados."
     hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
     UI.apply_text(hint)
     content.add_child(hint)
@@ -77,7 +77,7 @@ func refresh_forge(inventory: Dictionary, money: int, buildings: Dictionary) -> 
     for slot in GEAR.SLOTS:
         for item_id in GEAR.GEAR:
             var item: Dictionary = GEAR.GEAR[item_id]
-            if item["class"] != _archetype or item["slot"] != slot or item["rarity"] != "Comum":
+            if item["class"] != _archetype or item["slot"] != slot or GEAR.is_special(str(item_id)):
                 continue
             if not ECONOMY.RECIPES.has(item_id):
                 continue
@@ -98,7 +98,7 @@ func refresh_forge(inventory: Dictionary, money: int, buildings: Dictionary) -> 
             var description := Label.new()
             description.custom_minimum_size.x = 490
             description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-            description.text = "%s (%s)  |  %s  |  Nivel %d" % [item["name"],str(slot).capitalize(),", ".join(requirements),int(recipe["level"])]
+            description.text = "%s [%s] (%s) | Nivel %d | Foco: %s | %s" % [item["name"],str(item["rarity"]),str(slot).capitalize(),int(recipe["level"]),str(item.get("focus","Geral")),", ".join(requirements)]
             UI.apply_text(description)
             row.add_child(description)
             var make := Button.new()
