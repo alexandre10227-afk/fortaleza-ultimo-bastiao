@@ -1269,7 +1269,7 @@ func _refresh_market() -> void:
             continue
         if _market_selling and int(GameState.inventory.get(item_id, 0)) < 1:
             continue
-        if not _market_travelling:
+        if not _market_travelling and _market_vendor_id.is_empty():
             if active_interior == "Ferraria" and not ["Minerios", "Armas"].has(str(data["category"])):
                 continue
             if active_interior == "Taverna" and str(data["category"]) != "Comestiveis":
