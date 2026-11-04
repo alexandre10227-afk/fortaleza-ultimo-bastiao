@@ -11,6 +11,7 @@ const PLAYER_CLASSES = preload("res://scripts/protagonist_progression.gd")
 const WORLD_RECORDS = preload("res://scripts/stage1_records.gd")
 const SIM = preload("res://scripts/simulation_foundations.gd")
 const GEAR = preload("res://scripts/equipment_catalog.gd")
+const COMBAT = preload("res://scripts/combat_core.gd")
 
 const SAVE_PATH := "user://fortaleza_stage1_v1.json"
 const DIFFICULTIES := {
@@ -55,6 +56,12 @@ var migration_history: Array = []
 var money := 60
 var inventory: Dictionary = {"pao": 2}
 var equipped: Dictionary = GEAR.equip_slots()
+var hero_level := 1
+var hero_xp := 0
+var hero_hp := 0
+var hero_mp := 0
+var active_battle: Dictionary = {}
+var defeated_field_enemies: Dictionary = {}
 var recruited: Array[String] = []
 var discovered_regions: Array[String] = ["Fortaleza", "Porto Cinzento"]
 var quest_progress: Dictionary = {}
@@ -104,6 +111,12 @@ func new_game(hero_name: String, mode: String) -> void:
     money = 60
     inventory = {"pao": 2}
     equipped = GEAR.equip_slots()
+    hero_level = 1
+    hero_xp = 0
+    hero_hp = COMBAT.hero_max_hp(character_stats, hero_level)
+    hero_mp = COMBAT.hero_max_mp(character_stats, hero_level)
+    active_battle.clear()
+    defeated_field_enemies.clear()
     recruited.clear()
     discovered_bestiary.clear()
     expeditions.clear()
@@ -500,7 +513,70 @@ func craft_item(item_id: String) -> bool:
     save_game()
     return true
 
-func equip_item(item_id: String) -> bool:
+func hero_combat_stats() -> Dictionary:
+    return {"level":hero_level,"xp":hero_xp,"next_xp":COMBAT.xp_for_next_level(hero_level),"hp":hero_hp,"max_hp":COMBAT.hero_max_hp(character_stats,hero_level),"mp":hero_mp,"max_mp":COMBAT.hero_max_mp(character_stats,hero_level),"attack":COMBAT.hero_attack(character_stats,equipment_stats()),"defense":COMBAT.hero_defense(character_stats,equipment_stats())}
+
+func begin_field_battle(enemy_id: String, encounter_id: String) -> bool:
+    if not active_battle.is_empty() or encounter_id.is_empty() or COMBAT.ENEMIES.get(enemy_id, {}).is_empty():
+        return false
+    if int(defeated_field_enemies.get(encounter_id,-1)) == day or hero_hp <= 0:
+        return false
+    var candidate := COMBAT.start(character_stats,equipment_stats(),str(protagonist_track.get("base_class","Guerreiro")),hero_level,hero_hp,hero_mp,enemy_id,difficulty)
+    if candidate.is_empty():
+        return false
+    candidate["encounter_id"] = encounter_id
+    active_battle = candidate
+    record_event("battle_started",current_region,[character_name],enemy_id)
+    save_game()
+    return true
+
+func play_battle_turn(action: String) -> bool:
+    if active_battle.get("state","") != "active":
+        return false
+    if not ["attack","skill","defend","potion"].has(action):
+        return false
+    if action == "potion" and int(inventory.get("pocao_vida",0)) < 1:
+        return false
+    var previous_turn := int(active_battle["turn"])
+    var updated: Dictionary = COMBAT.act(active_battle,action)
+    if int(updated.get("turn",previous_turn)) <= previous_turn:
+        return false
+    active_battle = updated
+    if action == "potion":
+        inventory["pocao_vida"] = int(inventory.get("pocao_vida",0)) - 1
+    hero_hp = int(active_battle["hero_hp"])
+    hero_mp = int(active_battle["hero_mp"])
+    if active_battle["state"] == "won":
+        var enemy: Dictionary = active_battle["enemy"]
+        var earned_xp := COMBAT.reward_xp(int(enemy["xp"]),difficulty)
+        hero_xp += earned_xp
+        money += int(enemy["gold"])
+        while hero_xp >= COMBAT.xp_for_next_level(hero_level):
+            hero_xp -= COMBAT.xp_for_next_level(hero_level)
+            hero_level += 1
+            hero_hp = mini(COMBAT.hero_max_hp(character_stats,hero_level),hero_hp + 15)
+            hero_mp = mini(COMBAT.hero_max_mp(character_stats,hero_level),hero_mp + 8)
+        defeated_field_enemies[str(active_battle.get("encounter_id",""))] = day
+        observe_creature(str(enemy["id"]),current_region)
+        record_event("battle_victory",current_region,[character_name],"%s +%d XP" % [enemy["name"],earned_xp])
+    elif active_battle["state"] == "lost":
+        # Prototipo de combate: retorno seguro, sem apagar o save do jogador.
+        # Morte permanente sera introduzida junto com as regras de sucessao.
+        hero_hp = maxi(1,COMBAT.hero_max_hp(character_stats,hero_level)/3)
+        hero_mp = maxi(0,COMBAT.hero_max_mp(character_stats,hero_level)/3)
+        money = maxi(0,money - 12)
+        record_event("battle_defeat",current_region,[character_name],"Derrotado; recuperacao na cidade")
+    save_game()
+    return true
+
+func close_battle_result() -> bool:
+    if active_battle.is_empty() or active_battle.get("state","") == "active":
+        return false
+    active_battle.clear()
+    save_game()
+    return true
+
+
     if not GEAR.can_equip(item_id, str(protagonist_track.get("base_class", ""))):
         return false
     if int(inventory.get(item_id, 0)) < 1:
@@ -663,7 +739,7 @@ func save_game() -> bool:
     var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if file == null:
         return false
-    var data := {"schema": 1, "name": character_name, "character_origin": character_origin, "character_stats": character_stats, "character_appearance": character_appearance, "region_positions": region_positions, "hero_build": hero_build, "protagonist_track": protagonist_track, "npc_hero_builds": npc_hero_builds, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "npc_lives": npc_lives, "npc_story_flags": npc_story_flags, "last_gift_day": last_gift_day, "food_bonuses": active_food_bonuses, "building_levels": building_levels, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "equipped": equipped, "recruited": recruited, "bestiary": discovered_bestiary, "expeditions": expeditions, "memorial": memorial, "military_intel": military_intel, "legacy_records": legacy_records, "nemesis_records": nemesis_records, "migration_history": migration_history, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
+    var data := {"schema": 1, "name": character_name, "character_origin": character_origin, "character_stats": character_stats, "character_appearance": character_appearance, "region_positions": region_positions, "hero_build": hero_build, "protagonist_track": protagonist_track, "npc_hero_builds": npc_hero_builds, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "npc_lives": npc_lives, "npc_story_flags": npc_story_flags, "last_gift_day": last_gift_day, "food_bonuses": active_food_bonuses, "building_levels": building_levels, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "equipped": equipped, "hero_level": hero_level, "hero_xp": hero_xp, "hero_hp": hero_hp, "hero_mp": hero_mp, "active_battle": active_battle, "defeated_field_enemies": defeated_field_enemies, "recruited": recruited, "bestiary": discovered_bestiary, "expeditions": expeditions, "memorial": memorial, "military_intel": military_intel, "legacy_records": legacy_records, "nemesis_records": nemesis_records, "migration_history": migration_history, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
     file.store_string(JSON.stringify(data))
     return true
 
@@ -730,6 +806,14 @@ func load_game() -> bool:
     wave_number = int(parsed.get("wave", 0))
     dungeon_unlocked = bool(parsed.get("dungeon", false))
     money = int(parsed.get("money", 60))
+    hero_level = maxi(1,int(parsed.get("hero_level",1)))
+    hero_xp = maxi(0,int(parsed.get("hero_xp",0)))
+    hero_hp = clampi(int(parsed.get("hero_hp",COMBAT.hero_max_hp(character_stats,hero_level))),1,COMBAT.hero_max_hp(character_stats,hero_level))
+    hero_mp = clampi(int(parsed.get("hero_mp",COMBAT.hero_max_mp(character_stats,hero_level))),0,COMBAT.hero_max_mp(character_stats,hero_level))
+    active_battle = parsed.get("active_battle", {})
+    if not active_battle is Dictionary or (not active_battle.is_empty() and not ["active","won","lost"].has(str(active_battle.get("state","")))):
+        active_battle = {}
+    defeated_field_enemies = parsed.get("defeated_field_enemies", {})
     inventory = parsed.get("inventory", {"pao": 2})
     equipped = GEAR.equip_slots()
     var saved_equipment: Dictionary = parsed.get("equipped", {})
