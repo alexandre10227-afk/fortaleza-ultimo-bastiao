@@ -67,7 +67,7 @@ func run() -> void:
     state.inventory["maca"] = 2
     assert(state.consign_player_item("maca",2))
     assert(not state.consign_player_item("maca",1))
-    var balance := state.money
+    var balance: int = int(state.money)
     state.advance_days(1)
     assert(state.money > balance)
     assert(state.national_treasury("Fortaleza")["consign_tax"] > 0)
