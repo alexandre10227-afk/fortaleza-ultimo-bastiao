@@ -579,6 +579,7 @@ func close_battle_result() -> bool:
     return true
 
 
+func equip_item(item_id: String) -> bool:
     if not GEAR.can_equip(item_id, str(protagonist_track.get("base_class", ""))):
         return false
     if int(inventory.get(item_id, 0)) < 1:
