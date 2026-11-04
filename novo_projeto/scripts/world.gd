@@ -532,7 +532,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 func _refresh_hud() -> void:
     hud.text = "%s | %s | %s | Dia %d | Energia %d | Onda %d | Moedas %d" % [GameState.character_name, GameState.difficulty, GameState.current_region, GameState.day, GameState.energy, GameState.wave_number, GameState.money]
-    hud.text += "\nNivel %d | PV %d/%d | PM %d/%d | XP %d/%d" % [GameState.hero_level,GameState.hero_hp,COMBAT.hero_max_hp(GameState.character_stats,GameState.hero_level),GameState.hero_mp,COMBAT.hero_max_mp(GameState.character_stats,GameState.hero_level),GameState.hero_xp,COMBAT.xp_for_next_level(GameState.hero_level)]
+    hud.text += "\nNivel %d | PV %d/%d | PM %d/%d | XP %d/%d" % [GameState.hero_level,GameState.hero_hp,COMBAT.hero_max_hp(GameState.character_stats,GameState.hero_level,GameState.equipment_stats()),GameState.hero_mp,COMBAT.hero_max_mp(GameState.character_stats,GameState.hero_level,GameState.equipment_stats()),GameState.hero_xp,COMBAT.xp_for_next_level(GameState.hero_level)]
     _refresh_news()
     if not last_message.is_empty():
         hud.text += "\n" + last_message
