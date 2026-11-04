@@ -1,0 +1,1 @@
+Validacao final da fase2 inicial: menu ilustrado, sprites detalhados, loja e forja por classe, 27 testes.
