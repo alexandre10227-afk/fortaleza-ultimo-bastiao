@@ -14,6 +14,7 @@ const GEAR = preload("res://scripts/equipment_catalog.gd")
 const COMBAT = preload("res://scripts/combat_core.gd")
 const PARTY = preload("res://scripts/party_combat.gd")
 const ARMORY = preload("res://scripts/city_armory_economy.gd")
+const TERRITORY = preload("res://scripts/territory_economy.gd")
 
 const SAVE_PATH := "user://fortaleza_stage1_v1.json"
 const DIFFICULTIES := {
@@ -66,6 +67,7 @@ var active_battle: Dictionary = {}
 var defeated_field_enemies: Dictionary = {}
 var equipment_reward_claims: Dictionary = {}
 var city_armory: Dictionary = ARMORY.initial_state()
+var national_economy: Dictionary = TERRITORY.initial_state()
 var recruited: Array[String] = []
 var discovered_regions: Array[String] = ["Fortaleza", "Porto Cinzento"]
 var quest_progress: Dictionary = {}
@@ -123,6 +125,7 @@ func new_game(hero_name: String, mode: String) -> void:
     defeated_field_enemies.clear()
     equipment_reward_claims.clear()
     city_armory = ARMORY.initial_state()
+    national_economy = TERRITORY.initial_state()
     recruited.clear()
     discovered_bestiary.clear()
     expeditions.clear()
@@ -317,6 +320,10 @@ func advance_days(days: int) -> void:
             if int(active_food_bonuses[stat].get("until_day", 0)) <= day:
                 active_food_bonuses.erase(stat)
         _advance_npc_lives(day)
+        TERRITORY.settle_day(national_economy,day)
+        for receipt in TERRITORY.settle_sales(national_economy,day):
+            money += int(receipt["player"])
+            record_event("consignment_sold",str(receipt["region"]),[character_name],"Venda de %s: %d moedas; tributo: %d" % [receipt["item"],int(receipt["player"]),int(receipt["tax"])])
         for returned_id in WORLD_RECORDS.update_expeditions(expeditions, day):
             SIM.add_report(military_intel, day, current_region if current_region in ["Fortaleza","Porto Cinzento"] else "Fortaleza", "Reconhecimento concluido; ameaças ainda nao verificadas")
             record_event("expedition_return", current_region, [character_name], "Expedicao %s retornou sem combate" % returned_id)
@@ -679,6 +686,51 @@ func upgrade_building(building: String) -> bool:
     save_game()
     return true
 
+func national_treasury(region: String) -> Dictionary:
+    return national_economy.get("territories",{}).get(region,{})
+
+func upgrade_public_building(building: String) -> bool:
+    if current_region != "Fortaleza" or oath != "guardian":
+        return false
+    var level := int(building_levels.get(building,0))
+    if not TERRITORY.build(national_economy,current_region,building,level):
+        return false
+    building_levels[building] = level+1
+    record_event("public_building",current_region,[character_name],"%s nivel %d com Tesouro Nacional" % [building,level+1])
+    save_game()
+    return true
+
+func consign_player_item(item_id: String, quantity: int = 1) -> bool:
+    if not TERRITORY.valid_region(current_region) or not ITEMS.is_tradeable(item_id):
+        return false
+    # Equipamentos especiais permanecem fora das prateleiras publicas.
+    if GEAR.is_special(item_id):
+        return false
+    if not TERRITORY.list_item(national_economy,item_id,ITEMS.get_item(item_id),quantity,current_region,day,inventory,equipped):
+        return false
+    record_event("consignment",current_region,[character_name],"Anunciou %s x%d no mercado" % [item_id,quantity])
+    save_game()
+    return true
+
+func cancel_consignment(listing_id: int) -> bool:
+    if not TERRITORY.withdraw_listing(national_economy,listing_id,inventory):
+        return false
+    record_event("consignment_withdrawn",current_region,[character_name],"Retirou anuncio %d" % listing_id)
+    save_game()
+    return true
+
+func negotiate_territory_trade(destination: String, item_id: String, quantity: int) -> bool:
+    if oath != "guardian" or current_region != "Fortaleza" or destination != "Porto Cinzento":
+        return false
+    var invoice := TERRITORY.trade_for_alliance(national_economy,current_region,destination,item_id,quantity)
+    if invoice.is_empty():
+        return false
+    if bool(invoice["alliance"]):
+        region_reputation[destination] = mini(100,int(region_reputation.get(destination,0))+15)
+    record_event("territory_trade",current_region,[character_name],"%s x%d para %s; confianca %d" % [item_id,quantity,destination,int(invoice["relation"])])
+    save_game()
+    return true
+
 func start_quest(npc_id: String) -> bool:
     if not OPENING_QUESTS.has(npc_id) or quest_progress.has(npc_id):
         return false
@@ -797,7 +849,7 @@ func save_game() -> bool:
     var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if file == null:
         return false
-    var data := {"schema": 1, "name": character_name, "character_origin": character_origin, "character_stats": character_stats, "character_appearance": character_appearance, "region_positions": region_positions, "hero_build": hero_build, "protagonist_track": protagonist_track, "npc_hero_builds": npc_hero_builds, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "npc_lives": npc_lives, "npc_story_flags": npc_story_flags, "last_gift_day": last_gift_day, "food_bonuses": active_food_bonuses, "building_levels": building_levels, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "equipped": equipped, "hero_level": hero_level, "hero_xp": hero_xp, "hero_hp": hero_hp, "hero_mp": hero_mp, "active_battle": active_battle, "defeated_field_enemies": defeated_field_enemies, "equipment_reward_claims": equipment_reward_claims, "city_armory": city_armory, "recruited": recruited, "bestiary": discovered_bestiary, "expeditions": expeditions, "memorial": memorial, "military_intel": military_intel, "legacy_records": legacy_records, "nemesis_records": nemesis_records, "migration_history": migration_history, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
+    var data := {"schema": 1, "name": character_name, "character_origin": character_origin, "character_stats": character_stats, "character_appearance": character_appearance, "region_positions": region_positions, "hero_build": hero_build, "protagonist_track": protagonist_track, "npc_hero_builds": npc_hero_builds, "difficulty": difficulty, "oath": oath, "region": current_region, "day": day, "energy": energy, "agility_xp": agility_xp, "events": events, "npc_memory": npc_memory, "npc_friendship": npc_friendship, "friendship_days": last_friendship_interaction, "npc_lives": npc_lives, "npc_story_flags": npc_story_flags, "last_gift_day": last_gift_day, "food_bonuses": active_food_bonuses, "building_levels": building_levels, "reputation": region_reputation, "wave": wave_number, "dungeon": dungeon_unlocked, "money": money, "inventory": inventory, "equipped": equipped, "hero_level": hero_level, "hero_xp": hero_xp, "hero_hp": hero_hp, "hero_mp": hero_mp, "active_battle": active_battle, "defeated_field_enemies": defeated_field_enemies, "equipment_reward_claims": equipment_reward_claims, "city_armory": city_armory, "national_economy": national_economy, "recruited": recruited, "bestiary": discovered_bestiary, "expeditions": expeditions, "memorial": memorial, "military_intel": military_intel, "legacy_records": legacy_records, "nemesis_records": nemesis_records, "migration_history": migration_history, "quests": quest_progress, "collected_nodes": collected_nodes, "narrative_flags": narrative_flags, "duke_state": duke_state}
     file.store_string(JSON.stringify(data))
     return true
 
@@ -874,6 +926,7 @@ func load_game() -> bool:
     defeated_field_enemies = parsed.get("defeated_field_enemies", {})
     equipment_reward_claims = parsed.get("equipment_reward_claims", {})
     city_armory = parsed.get("city_armory", ARMORY.initial_state())
+    national_economy = parsed.get("national_economy", TERRITORY.initial_state())
     inventory = parsed.get("inventory", {"pao": 2})
     equipped = GEAR.equip_slots()
     var saved_equipment: Dictionary = parsed.get("equipped", {})
