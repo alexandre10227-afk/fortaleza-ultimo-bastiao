@@ -11,7 +11,11 @@ func run() -> void:
     for id in GEAR.GEAR:
         var item: Dictionary = GEAR.GEAR[id]
         assert(ITEMS.is_tradeable(id) or GEAR.is_special(id) or item.get("source","") in ["quest_or_dungeon","dungeon"])
-        assert(GEAR.can_equip(id, str(item["class"])))
+        if str(item["class"]) == "Todas":
+            for kind in GEAR.CLASS_ORDER:
+                assert(GEAR.can_equip(id, kind))
+        else:
+            assert(GEAR.can_equip(id, str(item["class"])))
         assert(not GEAR.can_equip(id, "Invalido"))
         if item.get("source","") == "forge":
             assert(ECONOMY.RECIPES.has(id))
