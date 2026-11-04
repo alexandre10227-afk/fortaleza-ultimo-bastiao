@@ -1,0 +1,1 @@
+Validar Godot 4.7.2: armas por classe, armaduras, raridades da forja, ciclo economico de reequipamento de soldados, salvamentos, recompensas unicas.
