@@ -1,0 +1,61 @@
+extends SceneTree
+const COMBAT = preload("res://scripts/combat_core.gd")
+func _initialize() -> void:
+    call_deferred("run")
+
+func run() -> void:
+    assert(COMBAT.ENEMIES.size() >= 3)
+    assert(COMBAT.CLASS_SKILLS.size() == 4)
+    assert(COMBAT.reward_xp(20, "Impossivel") == 60)
+    assert(COMBAT.enemy_stats("lobo_cinzento","Impossivel")["hp"] > COMBAT.enemy_stats("lobo_cinzento","Normal")["hp"])
+    var stats := {"Forca":10,"Constituicao":10,"Inteligencia":5,"Destreza":4,"Sorte":2}
+    var hero := COMBAT.start(stats,{"attack":8,"defense":10},"Guerreiro",1,COMBAT.hero_max_hp(stats,1),COMBAT.hero_max_mp(stats,1),"lobo_cinzento","Normal")
+    assert(hero["state"] == "active")
+    var after := COMBAT.act(hero,"invalid")
+    assert(after["turn"] == 1)
+    after = COMBAT.act(hero,"attack")
+    assert(after["enemy"]["hp"] < hero["enemy"]["hp"])
+    assert(hero["enemy"]["hp"] == hero["enemy"]["max_hp"])
+    var count := 0
+    while after["state"] == "active" and count < 12:
+        after = COMBAT.act(after,"attack")
+        count += 1
+    assert(after["state"] == "won")
+    assert(COMBAT.act(after,"attack")["turn"] == after["turn"])
+    var priest := COMBAT.start(stats,{"attack":0,"defense":0},"Sacerdote",1,35,15,"lobo_cinzento","Normal")
+    assert(priest["state"] == "active")
+    var healed := COMBAT.act(priest,"skill")
+    assert(healed["hero_mp"] == 10)
+    assert(healed["hero_hp"] > 0)
+    var state = root.get_node("GameState")
+    state.new_game("Combatente","Normal")
+    state.choose_oath(true)
+    state.character_stats = stats.duplicate(true)
+    state.hero_hp = COMBAT.hero_max_hp(stats,1)
+    state.hero_mp = COMBAT.hero_max_mp(stats,1)
+    assert(state.begin_field_battle("lobo_cinzento","Fortaleza_lobo"))
+    assert(not state.begin_field_battle("lobo_cinzento","Fortaleza_lobo"))
+    assert(not state.play_battle_turn("potion"))
+    while state.active_battle["state"] == "active":
+        assert(state.play_battle_turn("attack"))
+    assert(state.active_battle["state"] == "won")
+    assert(state.money >= 70)
+    assert(state.defeated_field_enemies["Fortaleza_lobo"] == state.day)
+    assert(not state.begin_field_battle("lobo_cinzento","Fortaleza_lobo"))
+    assert(state.save_game())
+    assert(state.close_battle_result())
+    assert(state.load_game())
+    assert(state.defeated_field_enemies["Fortaleza_lobo"] == state.day)
+    assert(not state.begin_field_battle("lobo_cinzento","Fortaleza_lobo"))
+    state.advance_days(1)
+    assert(state.begin_field_battle("lobo_cinzento","Fortaleza_lobo"))
+    var world = load("res://scenes/world.tscn").instantiate()
+    root.add_child(world)
+    await process_frame
+    assert(world.battle_panel.visible)
+    assert(world.enemy_visuals.size() == 2)
+    assert(world._controls_blocked())
+    world.queue_free()
+    await process_frame
+    print("TEST_PHASE2_COMBAT_PASS")
+    quit(0)
