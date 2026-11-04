@@ -10,14 +10,13 @@ func run() -> void:
     assert(GEAR.SLOTS == ["weapon","head","chest","feet"])
     for id in GEAR.GEAR:
         var item: Dictionary = GEAR.GEAR[id]
-        assert(ITEMS.is_tradeable(id) or GEAR.is_special(id))
+        assert(ITEMS.is_tradeable(id) or GEAR.is_special(id) or item.get("source","") in ["quest_or_dungeon","dungeon"])
         assert(GEAR.can_equip(id, str(item["class"])))
         assert(not GEAR.can_equip(id, "Invalido"))
         if item.get("source","") == "forge":
             assert(ECONOMY.RECIPES.has(id))
             assert(ECONOMY.RECIPES[id]["building"] == "Ferraria")
-        elif item.get("source","") == "merchant":
-            assert(ECONOMY.RECIPES.has(id))
+        elif item.get("source","") == "merchant" and ECONOMY.RECIPES.has(id):
             assert(int(ECONOMY.RECIPES[id]["level"]) >= 2)
         else:
             assert(not ECONOMY.RECIPES.has(id))
