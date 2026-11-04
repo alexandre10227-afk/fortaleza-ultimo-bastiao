@@ -36,8 +36,11 @@ func run() -> void:
                     pieces += 1
                     var armor: Dictionary = GEAR.GEAR[item_id]
                     assert(["head","chest","feet"].has(armor["slot"]))
-                    assert(ECONOMY.RECIPES.has(item_id))
-                    assert(int(ECONOMY.RECIPES[item_id]["level"]) >= 3)
+                    if line_id == 3:
+                        assert(not ECONOMY.RECIPES.has(item_id))
+                    else:
+                        assert(ECONOMY.RECIPES.has(item_id))
+                        assert(int(ECONOMY.RECIPES[item_id]["level"]) >= 3)
             assert(pieces == 3)
     assert(GEAR.vendor_inventory("doran").size() == 14)
     assert(GEAR.reward_for("boss","rei_lobos") == "machado_rei_lobos")
