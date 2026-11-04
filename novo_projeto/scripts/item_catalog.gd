@@ -9,6 +9,7 @@ const ITEMS := {
     "pintura_tinta": {"name":"Pintura a tinta", "category":"Arte", "rarity":"Epico", "price":260},
     "estatua_jade": {"name":"Estatua de jade", "category":"Arte", "rarity":"Lendario", "price":1200},
     # Comestiveis: presentes OU refeicoes que aplicam bonus temporarios.
+    "pocao_vida": {"name":"Pocao de vida", "category":"Comestiveis", "rarity":"Comum", "price":22, "bonus":{}, "duration":1},
     "maca": {"name":"Maca fresca", "category":"Comestiveis", "rarity":"Comum", "price":6, "bonus":{"vigor":1}, "duration":1},
     "ervas": {"name":"Ervas medicinais", "category":"Comestiveis", "rarity":"Comum", "price":12, "bonus":{"vigor":1}, "duration":1},
     "cenoura": {"name":"Cenoura", "category":"Comestiveis", "rarity":"Comum", "price":5, "bonus":{"vigor":1}, "duration":1},
