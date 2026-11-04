@@ -147,6 +147,7 @@ func show_page(page_name: String) -> void:
                 var event: Dictionary = GameState.events[index]
                 _line("Dia %d | %s" % [int(event.get("day", 0)), str(event.get("description", ""))])
         "Mundo":
+            _render_treasury()
             _line("BESTIARIO", true)
             if GameState.discovered_bestiary.is_empty():
                 _line("Nenhum monstro identificado ate o momento.")
@@ -282,3 +283,75 @@ func _show_catalog() -> void:
     UI.apply_button(forward)
     forward.pressed.connect(_catalog_turn_page.bind(1))
     navigation.add_child(forward)
+
+func _treasury_action(action: String, argument: String = "") -> void:
+    var success := false
+    match action:
+        "consign":
+            success = GameState.consign_player_item(argument,1)
+        "withdraw":
+            success = GameState.cancel_consignment(int(argument))
+        "upgrade":
+            success = GameState.upgrade_public_building(argument)
+        "trade":
+            success = GameState.negotiate_territory_trade("Porto Cinzento",argument,3)
+    if success:
+        show_page("Mundo")
+    else:
+        _line("Acao indisponivel: confira recursos, ouro, juramento e estoque.",true)
+
+func _render_treasury() -> void:
+    _line("TESOURO NACIONAL E COMERCIO TERRITORIAL",true)
+    var region := GameState.current_region
+    if not GameState.TERRITORY.valid_region(region):
+        _line("Inicie sua campanha para acessar o tesouro.")
+        return
+    var treasury: Dictionary = GameState.national_treasury(region)
+    _line("%s | Ouro nacional: %d | Impostos de NPC: %d | Taxas de vendas: %d" % [region,int(treasury.get("treasury",0)),int(treasury.get("tax_received",0)),int(treasury.get("consign_tax",0))])
+    _line("Mercado (capital dos compradores): %d | Estoque publico: %s" % [int(treasury.get("market_liquidity",0)),str(treasury.get("stock",{}))])
+    _line("Trabalhadores e producao: lenhador, mineiro, agricultor e mercador.")
+    _line("VENDAS DO JOGADOR: 12% da venda vai ao tesouro; restante ao jogador.",true)
+    _line("Cada anuncio vende ate 1 unidade por dia. Itens equipados e exclusivos nao podem ser vendidos.")
+    var displayed := 0
+    for item_id in GameState.inventory:
+        if int(GameState.inventory[item_id]) <= 0 or not ITEMS.is_tradeable(str(item_id)):
+            continue
+        var item_name := str(ITEMS.get_item(str(item_id)).get("name",item_id))
+        var list_button := Button.new()
+        list_button.text = "Anunciar 1: %s (estoque %d)" % [item_name,int(GameState.inventory[item_id])]
+        list_button.disabled = GameState.TERRITORY.can_list(str(item_id),ITEMS.get_item(str(item_id)),1,GameState.inventory,GameState.equipped) == false
+        UI.apply_button(list_button)
+        list_button.pressed.connect(_treasury_action.bind("consign",str(item_id)))
+        body.add_child(list_button)
+        displayed += 1
+        if displayed == 6:
+            break
+    for listing in GameState.national_economy.get("consignments",[]):
+        if listing is Dictionary and listing.get("status","") == "active":
+            var reclaim := Button.new()
+            reclaim.text = "Retirar anuncio #%d: %s x%d" % [int(listing["id"]),str(listing["item"]),int(listing["quantity"])]
+            UI.apply_button(reclaim)
+            reclaim.pressed.connect(_treasury_action.bind("withdraw",str(listing["id"])))
+            body.add_child(reclaim)
+    _line("OBRAS PUBLICAS: pagas com ouro e materiais do tesouro",true)
+    for building in GameState.TERRITORY.UPGRADE_BASE:
+        var level := int(GameState.building_levels.get(building,1))
+        var costs: Dictionary = GameState.TERRITORY.costs(building,level)
+        if costs.is_empty():
+            continue
+        var improve := Button.new()
+        improve.text = "%s %d→%d | %d ouro | %s" % [building,level,level+1,int(costs["gold"]),str(costs["materials"])]
+        improve.disabled = GameState.oath != "guardian" or region != "Fortaleza" or not GameState.TERRITORY.can_build(GameState.national_economy,region,building,level)
+        UI.apply_button(improve)
+        improve.pressed.connect(_treasury_action.bind("upgrade",building))
+        body.add_child(improve)
+    _line("DIPLOMACIA: vender materiais para Porto Cinzento aumenta a confianca.",true)
+    var relations: Dictionary = treasury.get("relations",{})
+    _line("Confianca com Porto Cinzento: %d/100 | Aliancas: %s" % [int(relations.get("Porto Cinzento",0)),str(treasury.get("alliances",[]))])
+    for material in ["madeira","pedra","ferro","pedra_incomum"]:
+        var trade_button := Button.new()
+        trade_button.text = "Enviar 3 x %s para Porto Cinzento" % material
+        trade_button.disabled = GameState.oath != "guardian" or region != "Fortaleza" or int(treasury.get("stock",{}).get(material,0)) < 3
+        UI.apply_button(trade_button)
+        trade_button.pressed.connect(_treasury_action.bind("trade",material))
+        body.add_child(trade_button)
