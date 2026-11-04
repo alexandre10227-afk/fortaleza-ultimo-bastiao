@@ -1,4 +1,5 @@
 extends RefCounted
+const PARTY = preload("res://scripts/party_combat.gd")
 ## Combate tatico por turnos da Fase 2. Nao interfere nas ondas de defesa.
 const HERO_CLASSES := ["Guerreiro", "Cavaleiro", "Mago", "Sacerdote"]
 const CLASS_SKILLS := {
@@ -13,11 +14,11 @@ const ENEMIES := {
     "guardiao_de_pedra": {"name":"Guardiao de Pedra","hp":78,"attack":14,"defense":8,"xp":45,"gold":24}
 }
 
-static func hero_max_hp(stats: Dictionary, level: int) -> int:
-    return 55 + int(stats.get("Constituicao",1)) * 9 + (maxi(1,level)-1)*5
+static func hero_max_hp(stats: Dictionary, level: int, gear: Dictionary = {}) -> int:
+    return 55 + int(stats.get("Constituicao",1)) * 9 + (maxi(1,level)-1)*5 + int(gear.get("life",0))
 
-static func hero_max_mp(stats: Dictionary, level: int) -> int:
-    return 17 + int(stats.get("Inteligencia",1))*5 + (maxi(1,level)-1)*2
+static func hero_max_mp(stats: Dictionary, level: int, gear: Dictionary = {}) -> int:
+    return 17 + int(stats.get("Inteligencia",1))*5 + (maxi(1,level)-1)*2 + int(gear.get("mana",0))
 
 static func hero_attack(stats: Dictionary, gear: Dictionary) -> int:
     return 5 + int(stats.get("Forca",1))*2 + int(gear.get("attack",0))
@@ -46,15 +47,15 @@ static func enemy_stats(enemy_id: String, difficulty: String = "Normal") -> Dict
 static func damage(attack: int, defense: int, bonus: int = 0) -> int:
     return maxi(1, attack + bonus - floori(float(defense)*0.55))
 
-static func start(hero_stats: Dictionary, gear: Dictionary, hero_class: String, level: int, hp: int, mp: int, enemy_id: String, difficulty: String) -> Dictionary:
+static func start(hero_stats: Dictionary, gear: Dictionary, hero_class: String, level: int, hp: int, mp: int, enemy_id: String, difficulty: String, companions: Array = []) -> Dictionary:
     if not HERO_CLASSES.has(hero_class) or not ENEMIES.has(enemy_id):
         return {}
     var enemy := enemy_stats(enemy_id, difficulty)
-    var max_hp := hero_max_hp(hero_stats,level)
-    var max_mp := hero_max_mp(hero_stats,level)
+    var max_hp := hero_max_hp(hero_stats,level,gear)
+    var max_mp := hero_max_mp(hero_stats,level,gear)
     if hp <= 0:
         return {}
-    return {"state":"active","turn":1,"hero_class":hero_class,"hero_hp":mini(hp,max_hp),"hero_mp":clampi(mp,0,max_mp),"max_hp":max_hp,"max_mp":max_mp,"attack":hero_attack(hero_stats,gear),"defense":hero_defense(hero_stats,gear),"guard":false,"enemy":enemy,"log":["Uma criatura se aproxima."],"result":""}
+    return {"state":"active","turn":1,"hero_class":hero_class,"hero_hp":mini(hp,max_hp),"hero_mp":clampi(mp,0,max_mp),"max_hp":max_hp,"max_mp":max_mp,"attack":hero_attack(hero_stats,gear),"defense":hero_defense(hero_stats,gear),"healing":int(gear.get("healing",0)),"critical":int(gear.get("critical",0)),"agility":int(gear.get("agility",0)),"allies":companions.duplicate(true),"guard":false,"enemy":enemy,"log":["Uma criatura se aproxima."],"result":""}
 
 static func act(battle: Dictionary, action: String) -> Dictionary:
     if battle.get("state","") != "active":
@@ -65,27 +66,30 @@ static func act(battle: Dictionary, action: String) -> Dictionary:
     var enemy: Dictionary = output["enemy"]
     var messages: Array = output["log"]
     var hero_class := str(output["hero_class"])
+    var crit_bonus := 0
+    if int(output.get("critical",0)) > 0 and (int(output["turn"]) + int(output.get("agility",0))) % 5 == 0:
+        crit_bonus = mini(20,int(output["critical"]))
     var spell: Dictionary = CLASS_SKILLS[hero_class]
     var mana_cost := int(spell["mana"])
     if action == "skill" and int(output["hero_mp"]) < mana_cost:
         return output
     match action:
         "attack":
-            var hit := damage(int(output["attack"]),int(enemy["defense"]))
+            var hit := damage(int(output["attack"]),int(enemy["defense"]),crit_bonus)
             enemy["hp"] = maxi(0,int(enemy["hp"])-hit)
             messages.append("Voce causou %d de dano." % hit)
         "skill":
             output["hero_mp"] = int(output["hero_mp"])-mana_cost
             match spell["type"]:
                 "attack":
-                    var hit := damage(int(output["attack"]),int(enemy["defense"]),int(spell["power"]))
+                    var hit := damage(int(output["attack"]),int(enemy["defense"]),int(spell["power"])+crit_bonus)
                     enemy["hp"] = maxi(0,int(enemy["hp"])-hit)
                     messages.append("%s: %d de dano." % [spell["name"],hit])
                 "guard":
                     output["guard"] = true
                     messages.append("Postura de Guarda: defesa preparada.")
                 "heal":
-                    var recovery := mini(int(spell["power"])+floori(float(output["max_hp"])*.08),int(output["max_hp"])-int(output["hero_hp"]))
+                    var recovery := mini(int(spell["power"])+floori(float(output["max_hp"])*.08)+int(output.get("healing",0)),int(output["max_hp"])-int(output["hero_hp"]))
                     output["hero_hp"] = int(output["hero_hp"])+recovery
                     messages.append("Prece de Amparo: +%d PV." % recovery)
         "defend":
@@ -96,6 +100,8 @@ static func act(battle: Dictionary, action: String) -> Dictionary:
             var recovery := mini(24,int(output["max_hp"])-int(output["hero_hp"]))
             output["hero_hp"] = int(output["hero_hp"])+recovery
             messages.append("Pocao: +%d PV." % recovery)
+    if int(enemy["hp"]) > 0:
+        PARTY.assist(output)
     if int(enemy["hp"]) <= 0:
         output["state"] = "won"
         output["result"] = "victory"
@@ -105,8 +111,9 @@ static func act(battle: Dictionary, action: String) -> Dictionary:
         if bool(output["guard"]):
             response = maxi(1,ceili(float(response)*.35))
         output["guard"] = false
-        output["hero_hp"] = maxi(0,int(output["hero_hp"])-response)
-        messages.append("%s atacou: -%d PV." % [enemy["name"],response])
+        if not PARTY.enemy_target(output,response):
+            output["hero_hp"] = maxi(0,int(output["hero_hp"])-response)
+            messages.append("%s atacou: -%d PV." % [enemy["name"],response])
         if int(output["hero_hp"]) <= 0:
             output["state"] = "lost"
             output["result"] = "defeat"
