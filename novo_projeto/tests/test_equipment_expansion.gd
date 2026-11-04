@@ -23,7 +23,8 @@ func run() -> void:
                         assert(ITEMS.is_tradeable(id))
                     elif rarity in ["Raro","Epico"]:
                         assert(ITEMS.is_tradeable(id))
-                        assert(not ECONOMY.RECIPES.has(id))
+                        assert(ECONOMY.RECIPES.has(id))
+                        assert(int(ECONOMY.RECIPES[id]["level"]) >= 2)
                     else:
                         assert(not ITEMS.is_tradeable(id))
                         assert(not ECONOMY.RECIPES.has(id))
@@ -35,7 +36,8 @@ func run() -> void:
                     pieces += 1
                     var armor: Dictionary = GEAR.GEAR[item_id]
                     assert(["head","chest","feet"].has(armor["slot"]))
-                    assert(not ECONOMY.RECIPES.has(item_id))
+                    assert(ECONOMY.RECIPES.has(item_id))
+                    assert(int(ECONOMY.RECIPES[item_id]["level"]) >= 3)
             assert(pieces == 3)
     assert(GEAR.vendor_inventory("doran").size() == 14)
     assert(GEAR.reward_for("boss","rei_lobos") == "machado_rei_lobos")
