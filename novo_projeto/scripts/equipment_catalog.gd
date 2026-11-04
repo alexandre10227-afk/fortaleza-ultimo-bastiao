@@ -16,7 +16,7 @@ static func is_special(id: String) -> bool:
     return GEAR.has(id) and bool(GEAR[id].get("unique",false))
 
 static func can_equip(id: String, hero_class: String) -> bool:
-    return GEAR.has(id) and (str(GEAR[id]["class"]) == hero_class or str(GEAR[id]["class"]) == "Todas")
+    return GEAR.has(id) and CLASS_ORDER.has(hero_class) and (str(GEAR[id]["class"]) == hero_class or str(GEAR[id]["class"]) == "Todas")
 
 static func slot_for(id: String) -> String:
     return str(GEAR[id]["slot"]) if GEAR.has(id) else ""
