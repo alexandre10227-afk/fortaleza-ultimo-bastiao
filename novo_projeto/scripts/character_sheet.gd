@@ -211,3 +211,61 @@ func _equip_owned_item(item_id: String) -> void:
         show_page("Personagem")
     else:
         show_page("Inventario")
+
+func _catalog_change_class(value: String) -> void:
+    _catalog_class = value
+    _catalog_page = 0
+    show_page("Catalogo")
+
+func _catalog_change_rarity(value: String) -> void:
+    _catalog_rarity = value
+    _catalog_page = 0
+    show_page("Catalogo")
+
+func _catalog_turn_page(delta: int) -> void:
+    _catalog_page = maxi(0,_catalog_page + delta)
+    show_page("Catalogo")
+
+func _show_catalog() -> void:
+    _line("ARMAS, ARMADURAS E RECOMPENSAS ESPECIAIS",true)
+    _line("Comum: forja | Raro/Epico: comerciantes | Lendario: desafios | Mitico: masmorra")
+    var classes_row := HBoxContainer.new()
+    body.add_child(classes_row)
+    for kind in GEAR.CLASS_ORDER:
+        var class_button := Button.new()
+        class_button.text = kind
+        UI.apply_button(class_button)
+        class_button.pressed.connect(_catalog_change_class.bind(kind))
+        classes_row.add_child(class_button)
+    var rarity_row := HBoxContainer.new()
+    body.add_child(rarity_row)
+    for rarity in GEAR.RARITIES:
+        var rarity_button := Button.new()
+        rarity_button.text = rarity
+        UI.apply_button(rarity_button)
+        rarity_button.pressed.connect(_catalog_change_rarity.bind(rarity))
+        rarity_row.add_child(rarity_button)
+    var matches: Array[String] = GEAR.equipment_for(_catalog_class,"",_catalog_rarity)
+    var page_size := 12
+    var page_count := maxi(1,ceili(float(matches.size())/float(page_size)))
+    _catalog_page = clampi(_catalog_page,0,page_count-1)
+    _line("%s / %s | %d itens | Pagina %d/%d" % [_catalog_class,_catalog_rarity,matches.size(),_catalog_page+1,page_count],true)
+    var initial := _catalog_page*page_size
+    for n in range(initial,mini(matches.size(),initial+page_size)):
+        var equipment: Dictionary = GEAR.GEAR[matches[n]]
+        _line("%s | %s | %s | Foco: %s" % [equipment["name"],equipment["slot"],equipment.get("source","legado"),equipment.get("focus","Geral")])
+        _line("Bonus: " + str(equipment.get("stats",{})))
+    var navigation := HBoxContainer.new()
+    body.add_child(navigation)
+    var backward := Button.new()
+    backward.text = "Anterior"
+    backward.disabled = _catalog_page <= 0
+    UI.apply_button(backward)
+    backward.pressed.connect(_catalog_turn_page.bind(-1))
+    navigation.add_child(backward)
+    var forward := Button.new()
+    forward.text = "Proximo"
+    forward.disabled = _catalog_page >= page_count-1
+    UI.apply_button(forward)
+    forward.pressed.connect(_catalog_turn_page.bind(1))
+    navigation.add_child(forward)
