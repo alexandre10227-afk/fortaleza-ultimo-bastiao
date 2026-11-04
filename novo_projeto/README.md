@@ -314,3 +314,13 @@ Primeira entrega de implementação:
 - Testes `test_phase2_equipment.gd` e `test_phase2_ui_flow.gd` cobrem novas regras, telas e entrada automática.
 - Validação local Godot 4.7.2: **26 testes anteriores PASS** com teste de moradores atualizado, e **teste adicional de fluxo de UI PASS** (27 suites). Revisão CI GitHub em curso; FPS real da nova versão no Windows não foi medido.
 - **Ainda não é combate completo**: técnicas, inimigos, atributos vivos, danos, IA e batalhas serão implementados em continuidade da Etapa 2; a arte definitiva também segue em revisão.
+
+
+### Fechamento de regressão do primeiro incremento da Etapa 2 (03/11/2026)
+
+- `menu_backdrop.gd`: cenário ilustrado original de castelo/montanhas para menu principal, dificuldade e criação.
+- `actor_animation.gd`: silhueta do herói com novos detalhes em tecido, cinto, ombreiras e botas, ainda em pixel art procedural (24 quadros pré-gerados, oito direções).
+- `world_texture_factory.gd`: padrões cacheados de pedra, madeira, grama e estradas; aplicar a paredes, telhados e terreno com materiais compartilhados.
+- `equipment_market_panel.gd` e `forge_panel.gd`: mercado e forja clicáveis com abas de classe, slots, materiais, moedas e paginação.
+- **Validação remota:** workflow <https://github.com/alexandre10227-afk/fortaleza-ultimo-bastiao/actions/runs/41743624248> concluído com sucesso: importação/compilação, regressões automatizadas e smoke test das cenas no Godot 4.7.2. **27 testes locais** também aprovados, incluindo `test_phase2_ui_flow.gd`.
+- Arte final, teste de FPS dessa versão no Windows e combate ativo continuam pendentes. Nenhuma alegação de Fase 2 finalizada; o usuário já autorizou o seu início.
