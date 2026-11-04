@@ -16,6 +16,9 @@ func run() -> void:
         if item.get("source","") == "forge":
             assert(ECONOMY.RECIPES.has(id))
             assert(ECONOMY.RECIPES[id]["building"] == "Ferraria")
+        elif item.get("source","") == "merchant":
+            assert(ECONOMY.RECIPES.has(id))
+            assert(int(ECONOMY.RECIPES[id]["level"]) >= 2)
         else:
             assert(not ECONOMY.RECIPES.has(id))
     assert(GEAR.is_special("armadura_duque"))
