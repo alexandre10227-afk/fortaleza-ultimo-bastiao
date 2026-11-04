@@ -5,24 +5,24 @@ const ITEMS = preload("res://scripts/item_catalog.gd")
 func _initialize() -> void:
     call_deferred("run")
 func run() -> void:
-    assert(GEAR.GEAR.size() == 24)
+    assert(GEAR.GEAR.size() == 134)
     assert(GEAR.CLASS_ORDER.size() == 4)
     assert(GEAR.SLOTS == ["weapon","head","chest","feet"])
     for id in GEAR.GEAR:
         var item: Dictionary = GEAR.GEAR[id]
-        assert(ITEMS.is_tradeable(id))
+        assert(ITEMS.is_tradeable(id) or GEAR.is_special(id))
         assert(GEAR.can_equip(id, str(item["class"])))
         assert(not GEAR.can_equip(id, "Invalido"))
-        if item["rarity"] == "Comum":
+        if item.get("source","") == "forge":
             assert(ECONOMY.RECIPES.has(id))
             assert(ECONOMY.RECIPES[id]["building"] == "Ferraria")
         else:
             assert(not ECONOMY.RECIPES.has(id))
-    assert(not GEAR.is_equipment("armadura_duque"))
-    assert(not GEAR.is_equipment("espada_heroi"))
+    assert(GEAR.is_special("armadura_duque"))
+    assert(GEAR.is_special("espada_heroi"))
     for npc in GEAR.MERCHANT_ARCHETYPES:
         var vendor_stock: Array[String] = GEAR.vendor_inventory(npc)
-        assert(vendor_stock.size() == 2)
+        assert(vendor_stock.size() == 14)
         for id in vendor_stock:
             assert(GEAR.GEAR[id]["class"] == GEAR.MERCHANT_ARCHETYPES[npc])
     var g = root.get_node("GameState")
