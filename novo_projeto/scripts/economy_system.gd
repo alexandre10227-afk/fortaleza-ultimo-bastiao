@@ -1,6 +1,18 @@
 extends RefCounted
 ## Regras economicas. Custos, receitas e melhorias nao alteram relacoes sociais.
 const RECIPES := {
+    "guerreiro_arma_comum_1": {"building":"Ferraria", "level":1, "money":24, "materials":{"ferro":2,"madeira":1}},
+    "guerreiro_arma_comum_2": {"building":"Ferraria", "level":1, "money":32, "materials":{"ferro":3,"madeira":1}},
+    "guerreiro_arma_comum_3": {"building":"Ferraria", "level":1, "money":40, "materials":{"ferro":4,"madeira":1}},
+    "cavaleiro_arma_comum_1": {"building":"Ferraria", "level":1, "money":24, "materials":{"ferro":2,"madeira":1}},
+    "cavaleiro_arma_comum_2": {"building":"Ferraria", "level":1, "money":32, "materials":{"ferro":3,"madeira":1}},
+    "cavaleiro_arma_comum_3": {"building":"Ferraria", "level":1, "money":40, "materials":{"ferro":4,"madeira":1}},
+    "mago_arma_comum_1": {"building":"Ferraria", "level":1, "money":24, "materials":{"ferro":2,"madeira":1}},
+    "mago_arma_comum_2": {"building":"Ferraria", "level":1, "money":32, "materials":{"ferro":3,"madeira":1}},
+    "mago_arma_comum_3": {"building":"Ferraria", "level":1, "money":40, "materials":{"ferro":4,"madeira":1}},
+    "sacerdote_arma_comum_1": {"building":"Ferraria", "level":1, "money":24, "materials":{"ferro":2,"madeira":1}},
+    "sacerdote_arma_comum_2": {"building":"Ferraria", "level":1, "money":32, "materials":{"ferro":3,"madeira":1}},
+    "sacerdote_arma_comum_3": {"building":"Ferraria", "level":1, "money":40, "materials":{"ferro":4,"madeira":1}},
     "guerreiro_weapon_comum": {"building":"Ferraria", "level":1, "money":25, "materials":{"ferro":2,"madeira":1}},
     "guerreiro_head_comum": {"building":"Ferraria", "level":1, "money":15, "materials":{"ferro":2,"madeira":1}},
     "guerreiro_chest_comum": {"building":"Ferraria", "level":1, "money":30, "materials":{"ferro":3,"madeira":1}},
