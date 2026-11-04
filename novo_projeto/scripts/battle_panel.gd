@@ -6,6 +6,7 @@ const UI = preload("res://scripts/ui_theme.gd")
 var heading: Label
 var hero_status: Label
 var enemy_status: Label
+var companion_status: Label
 var combat_log: RichTextLabel
 var actions: Dictionary = {}
 var finish: Button
@@ -35,6 +36,9 @@ func _ready() -> void:
     var info := HBoxContainer.new()
     info.add_theme_constant_override("separation", 25)
     col.add_child(info)
+    companion_status = Label.new()
+    UI.apply_text(companion_status)
+    col.add_child(companion_status)
     hero_status = Label.new()
     hero_status.custom_minimum_size.x = 360
     UI.apply_text(hero_status)
@@ -81,6 +85,12 @@ func display(battle: Dictionary, potion_count: int) -> void:
     heading.text = "BATALHA - TURNO %d%s" % [int(battle.get("turn",1)),suffix]
     hero_status.text = "HERÓI (%s)\nPV %d / %d\nPM %d / %d" % [str(battle.get("hero_class","")),int(battle.get("hero_hp",0)),int(battle.get("max_hp",0)),int(battle.get("hero_mp",0)),int(battle.get("max_mp",0))]
     enemy_status.text = "%s\nPV %d / %d" % [str(enemy.get("name","Inimigo")),int(enemy.get("hp",0)),int(enemy.get("max_hp",0))]
+    var party_lines: Array[String] = []
+    for companion in battle.get("allies",[]):
+        if companion is Dictionary:
+            var text_line := "%s (%s) — PV %d/%d" % [companion.get("name","Companheiro"),companion.get("role",""),int(companion.get("hp",0)),int(companion.get("max_hp",0))]
+            party_lines.append(text_line)
+    companion_status.text = "COMPANHEIROS: " + (", ".join(party_lines) if not party_lines.is_empty() else "Nenhum recrutado")
     combat_log.text = "\n".join(battle.get("log",[]))
     for action in actions:
         actions[action].visible = active
