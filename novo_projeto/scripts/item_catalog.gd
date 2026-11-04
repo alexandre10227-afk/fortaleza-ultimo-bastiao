@@ -1,7 +1,7 @@
 extends RefCounted
 ## Catalogo comerciavel. Itens unicos/armas especiais ficam em unique_weapons.gd.
 const RARITIES := ["Comum", "Raro", "Epico", "Lendario"]
-const CATEGORIES := ["Arte", "Comestiveis", "Estudos", "Minerios", "Armas"]
+const CATEGORIES := ["Arte", "Comestiveis", "Estudos", "Minerios", "Armas", "Armaduras"]
 const ITEMS := {
     # Arte: presentes para colecionadores, nobres e estudiosos.
     "estatua_argila": {"name":"Estatua de argila", "category":"Arte", "rarity":"Comum", "price":18},
