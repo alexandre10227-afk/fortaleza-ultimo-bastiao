@@ -8,6 +8,7 @@ const ROUTINES = preload("res://scripts/npc_daily_routines.gd")
 const ACTOR_ANIM = preload("res://scripts/actor_animation.gd")
 const GEAR = preload("res://scripts/equipment_catalog.gd")
 const TEXTURES = preload("res://scripts/world_texture_factory.gd")
+const COMBAT = preload("res://scripts/combat_core.gd")
 
 var player: CharacterBody3D
 var hud: Label
@@ -47,6 +48,8 @@ var _market_ids: Array[String] = []
 var _market_vendor_id := ""
 var equipment_market: Control
 var forge_panel: Control
+var battle_panel: Control
+var enemy_visuals: Dictionary = {}
 var npc_menu: Control
 var character_sheet: Control
 var _door_cooldown := 0.0
@@ -82,6 +85,10 @@ func _ready() -> void:
     _create_forge_panel()
     _create_character_sheet()
     _create_scene_fade()
+    _create_battle_panel()
+    _spawn_field_enemies()
+    if not GameState.active_battle.is_empty():
+        _show_battle()
     _refresh_hud()
 
 func _make_box(parent: Node3D, location: Vector3, dimensions: Vector3, tint: Color, solid: bool = false) -> void:
@@ -392,6 +399,8 @@ func _close_top_window() -> void:
         _market_mode = false
     elif forge_panel != null and forge_panel.visible:
         forge_panel.hide_forge()
+    elif battle_panel != null and battle_panel.visible:
+        _close_battle_result()
     elif character_sheet != null and character_sheet.visible:
         character_sheet.hide_sheet()
     elif map_open:
@@ -409,10 +418,12 @@ func _unhandled_key_input(event: InputEvent) -> void:
     if not event is InputEventKey or not event.pressed or event.echo:
         return
     if event.keycode == KEY_ESCAPE:
+        if battle_panel != null and battle_panel.visible and GameState.active_battle.get("state","") == "active":
+            return
         _close_top_window()
         get_viewport().set_input_as_handled()
         return
-    if (dialogue_ui != null and dialogue_ui.visible) or (npc_menu != null and npc_menu.is_open()) or (character_sheet != null and character_sheet.visible) or (equipment_market != null and equipment_market.visible) or (forge_panel != null and forge_panel.visible):
+    if (dialogue_ui != null and dialogue_ui.visible) or (npc_menu != null and npc_menu.is_open()) or (character_sheet != null and character_sheet.visible) or (equipment_market != null and equipment_market.visible) or (forge_panel != null and forge_panel.visible) or (battle_panel != null and battle_panel.visible):
         return
     match event.keycode:
         KEY_N:
@@ -592,6 +603,8 @@ func _update_hint() -> void:
                 next_hint = "Aproxime-se da porta para entrar em %s" % nearby["room"]
             elif not _nearest_resource().is_empty():
                 next_hint = "E: coletar recurso"
+            elif not _nearest_field_enemy().is_empty():
+                next_hint = "E: enfrentar criatura"
             else:
                 next_hint = "Explore a vila, aproxime-se dos personagens e recursos"
     if next_hint != _cached_hint:
@@ -1062,6 +1075,72 @@ func _refresh_resource_visibility() -> void:
         if is_instance_valid(resource_visuals[node_id]):
             resource_visuals[node_id].visible = int(GameState.collected_nodes.get(node_id, -1)) != GameState.day
 
+func _create_battle_panel() -> void:
+    battle_panel = preload("res://scripts/battle_panel.gd").new()
+    battle_panel.name = "BattlePanel"
+    get_node("CanvasLayer").add_child(battle_panel)
+    battle_panel.action_chosen.connect(_battle_action)
+    battle_panel.result_closed.connect(_close_battle_result)
+
+func _battle_action(action: String) -> void:
+    if GameState.play_battle_turn(action):
+        _show_battle()
+        _refresh_field_enemies()
+        _refresh_hud()
+
+func _show_battle() -> void:
+    battle_panel.display(GameState.active_battle,int(GameState.inventory.get("pocao_vida",0)))
+
+func _close_battle_result() -> void:
+    if GameState.close_battle_result():
+        battle_panel.visible = false
+        _refresh_field_enemies()
+        _refresh_hud()
+
+func _spawn_field_enemies() -> void:
+    for visual in enemy_visuals.values():
+        if is_instance_valid(visual):
+            visual.queue_free()
+    enemy_visuals.clear()
+    # Posicoes fixas por regiao e visita, sem AI por quadro.
+    var placements := [
+        {"id": GameState.current_region + "_lobo", "enemy":"lobo_cinzento", "pos":Vector3(0,0,24)},
+        {"id": GameState.current_region + "_saqueador", "enemy":"saqueador", "pos":Vector3(0,0,-25)}
+    ]
+    for entry in placements:
+        var root_node := Node3D.new()
+        root_node.name = str(entry["id"])
+        root_node.position = entry["pos"]
+        var body := MeshInstance3D.new()
+        var mesh := CapsuleMesh.new()
+        mesh.radius = .40
+        mesh.height = 1.2
+        body.mesh = mesh
+        body.position.y = .7
+        var color := Color("#947b53") if entry["enemy"] == "lobo_cinzento" else Color("#794a52")
+        var mat := StandardMaterial3D.new()
+        mat.albedo_color = color
+        body.material_override = mat
+        root_node.add_child(body)
+        settlement.add_child(root_node)
+        enemy_visuals[str(entry["id"])] = root_node
+    _refresh_field_enemies()
+
+func _refresh_field_enemies() -> void:
+    for encounter_id in enemy_visuals:
+        var marker: Node3D = enemy_visuals[encounter_id]
+        marker.visible = GameState.day != int(GameState.defeated_field_enemies.get(encounter_id,-1))
+
+func _nearest_field_enemy() -> Dictionary:
+    if not active_interior.is_empty():
+        return {}
+    for id in enemy_visuals:
+        var visual: Node3D = enemy_visuals[id]
+        if visual.visible and player.position.distance_to(visual.position) <= 2.4:
+            var enemy_id := "lobo_cinzento" if str(id).ends_with("_lobo") else "saqueador"
+            return {"id":str(id),"enemy":enemy_id}
+    return {}
+
 func _nearest_resource() -> Dictionary:
     if not active_interior.is_empty():
         return {}
@@ -1315,6 +1394,11 @@ func _contextual_interact() -> void:
             npc_menu.show_services(active_interior)
         else:
             _interact()
+        return
+    var nearby_enemy := _nearest_field_enemy()
+    if not nearby_enemy.is_empty():
+        if GameState.begin_field_battle(str(nearby_enemy["enemy"]),str(nearby_enemy["id"])):
+            _show_battle()
         return
     var npc := _nearest_npc()
     if not npc.is_empty():
