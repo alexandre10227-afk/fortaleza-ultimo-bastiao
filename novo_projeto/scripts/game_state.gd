@@ -759,7 +759,7 @@ func complete_quest(npc_id: String) -> bool:
     return true
 
 func collect_resource(node_id: String, item_id: String) -> bool:
-    if not ["ferro", "ervas", "madeira"].has(item_id):
+    if not ["ferro", "ervas", "madeira", "pedra"].has(item_id):
         return false
     if int(collected_nodes.get(node_id, -1)) == day:
         return false
