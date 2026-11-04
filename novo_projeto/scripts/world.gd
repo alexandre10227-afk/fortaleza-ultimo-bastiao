@@ -532,6 +532,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 func _refresh_hud() -> void:
     hud.text = "%s | %s | %s | Dia %d | Energia %d | Onda %d | Moedas %d" % [GameState.character_name, GameState.difficulty, GameState.current_region, GameState.day, GameState.energy, GameState.wave_number, GameState.money]
+    hud.text += "\nNivel %d | PV %d/%d | PM %d/%d | XP %d/%d" % [GameState.hero_level,GameState.hero_hp,COMBAT.hero_max_hp(GameState.character_stats,GameState.hero_level),GameState.hero_mp,COMBAT.hero_max_mp(GameState.character_stats,GameState.hero_level),GameState.hero_xp,COMBAT.xp_for_next_level(GameState.hero_level)]
     _refresh_news()
     if not last_message.is_empty():
         hud.text += "\n" + last_message
@@ -779,6 +780,7 @@ func _travel_to(destination: String) -> void:
         player.position = GameState.get_region_position()
         _interior_return_position = player.position
         _apply_region_theme()
+        _spawn_field_enemies()
         last_message = "Viagem concluida: -5 energia e XP de Agilidade."
     map_open = false
     map_dialog.visible = false
@@ -1164,6 +1166,7 @@ func _on_quick_action(action: String) -> void:
             GameState.advance_days(1)
             _refresh_resident_positions()
             _refresh_resource_visibility()
+            _refresh_field_enemies()
             _refresh_hud()
         "save":
             GameState.save_game()
