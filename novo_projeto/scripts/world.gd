@@ -301,7 +301,7 @@ func _process(delta: float) -> void:
         _update_hint()
 
 func _controls_blocked() -> bool:
-    return map_open or (dialogue_ui != null and dialogue_ui.visible) or (npc_menu != null and npc_menu.is_open()) or (character_sheet != null and character_sheet.visible)
+    return map_open or (dialogue_ui != null and dialogue_ui.visible) or (npc_menu != null and npc_menu.is_open()) or (character_sheet != null and character_sheet.visible) or (equipment_market != null and equipment_market.visible) or (forge_panel != null and forge_panel.visible) or (battle_panel != null and battle_panel.visible)
 
 func _physics_process(delta: float) -> void:
     if player == null:
